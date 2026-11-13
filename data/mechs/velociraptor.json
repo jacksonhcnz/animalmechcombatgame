@@ -2,7 +2,11 @@
 	"id": "velociraptor",
 	"name": "Velociraptor",
 	"movement": "ground",
-	"palette": { "primary": "#5fa36b", "accent": "#2f6b45", "dark": "#2b3a30" },
+	"palette": {
+		"primary": "#5fa36b",
+		"accent": "#2f6b45",
+		"dark": "#2b3a30"
+	},
 	"base": {
 		"speed": 20.0,
 		"turn_rate": 2.2,
@@ -13,10 +17,36 @@
 		"jump_speed": 14.0,
 		"jump_cooldown": 0.6
 	},
-	"collider": { "size": [3.4, 7.2, 5.0], "center": [0.0, 3.6, 0.0] },
-	"cockpit": [0.0, 0.3, -0.3],
-	"cockpit_frame": { "window": [1.05, 0.56], "distance": 1.0, "pillar_tilt_deg": 14.0, "console_height": 0.18 },
-	"third_person": { "height": 5.0, "distance": 20.0 },
+	"collider": {
+		"size": [
+			3.4,
+			7.2,
+			5.0
+		],
+		"center": [
+			0.0,
+			3.6,
+			0.0
+		]
+	},
+	"cockpit": [
+		0.0,
+		0.3,
+		-0.3
+	],
+	"cockpit_frame": {
+		"window": [
+			1.05,
+			0.56
+		],
+		"distance": 1.0,
+		"pillar_tilt_deg": 14.0,
+		"console_height": 0.18
+	},
+	"third_person": {
+		"height": 5.0,
+		"distance": 20.0
+	},
 	"animation": {
 		"stride_length": 10.0,
 		"bob_m": 0.35,
@@ -24,31 +54,40 @@
 		"land_dip_m": 0.6,
 		"limp_roll_deg": 5.0,
 		"collapse_m": 1.2,
-		"death_roll_deg": 10.0
+		"death_roll_deg": 10.0,
+		"sway_yaw_deg": 2.0,
+		"sway_roll_deg": 3.0
 	},
 	"parts": [
-		{ "id": "head", "name": "Head", "kind": "head", "health": 60, "fatal": true, "tone": "primary", "size": [1.6, 1.5, 2.6], "pos": [0.0, 6.6, -2.6] },
-		{ "id": "torso", "name": "Torso", "kind": "torso", "health": 150, "fatal": true, "tone": "primary", "size": [2.4, 2.4, 4.2], "pos": [0.0, 5.3, 0.0] },
-		{ "id": "tail", "name": "Tail", "kind": "tail", "health": 40, "tone": "accent", "size": [0.9, 0.9, 4.5], "pos": [0.0, 5.0, 4.3],
-			"anim": { "pivot": [0.0, 5.0, 2.05], "walk": { "axis": "y", "deg": 12.0, "phase": 0.25 } } },
-
-		{ "id": "leg_l", "name": "Left leg", "kind": "leg", "health": 85, "tone": "primary", "size": [1.0, 4.1, 1.4], "pos": [-1.0, 2.05, 0.2], "on_disabled": { "speed_mult": 0.6, "turn_mult": 0.8 },
-			"anim": { "pivot": [-1.0, 4.1, 0.2], "walk": { "axis": "x", "deg": 30.0, "phase": 0.0 } } },
-		{ "id": "leg_r", "name": "Right leg", "kind": "leg", "health": 85, "tone": "primary", "size": [1.0, 4.1, 1.4], "pos": [1.0, 2.05, 0.2], "on_disabled": { "speed_mult": 0.6, "turn_mult": 0.8 },
-			"anim": { "pivot": [1.0, 4.1, 0.2], "walk": { "axis": "x", "deg": 30.0, "phase": 0.5 } } },
-		{ "id": "knee_l", "name": "Left knee", "kind": "joint", "joint": true, "parent": "leg_l", "health": 40, "tone": "dark", "size": [1.3, 0.8, 1.7], "pos": [-1.0, 2.3, 0.2], "on_disabled": { "speed_mult": 0.75 } },
-		{ "id": "knee_r", "name": "Right knee", "kind": "joint", "joint": true, "parent": "leg_r", "health": 40, "tone": "dark", "size": [1.3, 0.8, 1.7], "pos": [1.0, 2.3, 0.2], "on_disabled": { "speed_mult": 0.75 } },
-
-		{ "id": "arm_l", "name": "Left arm", "kind": "arm", "health": 45, "tone": "accent", "size": [0.6, 0.6, 2.0], "pos": [-1.6, 5.0, -2.2],
-			"anim": { "pivot": [-1.6, 5.0, -1.2], "walk": { "axis": "x", "deg": 10.0, "phase": 0.5 } } },
-		{ "id": "arm_r", "name": "Right arm", "kind": "arm", "health": 45, "tone": "accent", "size": [0.6, 0.6, 2.0], "pos": [1.6, 5.0, -2.2],
-			"anim": { "pivot": [1.6, 5.0, -1.2], "walk": { "axis": "x", "deg": 10.0, "phase": 0.0 } } },
-		{ "id": "shoulder_l", "name": "Left shoulder", "kind": "joint", "joint": true, "parent": "arm_l", "health": 30, "tone": "dark", "size": [1.0, 1.0, 1.0], "pos": [-1.55, 5.2, -1.2] },
-		{ "id": "shoulder_r", "name": "Right shoulder", "kind": "joint", "joint": true, "parent": "arm_r", "health": 30, "tone": "dark", "size": [1.0, 1.0, 1.0], "pos": [1.55, 5.2, -1.2] }
+		{"id": "head", "name": "Head", "kind": "head", "health": 60, "fatal": true, "tone": "primary", "size": [1.6, 1.5, 2.6], "pos": [0.0, 6.6, -2.6], "anim": {"pivot": [0.0, 6.0, -1.8], "walk": {"axis": "x", "deg": 4.0, "phase": 0.25}}},
+		{"id": "torso", "name": "Torso", "kind": "torso", "health": 150, "fatal": true, "tone": "primary", "size": [2.4, 2.4, 4.2], "pos": [0.0, 5.3, 0.0]},
+		{"id": "tail", "name": "Tail", "kind": "tail", "health": 40, "tone": "accent", "size": [0.9, 0.9, 2.1], "pos": [0.0, 5.0, 3.1], "anim": {"pivot": [0.0, 5.0, 2.05], "walk": {"axis": "y", "deg": 4.0, "phase": 0.25}}},
+		{"id": "tail_mid", "name": "Tail middle", "kind": "tail", "parent": "tail", "damage_to": "tail", "tone": "accent", "size": [0.7, 0.7, 1.85], "pos": [0.0, 4.95, 5.075], "anim": {"pivot": [0.0, 5.0, 4.15], "walk": {"axis": "y", "deg": 6.0, "phase": 0.35}}},
+		{"id": "tail_tip", "name": "Tail tip", "kind": "tail", "parent": "tail_mid", "damage_to": "tail", "tone": "accent", "size": [0.5, 0.5, 1.6], "pos": [0.0, 4.9, 6.8], "anim": {"pivot": [0.0, 4.95, 6.0], "walk": {"axis": "y", "deg": 9.0, "phase": 0.45}}},
+		{"id": "leg_l", "name": "Left thigh", "kind": "leg", "tone": "primary", "size": [1.1, 1.562, 1.1], "pos": [-1.0, 3.9, -0.4], "rot_deg": [-129.806, 0.0, 0.0], "health": 85, "on_disabled": {"speed_mult": 0.6, "turn_mult": 0.8}, "anim": {"pivot": [-1.0, 4.4, 0.2], "walk": {"axis": "x", "deg": 24.0, "phase": 0.0}}},
+		{"id": "knee_l", "name": "Left knee", "kind": "joint", "joint": true, "parent": "leg_l", "health": 40, "tone": "dark", "size": [1.3, 0.8, 1.5], "pos": [-1.05, 3.4, -1.0], "on_disabled": {"speed_mult": 0.75}},
+		{"id": "shin_l", "name": "Shin", "kind": "limb", "tone": "primary", "size": [0.8, 2.759, 0.8], "pos": [-1.05, 2.45, 0.0], "rot_deg": [133.531, 0.0, 0.0], "parent": "knee_l", "damage_to": "leg_l", "anim": {"pivot": [-1.05, 3.4, -1.0], "walk": {"axis": "x", "deg": -40.0, "phase": 0.25, "rectify": true}}},
+		{"id": "metatarsus_l", "name": "Ankle", "kind": "limb", "tone": "dark", "size": [0.7, 1.665, 0.7], "pos": [-1.05, 0.875, 0.45], "rot_deg": [-138.652, 0.0, 0.0], "parent": "shin_l", "damage_to": "leg_l", "anim": {"pivot": [-1.05, 1.5, 1.0], "walk": {"axis": "x", "deg": 32.0, "phase": 0.25, "rectify": true}}},
+		{"id": "foot_l", "name": "Foot", "kind": "limb", "parent": "metatarsus_l", "damage_to": "leg_l", "tone": "dark", "size": [0.9, 0.3, 1.7], "pos": [-1.05, 0.15, -0.7]},
+		{"id": "sickle_l", "name": "Sickle claw", "kind": "limb", "parent": "foot_l", "damage_to": "leg_l", "tone": "accent", "size": [0.18, 0.9, 0.28], "pos": [-0.75, 0.65, -1.25], "rot_deg": [35.0, 0.0, 0.0]},
+		{"id": "arm_l", "name": "Left arm", "kind": "arm", "tone": "accent", "size": [0.55, 0.711, 0.55], "pos": [-1.55, 4.825, -1.075], "rot_deg": [140.711, 0.0, 0.0], "health": 45, "anim": {"pivot": [-1.55, 5.1, -1.3], "walk": {"axis": "x", "deg": 10.0, "phase": 0.5}}},
+		{"id": "shoulder_l", "name": "Left shoulder", "kind": "joint", "joint": true, "parent": "arm_l", "health": 30, "tone": "dark", "size": [1.0, 1.0, 1.0], "pos": [-1.55, 5.2, -1.2]},
+		{"id": "forearm_l", "name": "Forearm", "kind": "limb", "tone": "accent", "size": [0.5, 1.16, 0.5], "pos": [-1.6, 4.475, -1.425], "rot_deg": [-97.431, 0.0, 0.0], "parent": "arm_l", "damage_to": "arm_l", "anim": {"pivot": [-1.6, 4.55, -0.85], "walk": {"axis": "x", "deg": -14.0, "phase": 0.75, "rectify": true}}},
+		{"id": "hand_l", "name": "Hand", "kind": "limb", "parent": "forearm_l", "damage_to": "arm_l", "tone": "dark", "size": [0.45, 0.3, 0.8], "pos": [-1.6, 4.35, -2.55]},
+		{"id": "leg_r", "name": "Right thigh", "kind": "leg", "tone": "primary", "size": [1.1, 1.562, 1.1], "pos": [1.0, 3.9, -0.4], "rot_deg": [-129.806, 0.0, 0.0], "health": 85, "on_disabled": {"speed_mult": 0.6, "turn_mult": 0.8}, "anim": {"pivot": [1.0, 4.4, 0.2], "walk": {"axis": "x", "deg": 24.0, "phase": 0.5}}},
+		{"id": "knee_r", "name": "Right knee", "kind": "joint", "joint": true, "parent": "leg_r", "health": 40, "tone": "dark", "size": [1.3, 0.8, 1.5], "pos": [1.05, 3.4, -1.0], "on_disabled": {"speed_mult": 0.75}},
+		{"id": "shin_r", "name": "Shin", "kind": "limb", "tone": "primary", "size": [0.8, 2.759, 0.8], "pos": [1.05, 2.45, 0.0], "rot_deg": [133.531, 0.0, 0.0], "parent": "knee_r", "damage_to": "leg_r", "anim": {"pivot": [1.05, 3.4, -1.0], "walk": {"axis": "x", "deg": -40.0, "phase": 0.75, "rectify": true}}},
+		{"id": "metatarsus_r", "name": "Ankle", "kind": "limb", "tone": "dark", "size": [0.7, 1.665, 0.7], "pos": [1.05, 0.875, 0.45], "rot_deg": [-138.652, 0.0, 0.0], "parent": "shin_r", "damage_to": "leg_r", "anim": {"pivot": [1.05, 1.5, 1.0], "walk": {"axis": "x", "deg": 32.0, "phase": 0.75, "rectify": true}}},
+		{"id": "foot_r", "name": "Foot", "kind": "limb", "parent": "metatarsus_r", "damage_to": "leg_r", "tone": "dark", "size": [0.9, 0.3, 1.7], "pos": [1.05, 0.15, -0.7]},
+		{"id": "sickle_r", "name": "Sickle claw", "kind": "limb", "parent": "foot_r", "damage_to": "leg_r", "tone": "accent", "size": [0.18, 0.9, 0.28], "pos": [0.75, 0.65, -1.25], "rot_deg": [35.0, 0.0, 0.0]},
+		{"id": "arm_r", "name": "Right arm", "kind": "arm", "tone": "accent", "size": [0.55, 0.711, 0.55], "pos": [1.55, 4.825, -1.075], "rot_deg": [140.711, 0.0, 0.0], "health": 45, "anim": {"pivot": [1.55, 5.1, -1.3], "walk": {"axis": "x", "deg": 10.0, "phase": 0.0}}},
+		{"id": "shoulder_r", "name": "Right shoulder", "kind": "joint", "joint": true, "parent": "arm_r", "health": 30, "tone": "dark", "size": [1.0, 1.0, 1.0], "pos": [1.55, 5.2, -1.2]},
+		{"id": "forearm_r", "name": "Forearm", "kind": "limb", "tone": "accent", "size": [0.5, 1.16, 0.5], "pos": [1.6, 4.475, -1.425], "rot_deg": [-97.431, 0.0, 0.0], "parent": "arm_r", "damage_to": "arm_r", "anim": {"pivot": [1.6, 4.55, -0.85], "walk": {"axis": "x", "deg": -14.0, "phase": 0.25, "rectify": true}}},
+		{"id": "hand_r", "name": "Hand", "kind": "limb", "parent": "forearm_r", "damage_to": "arm_r", "tone": "dark", "size": [0.45, 0.3, 0.8], "pos": [1.6, 4.35, -2.55]}
 	],
 	"mounts": [
-		{ "id": "gun_l", "part": "arm_l", "weapon": "autocannon" },
-		{ "id": "gun_r", "part": "arm_r", "weapon": "rocket_pod" },
-		{ "id": "kick", "part": "leg_r", "weapon": "claw_strike" }
+		{"id": "gun_l", "part": "hand_l", "weapon": "autocannon"},
+		{"id": "gun_r", "part": "hand_r", "weapon": "rocket_pod"},
+		{"id": "kick", "part": "foot_r", "weapon": "claw_strike"}
 	]
 }

@@ -100,6 +100,7 @@ func is_part_disabled(part_id: String) -> bool:
 ## True if the part is disabled, one of its joints is, or a part it hangs from is. A crippled limb cannot
 ## use anything mounted on it.
 func is_crippled(part_id: String) -> bool:
+	part_id = resolve(part_id)
 	if _disabled.has(part_id):
 		return true
 	# A part hanging from a destroyed part (guns on a gimbal bar on a mast) goes down with it.
