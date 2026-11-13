@@ -36,6 +36,7 @@ Open the project in Godot 4.7 and press Play. Click the window to capture the mo
 | Melee | F | X |
 | Switch cockpit / third-person | C | Y |
 | Climb / descend (Hawk) | Space / Ctrl | A / B |
+| Jump (Lion, Velociraptor) | Space | A |
 
 Test range keys: `1` Lion, `2` Velociraptor, `3` Hawk. `F1` Practice, `F2` Standard, `F4` Hardcore, `F5` Arcade rules. `F3` developer overlay. `R` restart. `[` and `]` lower and raise the cockpit head bob (saved between sessions).
 

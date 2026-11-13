@@ -16,6 +16,7 @@ const DEFAULTS := {
 	"equipment_knockout": true,
 	"ammo_limits": true,
 	"friendly_fire": false,
+	"jumping": true,
 	"durability_mult": 1.0,
 	"match_time": 0.0,
 }
@@ -40,6 +41,8 @@ var equipment_knockout: bool
 var ammo_limits: bool
 ## Team members can damage each other.
 var friendly_fire: bool
+## Ground mechs can jump.
+var jumping: bool
 ## Multiplies every part's health.
 var durability_mult: float
 ## Match length in seconds. 0 means untimed.

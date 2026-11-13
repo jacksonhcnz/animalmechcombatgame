@@ -13,7 +13,9 @@
 		"armor": 1.2,
 		"twist_limit_deg": 100.0,
 		"pitch_min_deg": -35.0,
-		"pitch_max_deg": 30.0
+		"pitch_max_deg": 30.0,
+		"jump_speed": 11.0,
+		"jump_cooldown": 0.8
 	},
 	"collider": {
 		"size": [
@@ -49,6 +51,7 @@
 		"stride_length": 11.0,
 		"bob_m": 0.08,
 		"stalk_drop_m": 0.05,
+		"land_dip_m": 0.5,
 		"sway_yaw_deg": 3.0,
 		"sway_roll_deg": 2.0,
 		"sway_pitch_deg": 1.5,

@@ -36,6 +36,7 @@ func _physics_process(delta: float) -> void:
 	c.turn = Input.get_axis("turn_left", "turn_right")
 	c.strafe = Input.get_axis("strafe_left", "strafe_right")
 	c.vertical = Input.get_axis("descend", "ascend")
+	c.jump = Input.is_action_pressed("jump")
 	c.aim_yaw_delta += _mouse_yaw - Input.get_axis("aim_left", "aim_right") * stick_aim_rate * delta
 	c.aim_pitch_delta += _mouse_pitch + Input.get_axis("aim_down", "aim_up") * stick_aim_rate * delta
 	_mouse_yaw = 0.0
