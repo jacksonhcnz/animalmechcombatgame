@@ -21,7 +21,7 @@ Mechs are animated in code from their data file, with no animation assets.
 
 ## Segmented limbs
 
-A limb can be a chain of parts, each hanging from the one before (`parent`), with its own `pivot` and `walk` motion. The lion's legs are chains: shoulder blade, upper arm, elbow, forearm, paw (front) and thigh, knee, shin, foot (rear).
+A limb can be a chain of parts, each hanging from the one before (`parent`), with its own `pivot` and `walk` motion. The lion's, raptor's and hawk's limbs are chains: shoulder blade, upper arm, elbow, forearm, paw (front) and thigh, knee, shin, foot (rear).
 
 - `damage_to` (per part): the part is only a visible piece of another part. It has no health or HUD row, and hits on it count against the named part.
 - `rectify` (inside a `walk` or `flap` motion): only the positive half of the wave is used, so a joint folds and straightens but never bends backwards. Used to lift the foot during the swing.
@@ -29,3 +29,6 @@ A limb can be a chain of parts, each hanging from the one before (`parent`), wit
 ## Jumping
 
 Ground mechs set `base.jump_speed` (upward speed in m/s, 0 disables jumping) and optionally `base.jump_cooldown` (seconds). The jump height follows from gravity, and a damaged mech jumps lower because leg damage scales the jump like it scales speed. A ruleset can switch jumping off with `"jumping": false`. The optional animation key `land_dip_m` sets how far the body dips on landing.
+- `stabilize` (per part, a number): the part turns against the body's pitch by that fraction, so what sits on it stays level. The hawk's neck uses it to keep the head steady while the body pitches.
+
+The velociraptor follows a theropod skeleton: thigh, knee, shin, ankle bone and foot with a raised sickle claw, short folded arms with clawed hands, and a stiff three-segment tail. The hawk follows a bird skeleton: a three-joint wing (upper wing, forearm, primaries) whose flap travels outwards as a wave, a two-joint neck that keeps the head level, a hooked beak, a keel and a fanned tail.

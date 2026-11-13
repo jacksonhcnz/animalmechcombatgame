@@ -69,6 +69,27 @@ func _run() -> void:
 	await _frames(2)
 	_check(is_equal_approx(player.aim_yaw, deg_to_rad(110.0)), "the raptor's aim stops at its twist limit")
 	player.aim_yaw = 0.0
+	# Skeleton: thigh, knee, shin, ankle, foot, sickle claw hang from one another.
+	_check(player.pivots["shin_l"].get_parent() == player.pivots["knee_l"], "the shin hangs from the knee")
+	_check(player.pivots["metatarsus_l"].get_parent() == player.pivots["shin_l"], "the ankle bone hangs from the shin")
+	_check(player.pivots["foot_l"].get_parent() == player.pivots["metatarsus_l"], "the foot hangs from the ankle bone")
+	_check(player.pivots["sickle_l"].get_parent() == player.pivots["foot_l"], "the sickle claw is on the foot")
+	_check(player.pivots["forearm_l"].get_parent() == player.pivots["arm_l"], "the forearm hangs from the upper arm")
+	_check(player.damage.mount_online("gun_l") and player.damage.mount_online("kick"), "raptor guns and kick start online")
+	var shin_fold := 0.0
+	var shin_stretch := 0.0
+	player.controls.throttle = 1.0
+	for i in 90:
+		await physics_frame
+		shin_fold = minf(shin_fold, player.pivots["shin_l"].rotation.x)
+		shin_stretch = maxf(shin_stretch, player.pivots["shin_l"].rotation.x)
+	player.controls.throttle = 0.0
+	_check(shin_fold < deg_to_rad(-15.0), "the shin folds to lift the foot (%.2f rad)" % shin_fold)
+	_check(shin_stretch < 0.001, "the shin never bends the wrong way")
+	_check(absf(player.pivots["tail_tip"].rotation.y) <= deg_to_rad(10.0) + 0.001, "the raptor's tail stays stiff")
+	var before_leg: float = player.damage.health["leg_r"]
+	player.take_hit("sickle_r", 10.0)
+	_check(player.damage.health["leg_r"] < before_leg, "a hit on the sickle claw counts against the leg")
 	var peak := await _walk(player, 90)
 	_check(peak > deg_to_rad(10.0), "legs swing while walking (peak %.2f rad)" % peak)
 	_check(is_equal_approx(player.pivots["leg_l"].rotation.x + player.pivots["leg_r"].rotation.x, 0.0) or absf(player.pivots["leg_l"].rotation.x + player.pivots["leg_r"].rotation.x) < 0.05, "legs swing in opposite directions")
@@ -121,18 +142,39 @@ func _run() -> void:
 	var max_z := -99.0
 	for i in 120:
 		await physics_frame
-		var z: float = hawk.pivots["wing_l"].rotation.z
+		# The wing is a chain, so the tip's real angle is the sum of the three joints.
+		var z: float = hawk.pivots["wing_l"].rotation.z + hawk.pivots["wing_mid_l"].rotation.z + hawk.pivots["wing_tip_l"].rotation.z
 		min_z = minf(min_z, z)
 		max_z = maxf(max_z, z)
 	_check(max_z - min_z > deg_to_rad(20.0), "hawk wings flap (range %.2f rad)" % (max_z - min_z))
 	hawk.take_hit("wing_l", 9999.0)
 	await _frames(120)
-	var drooped: float = hawk.pivots["wing_l"].rotation.z
-	_check(is_equal_approx(drooped, deg_to_rad(55.0)), "a destroyed wing droops (%.2f rad)" % drooped)
+	var drooped: float = hawk.pivots["wing_l"].rotation.z + hawk.pivots["wing_mid_l"].rotation.z + hawk.pivots["wing_tip_l"].rotation.z
+	_check(is_equal_approx(drooped, deg_to_rad(35.0 + 20.0 + 12.0)), "a destroyed wing droops all the way along (%.2f rad)" % drooped)
 	hawk.controls.turn = 1.0
 	await _frames(60)
 	hawk.controls.turn = 0.0
 	_check(hawk.rig.rotation.z < -0.1, "hawk banks into a right turn")
+
+	# Bird skeleton: the wing is a wave that travels outwards, and the neck keeps the head level.
+	_check(hawk.pivots["wing_tip_r"].get_parent() == hawk.pivots["wing_mid_r"], "the primaries hang from the forearm")
+	_check(hawk.pivots["wing_mid_r"].get_parent() == hawk.pivots["wing_r"], "the forearm hangs from the upper wing")
+	_check(hawk.pivots["head"].get_parent() == hawk.pivots["neck_b"], "the head sits on the neck")
+	hawk.take_hit("wing_tip_r", 10.0)
+	_check(hawk.damage.health["wing_r"] < hawk.damage.max_health["wing_r"], "a hit on the primaries counts against the wing")
+	hawk.controls.vertical = 1.0
+	await _frames(100)
+	_check(hawk.rig.rotation.x > 0.05, "the hawk pitches up as it climbs")
+	_check(hawk.pivots["neck_a"].rotation.x < -0.02, "the neck turns against the pitch to keep the head level")
+	hawk.controls.vertical = 0.0
+	# Without a lag the tip would just be a scaled copy of the root; with one it falls out of step.
+	var out_of_step := 0.0
+	for i in 120:
+		await physics_frame
+		var inner: float = hawk.pivots["wing_r"].rotation.z - deg_to_rad(4.0)
+		var tip: float = hawk.pivots["wing_tip_r"].rotation.z
+		out_of_step = maxf(out_of_step, absf(tip - inner * 16.0 / 14.0))
+	_check(out_of_step > deg_to_rad(4.0), "the wingtip lags behind the wing root (the flap travels outwards)")
 
 	# Lion: all four legs animate.
 	_range.start("lion", "practice")
