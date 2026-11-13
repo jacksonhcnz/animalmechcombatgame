@@ -33,6 +33,11 @@ var aim_pitch: float = 0.0
 var view_third_person: bool = false
 var cockpit_camera: Camera3D
 var third_person_camera: Camera3D
+## Holds every visible part and hitbox, so the animator can bob and tilt the whole body.
+var rig: Node3D
+## One pivot node per part. A part hangs from its parent part's pivot, so joints follow limbs.
+var pivots: Dictionary = {}
+var animator: MechAnimator
 
 var _part_defs: Dictionary = {}
 var _part_meshes: Dictionary = {}
@@ -40,6 +45,7 @@ var _hitboxes: Dictionary = {}
 var _base_colors: Dictionary = {}
 var _own_rids: Array[RID] = []
 var _aim_pivot: Node3D
+var _aim_base_y: float = 0.0
 var _third_pivot: Node3D
 var _dead: bool = false
 var _rng := RandomNumberGenerator.new()
@@ -61,6 +67,7 @@ func setup(mech_id: String, ruleset: Ruleset) -> void:
 	for mount in def.get("mounts", []):
 		weapons.append(WeaponState.new(mount["id"], GameData.get_entry("weapons", mount["weapon"])))
 	_build_body()
+	animator = MechAnimator.new(self)
 
 
 func is_flying() -> bool:
@@ -146,10 +153,18 @@ func _physics_process(delta: float) -> void:
 		weapon.tick(delta)
 	if _dead:
 		_fall(delta)
+		_animate(delta)
 		return
 	_update_aim()
 	_move(delta)
+	_animate(delta)
 	_handle_fire()
+
+
+func _animate(delta: float) -> void:
+	animator.update(delta)
+	# The cockpit camera follows only a share of the body bob, set by the player's head bob setting.
+	_aim_pivot.position.y = _aim_base_y + animator.bob_y * GameSettings.head_bob
 
 
 func _update_aim() -> void:
@@ -295,12 +310,44 @@ func _build_body() -> void:
 	body_shape.position = _vec3(collider["center"])
 	add_child(body_shape)
 
+	rig = Node3D.new()
+	rig.name = "Rig"
+	add_child(rig)
+
 	var palette: Dictionary = def["palette"]
-	for part in def["parts"]:
+	var parts: Array = def["parts"]
+	for part in parts:
+		_part_defs[part["id"]] = part
+
+	# Pivots first, parents before children, so each part can hang from its parent's pivot.
+	var pivot_world: Dictionary = {}
+	var pending: Array = parts.duplicate()
+	while not pending.is_empty():
+		var progressed := false
+		for part in pending.duplicate():
+			var part_id: String = part["id"]
+			var parent_id: String = part.get("parent", "")
+			if parent_id != "" and not pivots.has(parent_id):
+				continue
+			var world := _vec3(part.get("anim", {}).get("pivot", part["pos"]))
+			var pivot := Node3D.new()
+			pivot.name = "Pivot_" + part_id
+			var parent_world: Vector3 = pivot_world[parent_id] if parent_id != "" else Vector3.ZERO
+			pivot.position = world - parent_world
+			(pivots[parent_id] if parent_id != "" else rig).add_child(pivot)
+			pivots[part_id] = pivot
+			pivot_world[part_id] = world
+			pending.erase(part)
+			progressed = true
+		if not progressed:
+			push_error("%s: parts have a parent loop" % name)
+			break
+
+	for part in parts:
 		var part_id: String = part["id"]
-		_part_defs[part_id] = part
 		var size := _vec3(part["size"])
-		var pos := _vec3(part["pos"])
+		var pivot_pos: Vector3 = pivot_world[part_id]
+		var local: Vector3 = _vec3(part["pos"]) - pivot_pos
 		var rot := _vec3(part.get("rot_deg", [0.0, 0.0, 0.0]))
 
 		var mesh_node := MeshInstance3D.new()
@@ -313,9 +360,9 @@ func _build_body() -> void:
 		material.albedo_color = color
 		material.roughness = 1.0
 		mesh_node.material_override = material
-		mesh_node.position = pos
+		mesh_node.position = local
 		mesh_node.rotation_degrees = rot
-		add_child(mesh_node)
+		pivots[part_id].add_child(mesh_node)
 		_part_meshes[part_id] = mesh_node
 		_base_colors[part_id] = color
 
@@ -324,7 +371,7 @@ func _build_body() -> void:
 		hitbox.collision_layer = LAYER_HITBOX
 		hitbox.collision_mask = 0
 		hitbox.monitoring = false
-		hitbox.position = pos
+		hitbox.position = local
 		hitbox.rotation_degrees = rot
 		var hit_shape := CollisionShape3D.new()
 		var hit_box := BoxShape3D.new()
@@ -333,7 +380,7 @@ func _build_body() -> void:
 		hitbox.add_child(hit_shape)
 		hitbox.set_meta("part_id", part_id)
 		hitbox.set_meta("mech", self)
-		add_child(hitbox)
+		pivots[part_id].add_child(hitbox)
 		_hitboxes[part_id] = hitbox
 		_own_rids.append(hitbox.get_rid())
 
@@ -342,6 +389,7 @@ func _build_body() -> void:
 	_aim_pivot = Node3D.new()
 	_aim_pivot.name = "AimPivot"
 	_aim_pivot.position = cockpit_pos
+	_aim_base_y = cockpit_pos.y
 	add_child(_aim_pivot)
 	_third_pivot = Node3D.new()
 	_third_pivot.name = "ThirdPersonPivot"

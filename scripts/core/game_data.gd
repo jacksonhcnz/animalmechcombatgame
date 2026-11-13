@@ -176,6 +176,7 @@ static func _validate_mech(id: String) -> Array[String]:
 				p.append("%s: unknown on_disabled effect '%s'" % [ptag, key])
 	if not has_fatal:
 		p.append("%s: needs at least one fatal part" % tag)
+	p.append_array(_validate_animation(tag, m, parts, part_ids))
 
 	var mount_ids: Dictionary = {}
 	for mount in m.get("mounts", []):
@@ -187,6 +188,56 @@ static func _validate_mech(id: String) -> Array[String]:
 			p.append("%s: part '%s' does not exist" % [mtag, mount.get("part", "")])
 		if get_entry("weapons", str(mount.get("weapon", ""))).is_empty():
 			p.append("%s: weapon '%s' does not exist" % [mtag, mount.get("weapon", "")])
+	return p
+
+
+## Checks the "animation" block of a mech and the "anim" block of each part.
+static func _validate_animation(tag: String, mech: Dictionary, parts: Array, part_ids: Dictionary) -> Array[String]:
+	var p: Array[String] = []
+	var flying: bool = mech.get("movement", "") == "flying"
+	var cfg: Dictionary = mech.get("animation", {})
+	if cfg.is_empty():
+		p.append("%s: needs an animation block" % tag)
+	var required: Array[String] = ["stride_length", "bob_m"]
+	if flying:
+		required = ["flap_hz", "flap_hz_climb", "hover_bob_m", "bank_deg", "pitch_deg"]
+	for key in required:
+		if float(cfg.get(key, 0.0)) <= 0.0:
+			p.append("%s: animation.%s must be greater than 0" % [tag, key])
+	for key in cfg:
+		if not (cfg[key] is float or cfg[key] is int):
+			p.append("%s: animation.%s must be a number" % [tag, key])
+
+	for part in parts:
+		var ptag := "%s part '%s'" % [tag, part.get("id", "?")]
+		var anim: Dictionary = part.get("anim", {})
+		for key in anim:
+			if not ["pivot", "walk", "flap"].has(key):
+				p.append("%s: unknown anim entry '%s'" % [ptag, key])
+		if anim.has("pivot") and not _is_vec3(anim["pivot"]):
+			p.append("%s: anim.pivot must be [x, y, z]" % ptag)
+		for motion_name in ["walk", "flap"]:
+			if not anim.has(motion_name):
+				continue
+			if (motion_name == "walk") == flying:
+				p.append("%s: a %s mech cannot use a '%s' motion" % [ptag, "flying" if flying else "ground", motion_name])
+			var motion: Dictionary = anim[motion_name]
+			if not ["x", "y", "z"].has(motion.get("axis", "")):
+				p.append("%s: %s.axis must be x, y or z" % [ptag, motion_name])
+			if not (motion.get("deg") is float or motion.get("deg") is int):
+				p.append("%s: %s.deg must be a number" % [ptag, motion_name])
+			for key in motion:
+				if not ["axis", "deg", "phase", "offset_deg", "droop_deg"].has(key):
+					p.append("%s: unknown %s setting '%s'" % [ptag, motion_name, key])
+
+		# A chain of parents must end somewhere, not loop back on itself.
+		var steps := 0
+		var current: String = part.get("parent", "")
+		while current != "" and steps <= parts.size():
+			current = part_ids.get(current, {}).get("parent", "")
+			steps += 1
+		if steps > parts.size():
+			p.append("%s: parent chain loops" % ptag)
 	return p
 
 

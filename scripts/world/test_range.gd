@@ -37,6 +37,7 @@ var _mechs_root: Node3D
 
 
 func _ready() -> void:
+	GameSettings.load_settings()
 	InputSetup.ensure_actions()
 	_build_environment()
 	_mechs_root = Node3D.new()
@@ -102,6 +103,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		elif event.keycode == KEY_F3:
 			hud.toggle_debug()
+		elif event.keycode == KEY_BRACKETLEFT or event.keycode == KEY_BRACKETRIGHT:
+			var step := GameSettings.HEAD_BOB_STEP
+			GameSettings.set_head_bob(GameSettings.head_bob + (step if event.keycode == KEY_BRACKETRIGHT else -step))
+			GameSettings.save_settings()
+			hud.flash("Head bob %d%%" % roundi(GameSettings.head_bob * 100.0))
 		elif event.keycode == KEY_R:
 			start(player_mech_id, ruleset_id)
 		elif MECH_KEYS.has(event.keycode):
