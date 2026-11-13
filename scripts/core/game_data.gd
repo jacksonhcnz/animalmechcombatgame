@@ -212,7 +212,7 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 		var ptag := "%s part '%s'" % [tag, part.get("id", "?")]
 		var anim: Dictionary = part.get("anim", {})
 		for key in anim:
-			if not ["pivot", "walk", "flap"].has(key):
+			if not ["pivot", "walk", "flap", "aim"].has(key):
 				p.append("%s: unknown anim entry '%s'" % [ptag, key])
 		if anim.has("pivot") and not _is_vec3(anim["pivot"]):
 			p.append("%s: anim.pivot must be [x, y, z]" % ptag)

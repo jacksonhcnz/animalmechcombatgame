@@ -49,12 +49,13 @@ func _init(mech: Mech) -> void:
 		if part.has("parent"):
 			_parent_of[id] = part["parent"]
 		var anim: Dictionary = part.get("anim", {})
-		if anim.has("walk") or anim.has("flap"):
+		if anim.has("walk") or anim.has("flap") or anim.has("aim"):
 			_entries.append({
 				"id": id,
 				"pivot": mech.pivots[id],
 				"walk": anim.get("walk", {}),
 				"flap": anim.get("flap", {}),
+				"aim": anim.get("aim", ""),
 			})
 			_factor[id] = 1.0
 			_droop[id] = 0.0
@@ -168,6 +169,13 @@ func _apply_parts(delta: float) -> void:
 			var live := _motion_angle(flap, flap_phase, _flap_amp, factor)
 			var drooped := deg_to_rad(float(flap.get("droop_deg", 0.0)))
 			rotation[_axis_index(flap)] += lerpf(live, drooped, _droop[id])
+
+		# Gimbal parts follow where the pilot is aiming, and freeze when destroyed.
+		match entry["aim"]:
+			"yaw":
+				rotation.y += _mech.aim_yaw * factor
+			"pitch":
+				rotation.x += _mech.aim_pitch * factor
 
 		entry["pivot"].rotation = rotation
 

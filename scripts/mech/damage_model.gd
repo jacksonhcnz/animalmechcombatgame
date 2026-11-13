@@ -82,11 +82,19 @@ func is_part_disabled(part_id: String) -> bool:
 	return _disabled.has(part_id)
 
 
-## True if the part is disabled, or one of its joints is. A crippled limb cannot
+## True if the part is disabled, one of its joints is, or a part it hangs from is. A crippled limb cannot
 ## use anything mounted on it.
 func is_crippled(part_id: String) -> bool:
 	if _disabled.has(part_id):
 		return true
+	# A part hanging from a destroyed part (guns on a gimbal bar on a mast) goes down with it.
+	var ancestor: String = _parts.get(part_id, {}).get("parent", "")
+	var steps := 0
+	while ancestor != "" and steps < _parts.size():
+		if _disabled.has(ancestor):
+			return true
+		ancestor = _parts.get(ancestor, {}).get("parent", "")
+		steps += 1
 	for other_id in _parts:
 		var other: Dictionary = _parts[other_id]
 		if other.get("joint", false) and other.get("parent", "") == part_id and _disabled.has(other_id):
