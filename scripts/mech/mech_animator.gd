@@ -33,6 +33,8 @@ var _flap_hz: float = 0.0
 var _bank: float = 0.0
 var _pitch: float = 0.0
 var _roll: float = 0.0
+var _yaw: float = 0.0
+var _crouch: float = 0.0
 var _idle_time: float = 0.0
 var _death: float = 0.0
 var _limp: float = 0.0
@@ -116,7 +118,12 @@ func _update_walk(delta: float) -> void:
 	bob_y += float(_cfg.get("idle_bob_m", 0.0)) * sin(_idle_time * 1.5)
 	# A crippled leg makes the whole body rock from side to side.
 	_roll = deg_to_rad(float(_cfg.get("limp_roll_deg", 0.0))) * _limp * _walk_amp * sin(stride_phase * TAU)
-	_pitch = 0.0
+	# Prowling body motion (optional, used by the lion): the spine sways side to side, the
+	# weight shifts over the planted feet, the shoulders rise and fall, and the body sinks low.
+	_yaw = deg_to_rad(float(_cfg.get("sway_yaw_deg", 0.0))) * _walk_amp * sin(stride_phase * TAU + 0.6)
+	_roll += deg_to_rad(float(_cfg.get("sway_roll_deg", 0.0))) * _walk_amp * sin(stride_phase * TAU + 1.6)
+	_pitch = deg_to_rad(float(_cfg.get("sway_pitch_deg", 0.0))) * _walk_amp * sin(stride_phase * TAU * 2.0 + 0.8)
+	_crouch = float(_cfg.get("stalk_drop_m", 0.0)) * _walk_amp
 
 
 func _update_flight(delta: float) -> void:
@@ -138,6 +145,8 @@ func _update_flight(delta: float) -> void:
 	_bank = lerpf(_bank, bank_target, clampf(4.0 * delta, 0.0, 1.0))
 	_pitch = lerpf(_pitch, climb * deg_to_rad(float(_cfg["pitch_deg"])), clampf(3.0 * delta, 0.0, 1.0))
 	_roll = _bank
+	_yaw = 0.0
+	_crouch = 0.0
 
 
 func _apply_parts(delta: float) -> void:
@@ -166,10 +175,10 @@ func _apply_parts(delta: float) -> void:
 func _apply_rig() -> void:
 	var collapse := _death * _death * (3.0 - 2.0 * _death)
 	bob_y *= 1.0 - collapse
-	_mech.rig.position.y = bob_y - float(_cfg.get("collapse_m", 0.0)) * collapse
+	_mech.rig.position.y = bob_y - _crouch * (1.0 - collapse) - float(_cfg.get("collapse_m", 0.0)) * collapse
 	_mech.rig.rotation = Vector3(
 		_pitch + deg_to_rad(float(_cfg.get("death_pitch_deg", 0.0))) * collapse,
-		0.0,
+		_yaw * (1.0 - collapse),
 		_roll + deg_to_rad(float(_cfg.get("death_roll_deg", 0.0))) * collapse
 	)
 
