@@ -11,7 +11,7 @@
 		"speed": 14.0,
 		"turn_rate": 1.6,
 		"armor": 1.2,
-		"twist_limit_deg": 100.0,
+		"twist_limit_deg": 360.0,
 		"pitch_min_deg": -35.0,
 		"pitch_max_deg": 30.0,
 		"jump_speed": 11.0,

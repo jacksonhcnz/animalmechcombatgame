@@ -65,6 +65,10 @@ func _run() -> void:
 	var player: Mech = _range.player
 	_range.controller.set_physics_process(false)
 	_check(absf(player.pivots["leg_l"].rotation.x) < 0.01, "legs are still when standing")
+	player.controls.aim_yaw_delta = 10.0
+	await _frames(2)
+	_check(is_equal_approx(player.aim_yaw, deg_to_rad(110.0)), "the raptor's aim stops at its twist limit")
+	player.aim_yaw = 0.0
 	var peak := await _walk(player, 90)
 	_check(peak > deg_to_rad(10.0), "legs swing while walking (peak %.2f rad)" % peak)
 	_check(is_equal_approx(player.pivots["leg_l"].rotation.x + player.pivots["leg_r"].rotation.x, 0.0) or absf(player.pivots["leg_l"].rotation.x + player.pivots["leg_r"].rotation.x) < 0.05, "legs swing in opposite directions")
@@ -178,6 +182,14 @@ func _run() -> void:
 	lion.aim_pitch = 0.2
 	await _frames(3)
 	_check(is_equal_approx(lion.pivots["mast"].rotation.y, 0.5), "gun mast turns with the aim")
+	# The gimbal spins a full circle: turning past straight behind carries on round, never stops.
+	lion.controls.aim_yaw_delta = 2.6
+	await _frames(2)
+	lion.controls.aim_yaw_delta = 2.6
+	await _frames(2)
+	_check(is_equal_approx(lion.aim_yaw, wrapf(0.5 + 5.2, -PI, PI)), "the lion's aim spins past straight behind (%.2f rad)" % lion.aim_yaw)
+	_check(is_equal_approx(lion.pivots["mast"].rotation.y, lion.aim_yaw), "the gun mast follows the aim all the way round")
+	lion.aim_yaw = 0.5
 	_check(is_equal_approx(lion.pivots["crossbar"].rotation.x, 0.2), "gimbal bar tilts with the aim")
 	_check(lion.damage.mount_online("gun_l") and lion.damage.mount_online("gun_r"), "both guns work while the mast is intact")
 	lion.take_hit("mast", 9999.0)

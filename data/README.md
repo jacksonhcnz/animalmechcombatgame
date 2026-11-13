@@ -11,6 +11,10 @@ Mechs are animated in code from their data file, with no animation assets.
 - Parts with a `parent` move with it, so joints follow their limbs, and hitboxes move with the visible parts.
 - `aim` (per part, `"yaw"` or `"pitch"`): the part turns or tilts with where the pilot aims. The lion's gun mast (yaw) and gimbal bar (pitch) use it. A part that hangs from a destroyed part is knocked out too, so losing the mast takes both guns offline.
 
+## Aim twist
+
+`base.twist_limit_deg` is how far the pilot can aim left or right of the way the legs face. At 180 or more the aim spins freely through a full circle. The lion uses 360, so its gimbal-mounted guns can turn all the way round.
+
 ## Cockpit
 
 `cockpit_frame` (per mech) shapes the frame the pilot sees in cockpit view: `window` (half width and half height of the opening), `distance` (at least 0.4), `pillar_tilt_deg` and `console_height`. The frame is built from flat-coloured boxes in the mech's palette and is hidden in third-person view.
