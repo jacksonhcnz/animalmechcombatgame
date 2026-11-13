@@ -1,0 +1,3 @@
+# scenes
+
+Godot scenes (`.tscn`).
