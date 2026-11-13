@@ -33,6 +33,8 @@ var aim_pitch: float = 0.0
 var view_third_person: bool = false
 var cockpit_camera: Camera3D
 var third_person_camera: Camera3D
+## The cockpit frame around the camera. Only the local pilot has one, and only the cockpit view shows it.
+var cockpit_interior: Node3D
 ## Holds every visible part and hitbox, so the animator can bob and tilt the whole body.
 var rig: Node3D
 ## One pivot node per part. A part hangs from its parent part's pivot, so joints follow limbs.
@@ -94,6 +96,8 @@ func make_player() -> void:
 	cockpit_camera.near = 0.2
 	cockpit_camera.far = 3000.0
 	_aim_pivot.add_child(cockpit_camera)
+	cockpit_interior = CockpitInterior.build(def["cockpit_frame"], def["palette"])
+	_aim_pivot.add_child(cockpit_interior)
 
 	third_person_camera = Camera3D.new()
 	third_person_camera.name = "ThirdPersonCamera"
@@ -404,6 +408,7 @@ func _update_cameras() -> void:
 	third_person_camera.current = view_third_person
 	# From inside the cockpit the pilot should not see the inside of their own head.
 	_part_meshes["head"].visible = view_third_person
+	cockpit_interior.visible = not view_third_person
 
 
 func _refresh_colors() -> void:
