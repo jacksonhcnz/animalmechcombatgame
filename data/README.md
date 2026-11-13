@@ -32,3 +32,7 @@ Ground mechs set `base.jump_speed` (upward speed in m/s, 0 disables jumping) and
 - `stabilize` (per part, a number): the part turns against the body's pitch by that fraction, so what sits on it stays level. The hawk's neck uses it to keep the head steady while the body pitches.
 
 The velociraptor follows a theropod skeleton: thigh, knee, shin, ankle bone and foot with a raised sickle claw, short folded arms with clawed hands, and a stiff three-segment tail. The hawk follows a bird skeleton: a three-joint wing (upper wing, forearm, primaries) whose flap travels outwards as a wave, a two-joint neck that keeps the head level, a hooked beak, a keel and a fanned tail.
+
+## Head look
+
+`look` (per part, `turn_deg`, optional `share` and `speed`) makes a part turn and tilt towards where the pilot is aiming, up to `turn_deg` left or right. Past that limit the aim carries on and the part stays put. `share` splits a turn between linked parts: the hawk's neck and head each take part of it, which adds up to one full turn. The lion's head turns up to 110 degrees, the raptor's up to 100 and the hawk's neck and head together up to 120. The cockpit view and the lion's gimbal keep following the aim beyond a head's limit.
