@@ -1,0 +1,14 @@
+{
+	"display_name": "Arcade",
+	"hud": true,
+	"crosshair": true,
+	"allow_third_person": true,
+	"force_cockpit": false,
+	"location_damage": false,
+	"joint_criticals": false,
+	"equipment_knockout": false,
+	"ammo_limits": false,
+	"friendly_fire": false,
+	"durability_mult": 1.5,
+	"match_time": 300.0
+}

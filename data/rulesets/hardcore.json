@@ -1,0 +1,14 @@
+{
+	"display_name": "Hardcore",
+	"hud": false,
+	"crosshair": false,
+	"allow_third_person": false,
+	"force_cockpit": true,
+	"location_damage": true,
+	"joint_criticals": true,
+	"equipment_knockout": true,
+	"ammo_limits": true,
+	"friendly_fire": true,
+	"durability_mult": 0.6,
+	"match_time": 600.0
+}

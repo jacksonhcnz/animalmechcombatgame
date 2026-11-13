@@ -10,7 +10,8 @@ config_version=5
 
 [application]
 
-config/name="animalmechcombatgame"
+config/name="Animal Mech Combat Game"
+run/main_scene="res://scenes/test_range.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -26,3 +27,9 @@ window/stretch/aspect="expand"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="hitbox"
+3d_physics/layer_3="mech"

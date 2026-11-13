@@ -1,0 +1,14 @@
+{
+	"display_name": "Standard",
+	"hud": true,
+	"crosshair": true,
+	"allow_third_person": true,
+	"force_cockpit": false,
+	"location_damage": true,
+	"joint_criticals": true,
+	"equipment_knockout": true,
+	"ammo_limits": true,
+	"friendly_fire": false,
+	"durability_mult": 1.0,
+	"match_time": 600.0
+}

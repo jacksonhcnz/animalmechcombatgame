@@ -1,0 +1,9 @@
+{
+	"id": "talon_strike",
+	"name": "Talon Strike",
+	"kind": "melee",
+	"slot": "melee",
+	"damage": 35.0,
+	"range": 12.0,
+	"fire_interval": 0.8
+}
