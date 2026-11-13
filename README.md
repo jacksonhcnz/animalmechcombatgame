@@ -37,7 +37,7 @@ Open the project in Godot 4.7 and press Play. Click the window to capture the mo
 | Switch cockpit / third-person | C | Y |
 | Climb / descend (Hawk) | Space / Ctrl | A / B |
 
-Test range keys: `1` Lion, `2` Velociraptor, `3` Hawk. `F1` Practice, `F2` Standard, `F4` Hardcore, `F5` Arcade rules. `F3` developer overlay. `R` restart.
+Test range keys: `1` Lion, `2` Velociraptor, `3` Hawk. `F1` Practice, `F2` Standard, `F4` Hardcore, `F5` Arcade rules. `F3` developer overlay. `R` restart. `[` and `]` lower and raise the cockpit head bob (saved between sessions).
 
 The rulesets show how modes switch systems on and off: Hardcore removes the HUD and crosshair, forces cockpit view, lowers durability and allows friendly fire. Arcade turns off per-part damage, joint criticals, equipment knockout and ammo limits.
 

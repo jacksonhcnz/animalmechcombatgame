@@ -19,7 +19,7 @@ if grep -E "ERROR|Parse Error" "$log" >/dev/null; then
 fi
 echo "Project loaded with no errors."
 
-for test_script in tests/run_tests.gd tests/smoke_test.gd; do
+for test_script in tests/run_tests.gd tests/smoke_test.gd tests/animation_test.gd; do
 	echo "Running $test_script"
 	"$GODOT" --headless --path . --script "$test_script" 2>&1 | tee -a "$log"
 	if [ "${PIPESTATUS[0]}" -ne 0 ]; then

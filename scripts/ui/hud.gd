@@ -59,6 +59,14 @@ func bind(mech: Mech, rules: Ruleset) -> void:
 	_apply_rules()
 
 
+## Shows a short message that clears itself, unless something else replaced it meanwhile.
+func flash(text: String, seconds: float = 1.5) -> void:
+	_message_label.text = text
+	await get_tree().create_timer(seconds).timeout
+	if is_instance_valid(_message_label) and _message_label.text == text:
+		_message_label.text = ""
+
+
 func set_timer(seconds_left: float) -> void:
 	_timer_value = seconds_left
 
