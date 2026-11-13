@@ -14,6 +14,7 @@ const DEATH_TIME := 0.9
 const CRIPPLED_FACTOR := 0.35
 const FACTOR_RATE := 4.0
 const DROOP_RATE := 2.5
+const LOOK_RATE := 7.0
 
 ## Vertical body bob in metres this frame. The cockpit camera follows a share of it.
 var bob_y: float = 0.0
@@ -38,6 +39,8 @@ var _crouch: float = 0.0
 var _idle_time: float = 0.0
 var _death: float = 0.0
 var _limp: float = 0.0
+var _look_yaw: Dictionary = {}
+var _look_pitch: Dictionary = {}
 var _fall_peak: float = 0.0
 var _land: float = 0.0
 
@@ -51,7 +54,7 @@ func _init(mech: Mech) -> void:
 		if part.has("parent"):
 			_parent_of[id] = part["parent"]
 		var anim: Dictionary = part.get("anim", {})
-		if anim.has("walk") or anim.has("flap") or anim.has("aim") or anim.has("stabilize"):
+		if anim.has("walk") or anim.has("flap") or anim.has("aim") or anim.has("stabilize") or anim.has("look"):
 			_entries.append({
 				"id": id,
 				"pivot": mech.pivots[id],
@@ -59,7 +62,10 @@ func _init(mech: Mech) -> void:
 				"flap": anim.get("flap", {}),
 				"aim": anim.get("aim", ""),
 				"stabilize": float(anim.get("stabilize", 0.0)),
+				"look": anim.get("look", {}),
 			})
+			_look_yaw[id] = 0.0
+			_look_pitch[id] = 0.0
 			_factor[id] = 1.0
 			_droop[id] = 0.0
 		if anim.has("walk") and part.get("kind", "") == "leg":
@@ -180,6 +186,18 @@ func _apply_parts(delta: float) -> void:
 			var live := _motion_angle(flap, flap_phase, _flap_amp, factor)
 			var drooped := deg_to_rad(float(flap.get("droop_deg", 0.0)))
 			rotation[_axis_index(flap)] += lerpf(live, drooped, _droop[id])
+
+		# Looking: the head (and neck) turn towards where the pilot is aiming, but only as far
+		# as the anatomy allows. Past that limit the aim carries on and the head stays put.
+		var look: Dictionary = entry["look"]
+		if not look.is_empty():
+			var limit := deg_to_rad(float(look["turn_deg"]))
+			var share := float(look.get("share", 1.0))
+			var rate := float(look.get("speed", LOOK_RATE)) * delta
+			_look_yaw[id] = move_toward(_look_yaw[id], clampf(_mech.aim_yaw, -limit, limit) * share, rate)
+			_look_pitch[id] = move_toward(_look_pitch[id], _mech.aim_pitch * share, rate)
+			rotation.y += _look_yaw[id] * alive
+			rotation.x += _look_pitch[id] * alive
 
 		# A stabilised part (a bird's neck) turns against the body's pitch, so the head stays level.
 		rotation.x -= _pitch * float(entry["stabilize"]) * alive

@@ -61,7 +61,7 @@
 		"death_roll_deg": 8.0
 	},
 	"parts": [
-		{"id": "head", "name": "Head", "kind": "head", "health": 70, "fatal": true, "tone": "primary", "size": [2.2, 2.0, 2.4], "pos": [0.0, 4.6, -3.9]},
+		{"id": "head", "name": "Head", "kind": "head", "health": 70, "fatal": true, "tone": "primary", "size": [2.2, 2.0, 2.4], "pos": [0.0, 4.6, -3.9], "anim": {"pivot": [0.0, 4.4, -2.9], "look": {"turn_deg": 110.0}}},
 		{"id": "torso", "name": "Torso", "kind": "torso", "health": 100, "fatal": true, "tone": "primary", "size": [3.6, 2.6, 3.2], "pos": [0.0, 3.4, -1.4]},
 		{"id": "hips", "name": "Hindquarters", "kind": "torso", "parent": "torso", "health": 80, "fatal": true, "tone": "primary", "size": [3.4, 2.5, 2.8], "pos": [0.0, 3.35, 1.6], "on_disabled": {"speed_mult": 0.9, "turn_mult": 0.9}, "anim": {"pivot": [0.0, 3.4, 0.2], "walk": {"axis": "y", "deg": 4.0, "phase": 0.5}}},
 		{"id": "tail", "name": "Tail", "kind": "tail", "parent": "hips", "health": 40, "tone": "accent", "size": [0.7, 0.7, 1.8], "pos": [0.0, 3.9, 3.9], "anim": {"pivot": [0.0, 3.9, 3.0], "walk": {"axis": "y", "deg": 14.0, "phase": 0.6}}},

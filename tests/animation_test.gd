@@ -68,7 +68,18 @@ func _run() -> void:
 	player.controls.aim_yaw_delta = 10.0
 	await _frames(2)
 	_check(is_equal_approx(player.aim_yaw, deg_to_rad(110.0)), "the raptor's aim stops at its twist limit")
+	# The head turns to face where the pilot looks, but only as far as its neck allows.
+	player.aim_yaw = 0.8
+	player.aim_pitch = 0.2
+	await _frames(40)
+	_check(absf(player.pivots["head"].rotation.y - 0.8) < 0.02, "the raptor's head turns to face the aim (%.2f rad)" % player.pivots["head"].rotation.y)
+	player.aim_yaw = deg_to_rad(108.0)
+	await _frames(60)
+	_check(is_equal_approx(player.pivots["head"].rotation.y, deg_to_rad(100.0)), "the raptor's head stops at its own limit while the aim goes on (%.2f rad)" % player.pivots["head"].rotation.y)
 	player.aim_yaw = 0.0
+	player.aim_pitch = 0.0
+	await _frames(60)
+	_check(absf(player.pivots["head"].rotation.y) < 0.02, "the head comes back to centre")
 	# Skeleton: thigh, knee, shin, ankle, foot, sickle claw hang from one another.
 	_check(player.pivots["shin_l"].get_parent() == player.pivots["knee_l"], "the shin hangs from the knee")
 	_check(player.pivots["metatarsus_l"].get_parent() == player.pivots["shin_l"], "the ankle bone hangs from the shin")
@@ -156,6 +167,14 @@ func _run() -> void:
 	hawk.controls.turn = 0.0
 	_check(hawk.rig.rotation.z < -0.1, "hawk banks into a right turn")
 
+	# The hawk's neck and head share the turn between them, up to the hawk's limit.
+	hawk.aim_yaw = 1.0
+	await _frames(60)
+	var turned: float = hawk.pivots["neck_a"].rotation.y + hawk.pivots["neck_b"].rotation.y + hawk.pivots["head"].rotation.y
+	_check(absf(turned - 1.0) < 0.03, "the hawk's neck and head together turn to face the aim (%.2f rad)" % turned)
+	_check(hawk.pivots["neck_a"].rotation.y > 0.2 and hawk.pivots["head"].rotation.y > 0.2, "both the neck and the head take part in the turn")
+	hawk.aim_yaw = 0.0
+	await _frames(60)
 	# Bird skeleton: the wing is a wave that travels outwards, and the neck keeps the head level.
 	_check(hawk.pivots["wing_tip_r"].get_parent() == hawk.pivots["wing_mid_r"], "the primaries hang from the forearm")
 	_check(hawk.pivots["wing_mid_r"].get_parent() == hawk.pivots["wing_r"], "the forearm hangs from the upper wing")
@@ -219,6 +238,16 @@ func _run() -> void:
 	_check(lion.damage.health["leg_fl"] < leg_before, "a hit on the paw counts against the leg it belongs to")
 	_check(lion.damage.is_cosmetic("paw_fl") and not lion.damage.health.has("paw_fl"), "the paw has no health of its own")
 
+	# The lion's head follows the aim up to 110 degrees, though its gimbal and view keep turning.
+	lion.aim_yaw = 1.0
+	await _frames(40)
+	_check(absf(lion.pivots["head"].rotation.y - 1.0) < 0.02, "the lion's head turns to face the aim")
+	lion.aim_yaw = 3.0
+	await _frames(80)
+	_check(is_equal_approx(lion.pivots["head"].rotation.y, deg_to_rad(110.0)), "the lion's head stops at 110 degrees")
+	_check(is_equal_approx(lion.pivots["mast"].rotation.y, 3.0), "while the gimbal keeps turning with the aim")
+	lion.aim_yaw = 0.5
+	await _frames(60)
 	# Gimbal gun mount: the mast turns and the bar tilts with the aim; losing the mast knocks out both guns.
 	lion.aim_yaw = 0.5
 	lion.aim_pitch = 0.2
