@@ -38,6 +38,13 @@ func _walk(mech: Mech, frames: int) -> float:
 	return peak
 
 
+func _part_index(mech: Mech, id: String) -> int:
+	for i in mech.def["parts"].size():
+		if mech.def["parts"][i]["id"] == id:
+			return i
+	return -1
+
+
 func _run() -> void:
 	GameSettings.set_head_bob(0.4)
 	_range = load("res://scenes/test_range.tscn").instantiate()
@@ -130,6 +137,15 @@ func _run() -> void:
 	_range.controller.set_physics_process(false)
 	var lion_peak := await _walk(lion, 90)
 	_check(lion_peak > deg_to_rad(10.0), "lion legs swing while walking")
+	# Feline gait: four evenly spaced footfalls, and the body sinks low while prowling.
+	var phases: Array[float] = []
+	for id in ["leg_rl", "leg_fl", "leg_rr", "leg_fr"]:
+		phases.append(float(lion.def["parts"][_part_index(lion, id)]["anim"]["walk"]["phase"]))
+	_check(phases == [0.0, 0.25, 0.5, 0.75], "lion walks in a lateral-sequence gait")
+	lion.controls.throttle = 1.0
+	await _frames(60)
+	_check(lion.rig.position.y < -0.1, "lion crouches while prowling (%.2f m)" % lion.rig.position.y)
+	lion.controls.throttle = 0.0
 
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
