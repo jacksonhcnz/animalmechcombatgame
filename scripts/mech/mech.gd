@@ -18,6 +18,7 @@ const GRAVITY := 22.0
 const GROUND_ACCEL := 5.0
 const AIR_ACCEL := 3.0
 const SINK_SPEED := 14.0
+const AIR_CONTROL := 1.5
 const DEAD_COLOR := Color("#2b2b2b")
 
 var def: Dictionary
@@ -50,6 +51,7 @@ var _aim_pivot: Node3D
 var _aim_base_y: float = 0.0
 var _third_pivot: Node3D
 var _dead: bool = false
+var _jump_cooldown: float = 0.0
 var _rng := RandomNumberGenerator.new()
 
 
@@ -78,6 +80,13 @@ func is_flying() -> bool:
 
 func is_dead() -> bool:
 	return _dead
+
+
+## True if this mech can jump right now: a ground mech, standing on the floor, with the
+## ruleset allowing it and the jump recovered.
+func can_jump() -> bool:
+	return not is_flying() and not _dead and rules.jumping and is_on_floor() \
+		and _jump_cooldown <= 0.0 and float(def["base"].get("jump_speed", 0.0)) > 0.0
 
 
 ## Height above the ground to spawn at, so the body starts just above the floor.
@@ -155,6 +164,7 @@ func aim_direction() -> Vector3:
 func _physics_process(delta: float) -> void:
 	for weapon in weapons:
 		weapon.tick(delta)
+	_jump_cooldown = maxf(0.0, _jump_cooldown - delta)
 	if _dead:
 		_fall(delta)
 		_animate(delta)
@@ -209,10 +219,15 @@ func _move(delta: float) -> void:
 		target.y = climb
 		velocity = velocity.lerp(target, clampf(AIR_ACCEL * delta, 0.0, 1.0))
 	else:
-		var flat := Vector2(velocity.x, velocity.z).lerp(Vector2(target.x, target.z), clampf(GROUND_ACCEL * delta, 0.0, 1.0))
+		# In the air a mech can steer only a little, so a jump commits it to a direction.
+		var accel := GROUND_ACCEL if is_on_floor() else AIR_CONTROL
+		var flat := Vector2(velocity.x, velocity.z).lerp(Vector2(target.x, target.z), clampf(accel * delta, 0.0, 1.0))
 		velocity.x = flat.x
 		velocity.z = flat.y
 		velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+		if c.jump and can_jump():
+			velocity.y = float(base["jump_speed"]) * damage.speed_mult()
+			_jump_cooldown = float(base.get("jump_cooldown", 0.8))
 	move_and_slide()
 
 	if is_flying() and global_position.y > altitude_limit:

@@ -27,6 +27,7 @@ static func _defaults() -> Dictionary:
 		"strafe_left": [_key(KEY_Q), _button(JOY_BUTTON_LEFT_SHOULDER)],
 		"strafe_right": [_key(KEY_E), _button(JOY_BUTTON_RIGHT_SHOULDER)],
 		"ascend": [_key(KEY_SPACE), _button(JOY_BUTTON_A)],
+		"jump": [_key(KEY_SPACE), _button(JOY_BUTTON_A)],
 		"descend": [_key(KEY_CTRL), _button(JOY_BUTTON_B)],
 		"aim_left": [_axis(JOY_AXIS_RIGHT_X, -1.0)],
 		"aim_right": [_axis(JOY_AXIS_RIGHT_X, 1.0)],

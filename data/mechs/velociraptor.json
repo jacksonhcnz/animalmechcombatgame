@@ -9,7 +9,9 @@
 		"armor": 0.9,
 		"twist_limit_deg": 110.0,
 		"pitch_min_deg": -40.0,
-		"pitch_max_deg": 35.0
+		"pitch_max_deg": 35.0,
+		"jump_speed": 14.0,
+		"jump_cooldown": 0.6
 	},
 	"collider": { "size": [3.4, 7.2, 5.0], "center": [0.0, 3.6, 0.0] },
 	"cockpit": [0.0, 0.3, -0.3],
@@ -19,6 +21,7 @@
 		"stride_length": 10.0,
 		"bob_m": 0.35,
 		"idle_bob_m": 0.04,
+		"land_dip_m": 0.6,
 		"limp_roll_deg": 5.0,
 		"collapse_m": 1.2,
 		"death_roll_deg": 10.0

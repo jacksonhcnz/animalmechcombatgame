@@ -129,6 +129,10 @@ static func _validate_mech(id: String) -> Array[String]:
 	for key in ["speed", "turn_rate", "armor", "twist_limit_deg"]:
 		if float(base.get(key, 0.0)) <= 0.0:
 			p.append("%s: base.%s must be greater than 0" % [tag, key])
+	if m.get("movement", "") == "ground":
+		var jump: Variant = base.get("jump_speed")
+		if not ((jump is float or jump is int) and float(jump) >= 0.0):
+			p.append("%s: ground mechs need base.jump_speed of 0 or more (0 disables jumping)" % tag)
 	if m.get("movement", "") == "flying":
 		for key in ["climb_speed", "spawn_height"]:
 			if float(base.get(key, 0.0)) <= 0.0:

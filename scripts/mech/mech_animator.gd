@@ -38,6 +38,8 @@ var _crouch: float = 0.0
 var _idle_time: float = 0.0
 var _death: float = 0.0
 var _limp: float = 0.0
+var _fall_peak: float = 0.0
+var _land: float = 0.0
 
 
 func _init(mech: Mech) -> void:
@@ -125,6 +127,14 @@ func _update_walk(delta: float) -> void:
 	_roll += deg_to_rad(float(_cfg.get("sway_roll_deg", 0.0))) * _walk_amp * sin(stride_phase * TAU + 1.6)
 	_pitch = deg_to_rad(float(_cfg.get("sway_pitch_deg", 0.0))) * _walk_amp * sin(stride_phase * TAU * 2.0 + 0.8)
 	_crouch = float(_cfg.get("stalk_drop_m", 0.0)) * _walk_amp
+	# Landing from a jump or fall: the body dips, more the harder the landing, then recovers.
+	if not _mech.is_on_floor():
+		_fall_peak = maxf(_fall_peak, -_mech.velocity.y)
+	elif _fall_peak > 0.0:
+		_land = clampf(_fall_peak / 15.0, 0.0, 1.0)
+		_fall_peak = 0.0
+	_land = move_toward(_land, 0.0, 3.0 * delta)
+	_crouch += float(_cfg.get("land_dip_m", 0.0)) * _land
 
 
 func _update_flight(delta: float) -> void:
