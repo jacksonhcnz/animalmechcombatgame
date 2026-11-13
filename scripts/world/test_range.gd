@@ -10,7 +10,6 @@ const RULESET_KEYS := {KEY_F1: "practice", KEY_F2: "standard", KEY_F4: "hardcore
 const ALTITUDE_LIMIT := 120.0
 const FIELD_HALF := 380.0
 const RESPAWN_DELAY := 4.0
-const BLOCK_COLORS: Array[String] = ["#7d8f69", "#a39171", "#6f7f94", "#9c6f5a", "#85a07a"]
 
 ## Dummy mechs: [mech id, x, z, height above ground (0 = default)].
 const TARGETS := [
@@ -145,65 +144,6 @@ func _on_player_destroyed(_mech: Mech) -> void:
 
 
 func _build_environment() -> void:
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color("#8fc4e8")
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("#dce6f0")
-	environment.ambient_light_energy = 0.45
-	var world_environment := WorldEnvironment.new()
-	world_environment.environment = environment
-	add_child(world_environment)
-
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-50.0, -35.0, 0.0)
-	sun.light_energy = 0.7
-	sun.shadow_enabled = true
-	add_child(sun)
-
-	_add_block(Vector3(0.0, -0.5, 0.0), Vector3(FIELD_HALF * 2.0, 1.0, FIELD_HALF * 2.0), Color("#7c9a68"))
-
-	# Walls around the field, so nothing wanders off the edge.
-	var wall_color := Color("#5d6b5a")
-	_add_block(Vector3(0.0, 20.0, -FIELD_HALF), Vector3(FIELD_HALF * 2.0, 40.0, 8.0), wall_color)
-	_add_block(Vector3(0.0, 20.0, FIELD_HALF), Vector3(FIELD_HALF * 2.0, 40.0, 8.0), wall_color)
-	_add_block(Vector3(-FIELD_HALF, 20.0, 0.0), Vector3(8.0, 40.0, FIELD_HALF * 2.0), wall_color)
-	_add_block(Vector3(FIELD_HALF, 20.0, 0.0), Vector3(8.0, 40.0, FIELD_HALF * 2.0), wall_color)
-
-	# A fixed scatter of blocks (the same every time), kept clear of the spawn and targets.
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 20261113
-	var placed := 0
-	while placed < 70:
-		var x := rng.randf_range(-FIELD_HALF + 30.0, FIELD_HALF - 30.0)
-		var z := rng.randf_range(-FIELD_HALF + 30.0, FIELD_HALF - 30.0)
-		var w := rng.randf_range(5.0, 20.0)
-		var d := rng.randf_range(5.0, 20.0)
-		var h := rng.randf_range(2.0, 16.0)
-		var color := Color(BLOCK_COLORS[rng.randi() % BLOCK_COLORS.size()])
-		if absf(x) < 80.0 and z > -150.0 and z < 70.0:
-			continue
-		_add_block(Vector3(x, h * 0.5, z), Vector3(w, h, d), color)
-		placed += 1
-
-
-func _add_block(center: Vector3, size: Vector3, color: Color) -> void:
-	var body := StaticBody3D.new()
-	body.collision_layer = Mech.LAYER_WORLD
-	body.collision_mask = 0
-	body.position = center
-	var shape := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
-	box_shape.size = size
-	shape.shape = box_shape
-	body.add_child(shape)
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = size
-	mesh.mesh = box
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 1.0
-	mesh.material_override = material
-	body.add_child(mesh)
-	add_child(body)
+	# A field with a fixed scatter of blocks, kept clear of the spawn and the targets.
+	var clear: Array[Rect2] = [Rect2(-80.0, -150.0, 160.0, 220.0)]
+	Arena.build(self, FIELD_HALF, 70, clear, 20261113)

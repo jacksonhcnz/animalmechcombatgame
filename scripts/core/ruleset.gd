@@ -63,6 +63,14 @@ static func from_dict(data: Dictionary, ruleset_id: String = "") -> Ruleset:
 	return ruleset
 
 
+## Every setting as plain data, so a server can send its ruleset to clients.
+func to_dict() -> Dictionary:
+	var data := {}
+	for key in DEFAULTS:
+		data[key] = get(key)
+	return data
+
+
 static func load_id(ruleset_id: String) -> Ruleset:
 	return from_dict(GameData.get_entry("rulesets", ruleset_id), ruleset_id)
 

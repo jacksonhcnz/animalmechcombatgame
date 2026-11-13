@@ -114,7 +114,7 @@ func _update_walk(delta: float) -> void:
 	var velocity := _mech.velocity
 	var flat := Vector2(velocity.x, velocity.z).length()
 	var base_speed := float(_mech.def["base"]["speed"])
-	var moving := _mech.is_on_floor() and not _mech.is_dead()
+	var moving := _mech.grounded() and not _mech.is_dead()
 	var target := clampf(flat / base_speed, 0.0, 1.0) if moving else 0.0
 	_walk_amp = move_toward(_walk_amp, target, 5.0 * delta)
 
@@ -135,7 +135,7 @@ func _update_walk(delta: float) -> void:
 	_pitch = deg_to_rad(float(_cfg.get("sway_pitch_deg", 0.0))) * _walk_amp * sin(stride_phase * TAU * 2.0 + 0.8)
 	_crouch = float(_cfg.get("stalk_drop_m", 0.0)) * _walk_amp
 	# Landing from a jump or fall: the body dips, more the harder the landing, then recovers.
-	if not _mech.is_on_floor():
+	if not _mech.grounded():
 		_fall_peak = maxf(_fall_peak, -_mech.velocity.y)
 	elif _fall_peak > 0.0:
 		_land = clampf(_fall_peak / 15.0, 0.0, 1.0)
