@@ -97,7 +97,7 @@ func _test_ground_movement() -> void:
 	_check(player.rotation.y < heading_before, "turning right rotates clockwise")
 	player.controls.aim_yaw_delta = 10.0
 	await _frames(2)
-	_check(is_equal_approx(player.aim_yaw, deg_to_rad(100.0)), "aim yaw stops at the twist limit")
+	_check(is_equal_approx(player.aim_yaw, wrapf(10.0, -PI, PI)), "the lion's aim spins freely all the way round")
 	player.controls.center_aim = true
 	await _frames(2)
 	_check(player.aim_yaw == 0.0, "centre aim resets the head")

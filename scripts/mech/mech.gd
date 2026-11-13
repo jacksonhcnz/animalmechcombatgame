@@ -190,7 +190,11 @@ func _update_aim() -> void:
 		aim_yaw = 0.0
 		aim_pitch = 0.0
 		controls.center_aim = false
-	aim_yaw = clampf(aim_yaw + controls.aim_yaw_delta, -twist, twist)
+	if twist >= PI:
+		# A twist limit of 180 degrees or more means the aim can spin freely all the way round.
+		aim_yaw = wrapf(aim_yaw + controls.aim_yaw_delta, -PI, PI)
+	else:
+		aim_yaw = clampf(aim_yaw + controls.aim_yaw_delta, -twist, twist)
 	aim_pitch = clampf(aim_pitch + controls.aim_pitch_delta, pitch_min, pitch_max)
 	controls.aim_yaw_delta = 0.0
 	controls.aim_pitch_delta = 0.0
