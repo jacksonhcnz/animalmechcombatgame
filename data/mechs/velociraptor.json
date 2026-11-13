@@ -13,6 +13,7 @@
 	},
 	"collider": { "size": [3.4, 7.2, 5.0], "center": [0.0, 3.6, 0.0] },
 	"cockpit": [0.0, 0.3, -0.3],
+	"cockpit_frame": { "window": [1.05, 0.56], "distance": 1.0, "pillar_tilt_deg": 14.0, "console_height": 0.18 },
 	"third_person": { "height": 5.0, "distance": 20.0 },
 	"animation": {
 		"stride_length": 10.0,

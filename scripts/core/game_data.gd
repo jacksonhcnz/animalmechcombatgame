@@ -138,6 +138,12 @@ static func _validate_mech(id: String) -> Array[String]:
 		p.append("%s: collider needs size and center as [x, y, z]" % tag)
 	if not _is_vec3(m.get("cockpit")):
 		p.append("%s: cockpit must be [x, y, z]" % tag)
+	var frame: Dictionary = m.get("cockpit_frame", {})
+	var window: Variant = frame.get("window")
+	if not (window is Array and window.size() == 2 and float(window[0]) > 0.0 and float(window[1]) > 0.0):
+		p.append("%s: cockpit_frame.window must be [half width, half height] greater than 0" % tag)
+	if float(frame.get("distance", 0.0)) < 0.4:
+		p.append("%s: cockpit_frame.distance must be at least 0.4 (the camera's near plane is 0.2)" % tag)
 	if float(m.get("third_person", {}).get("distance", 0.0)) <= 0.0:
 		p.append("%s: third_person.distance must be greater than 0" % tag)
 
