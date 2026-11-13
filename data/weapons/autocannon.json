@@ -1,0 +1,12 @@
+{
+	"id": "autocannon",
+	"name": "Autocannon",
+	"kind": "ranged",
+	"slot": "primary",
+	"damage": 9.0,
+	"range": 300.0,
+	"fire_interval": 0.12,
+	"ammo": 400,
+	"spread_deg": 0.4,
+	"tracer_color": "#ffe066"
+}

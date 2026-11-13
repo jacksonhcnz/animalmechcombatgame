@@ -2,7 +2,7 @@
 
 An open-source, multiplayer tournament game where players pilot animal-shaped mechs from a cockpit in the animal's head. Low-poly, flat-colour visuals. Built with Godot 4.
 
-**Status:** very early. Design is in progress and nothing is playable yet.
+**Status:** very early. There is an offline test range where you can drive the three mechs and shoot dummy targets. Multiplayer is not built yet.
 
 ## Planned features
 
@@ -20,6 +20,28 @@ An open-source, multiplayer tournament game where players pilot animal-shaped me
 - No AI-generated art, audio, icons or fonts.
 - Mechs use plain flat colours. Levels are low-poly blocky shapes in flat colours.
 - Third-party assets must be open-licensed, with the licence understood and credit recorded in [CREDITS.md](CREDITS.md).
+
+## Try the test range
+
+Open the project in Godot 4.7 and press Play. Click the window to capture the mouse, and press Esc to release it.
+
+| Action | Keyboard and mouse | Gamepad |
+| --- | --- | --- |
+| Move forward / back | W / S | Left stick up / down |
+| Turn the legs | A / D | Left stick left / right |
+| Strafe | Q / E | Shoulder buttons |
+| Aim head and weapons | Mouse | Right stick |
+| Centre the aim | Z | Right stick click |
+| Fire primary / secondary | Left / right mouse button | Right / left trigger |
+| Melee | F | X |
+| Switch cockpit / third-person | C | Y |
+| Climb / descend (Hawk) | Space / Ctrl | A / B |
+
+Test range keys: `1` Lion, `2` Velociraptor, `3` Hawk. `F1` Practice, `F2` Standard, `F4` Hardcore, `F5` Arcade rules. `F3` developer overlay. `R` restart.
+
+The rulesets show how modes switch systems on and off: Hardcore removes the HUD and crosshair, forces cockpit view, lowers durability and allows friendly fire. Arcade turns off per-part damage, joint criticals, equipment knockout and ammo limits.
+
+All gameplay numbers (mech parts and stats, weapons, rulesets) are JSON files in `data/`. Change them, restart, and the game picks them up. `tools/check.sh` validates them.
 
 ## Project layout
 

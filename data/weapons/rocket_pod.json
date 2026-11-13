@@ -1,0 +1,12 @@
+{
+	"id": "rocket_pod",
+	"name": "Rocket Pod",
+	"kind": "ranged",
+	"slot": "secondary",
+	"damage": 45.0,
+	"range": 400.0,
+	"fire_interval": 0.9,
+	"ammo": 24,
+	"spread_deg": 1.2,
+	"tracer_color": "#ff8a4a"
+}
