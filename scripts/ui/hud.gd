@@ -125,6 +125,8 @@ func _parts_text() -> String:
 	if _rules.location_damage:
 		for part in _mech.def["parts"]:
 			var id: String = part["id"]
+			if _mech.damage.is_cosmetic(id):
+				continue
 			var status := "OFFLINE" if _mech.damage.is_part_disabled(id) else "%d%%" % roundi(_mech.damage.part_ratio(id) * 100.0)
 			var crippled := " (crippled)" if _mech.damage.is_crippled(id) and not _mech.damage.is_part_disabled(id) else ""
 			lines.append("%s  %s%s" % [part["name"], status, crippled])

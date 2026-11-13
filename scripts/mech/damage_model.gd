@@ -27,8 +27,12 @@ func _init(mech_def: Dictionary, rules: Ruleset) -> void:
 	_rules = rules
 	_armor = maxf(0.01, float(mech_def.get("base", {}).get("armor", 1.0)))
 	for part in mech_def.get("parts", []):
-		var hp := float(part["health"]) * rules.durability_mult
 		_parts[part["id"]] = part
+		# A part with "damage_to" is only a visible piece of another part (a forearm, a paw):
+		# it has no health of its own, and hits on it count against that part.
+		if part.has("damage_to"):
+			continue
+		var hp := float(part["health"]) * rules.durability_mult
 		health[part["id"]] = hp
 		max_health[part["id"]] = hp
 		_pool_max += hp
@@ -40,6 +44,7 @@ func _init(mech_def: Dictionary, rules: Ruleset) -> void:
 ## Applies damage to a part. Returns what happened:
 ## { part, applied, disabled, destroyed }. "part" is the part that really took the damage.
 func apply_damage(part_id: String, amount: float) -> Dictionary:
+	part_id = resolve(part_id)
 	var result := {"part": part_id, "applied": 0.0, "disabled": false, "destroyed": false}
 	if _destroyed or amount <= 0.0 or not _parts.has(part_id):
 		return result
@@ -73,13 +78,23 @@ func apply_damage(part_id: String, amount: float) -> Dictionary:
 	return result
 
 
+## The part that really owns a piece of the body: itself, or the part it stands in for.
+func resolve(part_id: String) -> String:
+	return _parts.get(part_id, {}).get("damage_to", part_id)
+
+
+## True for a visible piece that has no health of its own (see "damage_to").
+func is_cosmetic(part_id: String) -> bool:
+	return _parts.get(part_id, {}).has("damage_to")
+
+
 func is_destroyed() -> bool:
 	return _destroyed
 
 
 ## True if the part has no health left.
 func is_part_disabled(part_id: String) -> bool:
-	return _disabled.has(part_id)
+	return _disabled.has(resolve(part_id))
 
 
 ## True if the part is disabled, one of its joints is, or a part it hangs from is. A crippled limb cannot
@@ -104,6 +119,7 @@ func is_crippled(part_id: String) -> bool:
 
 ## Remaining health of a part from 0 to 1. With location damage off this is the shared pool.
 func part_ratio(part_id: String) -> float:
+	part_id = resolve(part_id)
 	if not _rules.location_damage:
 		return total_ratio()
 	if not health.has(part_id):

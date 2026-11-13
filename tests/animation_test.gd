@@ -147,6 +147,32 @@ func _run() -> void:
 	_check(lion.rig.position.y < -0.1, "lion crouches while prowling (%.2f m)" % lion.rig.position.y)
 	lion.controls.throttle = 0.0
 
+	# Skeleton: each leg is a chain of segments that fold at the joints to lift the foot.
+	_check(lion.pivots["forearm_fl"].get_parent() == lion.pivots["knee_fl"], "the forearm hangs from the elbow")
+	_check(lion.pivots["knee_fl"].get_parent() == lion.pivots["leg_fl"], "the elbow hangs from the upper arm")
+	_check(lion.pivots["leg_fl"].get_parent() == lion.pivots["scapula_fl"], "the upper arm hangs from the shoulder blade")
+	_check(lion.pivots["foot_rl"].get_parent() == lion.pivots["shin_rl"], "the foot hangs from the shin")
+	lion.controls.throttle = 1.0
+	var most_fold := 0.0
+	var most_stretch := 0.0
+	var spine := 0.0
+	var blade := 0.0
+	for i in 120:
+		await physics_frame
+		most_fold = minf(most_fold, lion.pivots["forearm_fl"].rotation.x)
+		most_stretch = maxf(most_stretch, lion.pivots["forearm_fl"].rotation.x)
+		spine = maxf(spine, absf(lion.pivots["hips"].rotation.y))
+		blade = maxf(blade, absf(lion.pivots["scapula_fl"].rotation.x))
+	lion.controls.throttle = 0.0
+	_check(most_fold < deg_to_rad(-20.0), "the forearm folds to lift the paw (%.2f rad)" % most_fold)
+	_check(most_stretch < 0.001, "the forearm never bends the wrong way")
+	_check(spine > deg_to_rad(1.0), "the spine twists while walking (%.2f rad)" % spine)
+	_check(blade > deg_to_rad(3.0), "the shoulder blade swings with the stride (%.2f rad)" % blade)
+	var leg_before: float = lion.damage.health["leg_fl"]
+	lion.take_hit("paw_fl", 10.0)
+	_check(lion.damage.health["leg_fl"] < leg_before, "a hit on the paw counts against the leg it belongs to")
+	_check(lion.damage.is_cosmetic("paw_fl") and not lion.damage.health.has("paw_fl"), "the paw has no health of its own")
+
 	# Gimbal gun mount: the mast turns and the bar tilts with the aim; losing the mast knocks out both guns.
 	lion.aim_yaw = 0.5
 	lion.aim_pitch = 0.2

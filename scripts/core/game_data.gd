@@ -162,7 +162,13 @@ static func _validate_mech(id: String) -> Array[String]:
 		var ptag := "%s part '%s'" % [tag, part.get("id", "?")]
 		if not str(part.get("name", "")).length() > 0:
 			p.append("%s: name is required" % ptag)
-		if float(part.get("health", 0.0)) <= 0.0:
+		if part.has("damage_to"):
+			var owner_part: Variant = part_ids.get(part["damage_to"])
+			if owner_part == null or owner_part.has("damage_to"):
+				p.append("%s: damage_to must name a part that has its own health" % ptag)
+			if part.get("fatal", false):
+				p.append("%s: a part with damage_to cannot be fatal" % ptag)
+		elif float(part.get("health", 0.0)) <= 0.0:
 			p.append("%s: health must be greater than 0" % ptag)
 		if not TONES.has(part.get("tone", "")):
 			p.append("%s: tone must be one of %s" % [ptag, TONES])
@@ -233,7 +239,7 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 			if not (motion.get("deg") is float or motion.get("deg") is int):
 				p.append("%s: %s.deg must be a number" % [ptag, motion_name])
 			for key in motion:
-				if not ["axis", "deg", "phase", "offset_deg", "droop_deg"].has(key):
+				if not ["axis", "deg", "phase", "offset_deg", "droop_deg", "rectify"].has(key):
 					p.append("%s: unknown %s setting '%s'" % [ptag, motion_name, key])
 
 		# A chain of parents must end somewhere, not loop back on itself.

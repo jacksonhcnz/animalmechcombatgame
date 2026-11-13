@@ -193,7 +193,12 @@ func _apply_rig() -> void:
 
 ## Angle in radians of one motion at a point in the cycle.
 static func _motion_angle(motion: Dictionary, cycle: float, amplitude: float, factor: float) -> float:
-	var swing := float(motion["deg"]) * amplitude * sin(TAU * (cycle + float(motion.get("phase", 0.0))))
+	var wave := sin(TAU * (cycle + float(motion.get("phase", 0.0))))
+	# "rectify" keeps only the positive half of the wave: a limb that folds and then straightens,
+	# like a knee bending to lift the foot during the swing, and never bends the other way.
+	if motion.get("rectify", false):
+		wave = maxf(wave, 0.0)
+	var swing := float(motion["deg"]) * amplitude * wave
 	return deg_to_rad((float(motion.get("offset_deg", 0.0)) + swing) * factor)
 
 
