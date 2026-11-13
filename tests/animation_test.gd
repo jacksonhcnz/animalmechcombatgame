@@ -195,6 +195,21 @@ func _run() -> void:
 		out_of_step = maxf(out_of_step, absf(tip - inner * 16.0 / 14.0))
 	_check(out_of_step > deg_to_rad(4.0), "the wingtip lags behind the wing root (the flap travels outwards)")
 
+	# Belly gimbal: it turns and tilts with the aim, carries both guns, and is the guns' weak point.
+	hawk.aim_yaw = 0.7
+	hawk.aim_pitch = -0.3
+	await _frames(5)
+	_check(is_equal_approx(hawk.pivots["mast"].rotation.y, 0.7), "the belly gimbal turns with the aim")
+	_check(is_equal_approx(hawk.pivots["crossbar"].rotation.x, -0.3), "the gimbal bar tilts down with the aim")
+	_check(hawk.pivots["pod_l"].get_parent() == hawk.pivots["crossbar"], "the guns hang from the gimbal bar")
+	_check(hawk.pivots["mast"].position.y < -0.5, "the gimbal sits below the body")
+	_check(hawk.damage.mount_online("gun_l") and hawk.damage.mount_online("gun_r"), "both guns work although the left wing is gone")
+	hawk.take_hit("mast", 9999.0)
+	_check(not hawk.damage.mount_online("gun_l") and not hawk.damage.mount_online("gun_r"), "losing the belly gimbal knocks out both guns")
+	_check(hawk.damage.mount_online("talon"), "the talons still work without the gimbal")
+	hawk.aim_yaw = 0.0
+	hawk.aim_pitch = 0.0
+
 	# Lion: all four legs animate.
 	_range.start("lion", "practice")
 	await _frames(40)
