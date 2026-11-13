@@ -16,6 +16,7 @@ var _parts_label: Label
 var _weapons_label: Label
 var _info_label: Label
 var _timer_label: Label
+var _score_label: Label
 var _message_label: Label
 var _debug_label: Label
 var _timer_value: float = -1.0
@@ -31,6 +32,8 @@ func _ready() -> void:
 	_info_label = _make_label(_panels, Control.PRESET_TOP_LEFT, HORIZONTAL_ALIGNMENT_LEFT)
 	_timer_label = _make_label(_panels, Control.PRESET_CENTER_TOP, HORIZONTAL_ALIGNMENT_CENTER)
 	_timer_label.add_theme_font_size_override("font_size", 28)
+	_score_label = _make_label(_panels, Control.PRESET_CENTER_TOP, HORIZONTAL_ALIGNMENT_CENTER)
+	_score_label.offset_top = 56.0
 	_parts_label = _make_label(_panels, Control.PRESET_BOTTOM_LEFT, HORIZONTAL_ALIGNMENT_LEFT)
 	_weapons_label = _make_label(_panels, Control.PRESET_BOTTOM_RIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
 
@@ -69,6 +72,11 @@ func flash(text: String, seconds: float = 1.5) -> void:
 
 func set_timer(seconds_left: float) -> void:
 	_timer_value = seconds_left
+
+
+## One line of match score under the timer, such as "Pilot 2   Rival 1".
+func set_scoreline(text: String) -> void:
+	_score_label.text = text
 
 
 func show_message(text: String) -> void:

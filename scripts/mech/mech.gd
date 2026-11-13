@@ -9,6 +9,8 @@ extends CharacterBody3D
 signal hit_taken(result: Dictionary)
 signal part_disabled(part_id: String)
 signal destroyed(mech: Mech)
+## A shot was fired. Servers broadcast it so every client can draw the tracer.
+signal fired(from: Vector3, to: Vector3, color: Color)
 
 const LAYER_WORLD := 1
 const LAYER_HITBOX := 2
@@ -27,6 +29,12 @@ var damage: DamageModel
 var controls := MechControls.new()
 var weapons: Array[WeaponState] = []
 var team: int = 1
+## Network mode: the mech is a display copy. It does no physics or shooting of its own;
+## a client moves it from server snapshots and mirrors damage from server events.
+var remote_mode: bool = false
+var remote_grounded: bool = true
+## Whoever last damaged this mech, so a server can credit the kill.
+var last_attacker: Mech
 var is_player: bool = false
 var altitude_limit: float = 150.0
 var aim_yaw: float = 0.0
@@ -61,6 +69,14 @@ static func create(mech_id: String, ruleset: Ruleset) -> Mech:
 	return mech
 
 
+## A display copy for a network client: it does no physics or shooting of its own.
+static func create_remote(mech_id: String, ruleset: Ruleset) -> Mech:
+	var mech := Mech.new()
+	mech.remote_mode = true
+	mech.setup(mech_id, ruleset)
+	return mech
+
+
 func setup(mech_id: String, ruleset: Ruleset) -> void:
 	def = GameData.get_entry("mechs", mech_id)
 	rules = ruleset
@@ -80,6 +96,11 @@ func is_flying() -> bool:
 
 func is_dead() -> bool:
 	return _dead
+
+
+## On the ground. A display copy cannot ask the physics engine, so it uses what the server said.
+func grounded() -> bool:
+	return remote_grounded if remote_mode else is_on_floor()
 
 
 ## True if this mech can jump right now: a ground mech, standing on the floor, with the
@@ -140,7 +161,10 @@ func take_hit(part_id: String, amount: float, attacker: Mech = null) -> Dictiona
 		return {"part": part_id, "applied": 0.0, "disabled": false, "destroyed": false}
 	var result := damage.apply_damage(part_id, amount)
 	if result["applied"] > 0.0:
+		if attacker != null and attacker != self:
+			last_attacker = attacker
 		_refresh_colors()
+		result["raw"] = amount
 		hit_taken.emit(result)
 	return result
 
@@ -161,7 +185,24 @@ func aim_direction() -> Vector3:
 	return -_aim_pivot.global_transform.basis.z
 
 
+## Copies a damage state from the server (used when a mech first appears on a client).
+func mirror_state(state: Dictionary) -> void:
+	damage.import_state(state)
+	if damage.is_destroyed():
+		_dead = true
+		controls.clear()
+	_refresh_colors()
+
+
 func _physics_process(delta: float) -> void:
+	if remote_mode:
+		# A display copy only animates. The local player's copy still turns its own head at once.
+		if is_player and not _dead:
+			_update_aim()
+		else:
+			_apply_aim_pivots()
+		_animate(delta)
+		return
 	for weapon in weapons:
 		weapon.tick(delta)
 	_jump_cooldown = maxf(0.0, _jump_cooldown - delta)
@@ -190,14 +231,24 @@ func _update_aim() -> void:
 		aim_yaw = 0.0
 		aim_pitch = 0.0
 		controls.center_aim = false
+	var wanted_yaw := aim_yaw + controls.aim_yaw_delta
+	var wanted_pitch := aim_pitch + controls.aim_pitch_delta
+	if not is_nan(controls.aim_yaw_target):
+		# A server is told where the pilot is aiming, not how far they turned.
+		wanted_yaw = controls.aim_yaw_target
+		wanted_pitch = controls.aim_pitch_target
 	if twist >= PI:
 		# A twist limit of 180 degrees or more means the aim can spin freely all the way round.
-		aim_yaw = wrapf(aim_yaw + controls.aim_yaw_delta, -PI, PI)
+		aim_yaw = wrapf(wanted_yaw, -PI, PI)
 	else:
-		aim_yaw = clampf(aim_yaw + controls.aim_yaw_delta, -twist, twist)
-	aim_pitch = clampf(aim_pitch + controls.aim_pitch_delta, pitch_min, pitch_max)
+		aim_yaw = clampf(wanted_yaw, -twist, twist)
+	aim_pitch = clampf(wanted_pitch, pitch_min, pitch_max)
 	controls.aim_yaw_delta = 0.0
 	controls.aim_pitch_delta = 0.0
+	_apply_aim_pivots()
+
+
+func _apply_aim_pivots() -> void:
 	_aim_pivot.rotation = Vector3(aim_pitch, aim_yaw, 0.0)
 	_third_pivot.rotation = Vector3(aim_pitch, aim_yaw, 0.0)
 
@@ -287,7 +338,10 @@ func _fire(weapon: WeaponState) -> void:
 				target.take_hit(collider.get_meta("part_id"), float(weapon.def["damage"]), self)
 
 	if not weapon.is_melee():
-		_spawn_tracer(mount_position(weapon.mount_id), end, Color.html(weapon.def.get("tracer_color", "#ffffff")))
+		var tracer_color := Color.html(weapon.def.get("tracer_color", "#ffffff"))
+		var muzzle := mount_position(weapon.mount_id)
+		fired.emit(muzzle, end, tracer_color)
+		spawn_tracer(get_parent(), muzzle, end, tracer_color)
 
 
 func _apply_spread(dir: Vector3, spread: float) -> Vector3:
@@ -299,9 +353,9 @@ func _apply_spread(dir: Vector3, spread: float) -> Vector3:
 	return (dir + (side * cos(angle) + up * sin(angle)) * tan(amount)).normalized()
 
 
-func _spawn_tracer(from: Vector3, to: Vector3, color: Color) -> void:
-	var parent := get_parent()
-	if parent == null:
+## Draws a short-lived line between two points. Clients use it for tracers the server reports.
+static func spawn_tracer(parent: Node, from: Vector3, to: Vector3, color: Color) -> void:
+	if parent == null or not parent.is_inside_tree():
 		return
 	var length := from.distance_to(to)
 	if length < 0.1:
@@ -318,7 +372,7 @@ func _spawn_tracer(from: Vector3, to: Vector3, color: Color) -> void:
 	var dir := (to - from).normalized()
 	var up := Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT
 	tracer.look_at_from_position((from + to) * 0.5, to, up)
-	get_tree().create_timer(0.08).timeout.connect(tracer.queue_free)
+	parent.get_tree().create_timer(0.08).timeout.connect(tracer.queue_free)
 
 
 func _build_body() -> void:

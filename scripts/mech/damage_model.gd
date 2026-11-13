@@ -88,6 +88,22 @@ func is_cosmetic(part_id: String) -> bool:
 	return _parts.get(part_id, {}).has("damage_to")
 
 
+## The whole damage state as plain data, so a server can send it to a client.
+func export_state() -> Dictionary:
+	return {"health": health.duplicate(), "disabled": _disabled.keys(), "destroyed": _destroyed, "pool": _pool}
+
+
+func import_state(state: Dictionary) -> void:
+	for part_id in state.get("health", {}):
+		if health.has(part_id):
+			health[part_id] = float(state["health"][part_id])
+	_disabled.clear()
+	for part_id in state.get("disabled", []):
+		_disabled[part_id] = true
+	_destroyed = bool(state.get("destroyed", false))
+	_pool = float(state.get("pool", _pool))
+
+
 func is_destroyed() -> bool:
 	return _destroyed
 

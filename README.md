@@ -44,6 +44,20 @@ The rulesets show how modes switch systems on and off: Hardcore removes the HUD 
 
 All gameplay numbers (mech parts and stats, weapons, rulesets) are JSON files in `data/`. Change them, restart, and the game picks them up. `tools/check.sh` validates them.
 
+## Multiplayer
+
+The game opens on a menu: **Test range** (offline), **Host a match**, **Join by address** and **Scan local network**. A match is a timed 1v1 (up to 8 pilots can join; most kills when the time runs out wins). `F10` leaves a match.
+
+Run a dedicated server (no player, no window needed) on any machine with Godot:
+
+```
+godot --headless --path . -- --server --port=7777 --ruleset=standard --max-players=2 --server-name="My server"
+```
+
+Other options: `--host` (listen server, you play too), `--join=ADDRESS[:PORT]`, `--name=`, `--mech=`. Open UDP ports 7777 (game) and 7778 (LAN discovery) on the server. A client with a different balance version or network protocol is turned away with a message, so everyone in a match has the same numbers.
+
+The server decides movement, shooting and damage. There is no client-side prediction or lag compensation yet, so expect the local mech to feel a little delayed on high latency; those come in a later milestone. The game never needs an official server: LAN and direct connect always work.
+
 ## Project layout
 
 - `assets/`: art and audio (CC BY-SA 4.0)
