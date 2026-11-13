@@ -147,5 +147,16 @@ func _run() -> void:
 	_check(lion.rig.position.y < -0.1, "lion crouches while prowling (%.2f m)" % lion.rig.position.y)
 	lion.controls.throttle = 0.0
 
+	# Gimbal gun mount: the mast turns and the bar tilts with the aim; losing the mast knocks out both guns.
+	lion.aim_yaw = 0.5
+	lion.aim_pitch = 0.2
+	await _frames(3)
+	_check(is_equal_approx(lion.pivots["mast"].rotation.y, 0.5), "gun mast turns with the aim")
+	_check(is_equal_approx(lion.pivots["crossbar"].rotation.x, 0.2), "gimbal bar tilts with the aim")
+	_check(lion.damage.mount_online("gun_l") and lion.damage.mount_online("gun_r"), "both guns work while the mast is intact")
+	lion.take_hit("mast", 9999.0)
+	_check(not lion.damage.mount_online("gun_l") and not lion.damage.mount_online("gun_r"), "destroying the mast knocks out both guns")
+	_check(lion.damage.mount_online("jaw"), "the jaw still works without the mast")
+
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
