@@ -38,7 +38,8 @@ static func ids(kind: String) -> Array[String]:
 static func get_entry(kind: String, id: String) -> Dictionary:
 	var key := "%s/%s" % [kind, id]
 	if not _cache.has(key):
-		_cache[key] = read_json("%s/%s/%s.json" % [DATA_DIR, kind, id])
+		var entry := read_json("%s/%s/%s.json" % [DATA_DIR, kind, id])
+		_cache[key] = Points.resolve(entry) if kind == "mechs" else entry
 	return _cache[key]
 
 
@@ -57,6 +58,8 @@ static func validate_all() -> Array[String]:
 	var problems: Array[String] = []
 	if balance_version() <= 0:
 		problems.append("balance.json: version must be a positive integer")
+	problems.append_array(Points.validate())
+	problems.append_array(Loadout.validate())
 	for kind in ["mechs", "weapons", "rulesets"]:
 		if ids(kind).is_empty():
 			problems.append("%s: no data files found" % kind)
@@ -126,6 +129,15 @@ static func _validate_mech(id: String) -> Array[String]:
 		if not Color.html_is_valid(str(palette.get(tone, ""))):
 			p.append("%s: palette.%s must be a colour such as #d9a441" % [tag, tone])
 
+	var pts: Dictionary = m.get("points", {})
+	for stat in Points.STATS:
+		if not (pts.get(stat) is float or pts.get(stat) is int) or int(pts[stat]) < 1:
+			p.append("%s: points.%s must be a whole number of 1 or more" % [tag, stat])
+	if Points.total(m) != int(Points.table().get("budget", 0)):
+		p.append("%s: points must add up to the budget of %d (is %d)" % [tag, int(Points.table().get("budget", 0)), Points.total(m)])
+	var weight := Points.weapons_weight(m)
+	if weight > Points.carry_capacity(m):
+		p.append("%s: weapons weigh %.0f but the mech can only carry %.0f" % [tag, weight, Points.carry_capacity(m)])
 	var base: Dictionary = m.get("base", {})
 	for key in ["speed", "turn_rate", "armor", "twist_limit_deg"]:
 		if float(base.get(key, 0.0)) <= 0.0:

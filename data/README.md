@@ -40,3 +40,19 @@ The velociraptor follows a theropod skeleton: thigh, knee, shin, ankle bone and 
 `look` (per part, `turn_deg`, optional `share` and `speed`) makes a part turn and tilt towards where the pilot is aiming, up to `turn_deg` left or right. Past that limit the aim carries on and the part stays put. `share` splits a turn between linked parts: the hawk's neck and head each take part of it, which adds up to one full turn. The lion's head turns up to 110 degrees, the raptor's up to 100 and the hawk's neck and head together up to 120. The cockpit view and the lion's gimbal keep following the aim beyond a head's limit.
 
 The hawk carries both of its guns on a gimbal under its belly (a mast with a crossbar, like the lion's, but hanging down). It turns and tilts with the aim, so the guns can fire downwards. Losing the gimbal takes both guns offline, and the wings no longer carry weapons.
+
+## Points (hidden, fixed)
+
+Every mech has a fixed point budget the player cannot change. `points` (per mech) splits `budget` (in `points.json`, 30) across `speed`, `armor` and `carry`, each at least 1. `points.json` gives each stat as `base + per_point * points`:
+
+- `speed` covers mobility too: top speed, turn rate, jump speed and cooldown (walkers) or climb speed (flyers).
+- `armor` divides incoming damage.
+- `carry` sets carry capacity. Weapons have a `weight`, and ranged ones an `ammo_weight` per round. A mech whose capacity cannot hold every full ammo load carries less ammo, cut back evenly. The weapons themselves must always fit.
+
+Do not put `speed`, `turn_rate`, `armor`, `jump_speed`, `jump_cooldown` or `climb_speed` in `base`; they come from points. Bump `balance.json` when points or conversions change.
+
+## Loadout (four slots)
+
+A pilot picks four things in the main menu: `primary` and `secondary` weapons (any weapon whose `slot` matches), one `equipment` item (`data/equipment/`) and one `perk` (`data/perks/`). Each has a `weight`; weapons add `weight` plus `ammo_weight` per round. Weapons and gear must fit the mech's carry capacity, otherwise the server uses the default loadout (autocannon, rocket pod, no equipment, no perk). Melee weapons stay fixed per mech.
+
+Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump, climb), `turn_mult`, `damage_mult` and `ammo_mult`. Every folder needs a `none` entry. The server checks every loadout a client sends. Command-line options: `--primary=ID --secondary=ID --equipment=ID --perk=ID`.

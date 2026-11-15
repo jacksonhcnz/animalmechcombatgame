@@ -1,0 +1,8 @@
+{
+	"id": "ammo_crate",
+	"name": "Ammo Crate",
+	"weight": 10.0,
+	"mods": {
+		"ammo_mult": 1.5
+	}
+}

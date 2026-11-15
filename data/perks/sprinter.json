@@ -1,0 +1,9 @@
+{
+	"id": "sprinter",
+	"name": "Sprinter",
+	"weight": 0.0,
+	"mods": {
+		"speed_mult": 1.1,
+		"armor_mult": 0.9
+	}
+}

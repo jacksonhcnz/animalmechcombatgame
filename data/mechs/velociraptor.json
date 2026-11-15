@@ -7,15 +7,15 @@
 		"accent": "#2d7a33",
 		"dark": "#9a6a30"
 	},
+	"points": {
+		"speed": 16,
+		"armor": 6,
+		"carry": 8
+	},
 	"base": {
-		"speed": 20.0,
-		"turn_rate": 2.2,
-		"armor": 0.9,
 		"twist_limit_deg": 110.0,
 		"pitch_min_deg": -40.0,
-		"pitch_max_deg": 35.0,
-		"jump_speed": 14.0,
-		"jump_cooldown": 0.6
+		"pitch_max_deg": 35.0
 	},
 	"collider": {
 		"size": [

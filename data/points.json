@@ -1,0 +1,17 @@
+{
+	"notes": "Every mech has a fixed hidden point budget, set in its data file and never changed by the player. Points become stats here: value = base + per_point * points. Weights are in kg-like units.",
+	"budget": 30,
+	"speed": {
+		"speed": {"base": 4.0, "per_point": 1.0},
+		"turn_rate": {"base": 1.0, "per_point": 0.06},
+		"jump_speed": {"base": 6.0, "per_point": 0.5},
+		"jump_cooldown": {"base": 1.2, "per_point": -0.04},
+		"climb_speed": {"base": 2.0, "per_point": 0.5}
+	},
+	"armor": {
+		"armor": {"base": 0.5, "per_point": 0.1}
+	},
+	"carry": {
+		"capacity": {"base": 30.0, "per_point": 6.0}
+	}
+}
