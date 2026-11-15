@@ -4,7 +4,7 @@ extends RefCounted
 ## All gameplay numbers live in those JSON files, so balance changes are data edits.
 
 const DATA_DIR := "res://data"
-const VISUAL_SHAPES: Array[String] = ["box", "sphere", "cylinder", "hex"]
+const VISUAL_SHAPES: Array[String] = ["box", "sphere", "cylinder", "hex", "plate"]
 const MOVEMENT_TYPES: Array[String] = ["ground", "flying"]
 const WEAPON_KINDS: Array[String] = ["ranged", "melee"]
 const WEAPON_SLOTS: Array[String] = ["primary", "secondary", "melee"]
@@ -281,7 +281,15 @@ static func _validate_visual(ptag: String, pieces: Variant) -> Array[String]:
 		if not piece is Dictionary:
 			p.append("%s: every visual piece must be an object" % ptag)
 			continue
-		if not _is_vec3(piece.get("size")):
+		if piece.get("shape", "box") == "plate":
+			var outline: Variant = piece.get("points")
+			if not outline is Array or (outline as Array).size() < 3:
+				p.append("%s: a plate piece needs points, at least three [x, y] pairs" % ptag)
+			elif (outline as Array).any(func(point: Variant) -> bool: return not (point is Array and (point as Array).size() == 2)):
+				p.append("%s: every plate point must be [x, y]" % ptag)
+			if float(piece.get("thickness", 0.0)) <= 0.0:
+				p.append("%s: a plate piece needs a thickness above 0" % ptag)
+		elif not _is_vec3(piece.get("size")):
 			p.append("%s: visual piece needs a size [x, y, z]" % ptag)
 		if piece.has("pos") and not _is_vec3(piece["pos"]):
 			p.append("%s: visual piece pos must be [x, y, z]" % ptag)
