@@ -1,0 +1,8 @@
+{
+	"id": "booster",
+	"name": "Booster",
+	"weight": 12.0,
+	"mods": {
+		"speed_mult": 1.1
+	}
+}

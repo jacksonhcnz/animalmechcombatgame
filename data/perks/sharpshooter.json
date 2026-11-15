@@ -1,0 +1,9 @@
+{
+	"id": "sharpshooter",
+	"name": "Sharpshooter",
+	"weight": 0.0,
+	"mods": {
+		"damage_mult": 1.1,
+		"turn_mult": 0.9
+	}
+}

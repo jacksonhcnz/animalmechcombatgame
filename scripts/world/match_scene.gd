@@ -39,14 +39,14 @@ func _ready() -> void:
 		LaunchConfig.SERVER, LaunchConfig.HOST:
 			var local := {}
 			if LaunchConfig.mode == LaunchConfig.HOST:
-				local = {"name": LaunchConfig.player_name, "mech": LaunchConfig.mech_id}
+				local = {"name": LaunchConfig.player_name, "mech": LaunchConfig.mech_id, "loadout": LaunchConfig.loadout}
 			var error := session.start_server(LaunchConfig.port, LaunchConfig.ruleset_id, LaunchConfig.server_name, LaunchConfig.max_players, local)
 			if error != OK:
 				_leave("Could not start the server (error %d). Is the port in use?" % error)
 			else:
 				print("Server '%s' running on port %d, ruleset %s" % [LaunchConfig.server_name, LaunchConfig.port, LaunchConfig.ruleset_id])
 		LaunchConfig.CLIENT:
-			var error := session.start_client(LaunchConfig.address, LaunchConfig.port, LaunchConfig.player_name, LaunchConfig.mech_id)
+			var error := session.start_client(LaunchConfig.address, LaunchConfig.port, LaunchConfig.player_name, LaunchConfig.mech_id, LaunchConfig.loadout)
 			if error != OK:
 				_leave("Could not connect (error %d)" % error)
 			else:

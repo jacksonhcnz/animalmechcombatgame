@@ -1,0 +1,14 @@
+{
+	"id": "machine_gun",
+	"name": "Machine Gun",
+	"kind": "ranged",
+	"slot": "primary",
+	"damage": 4.0,
+	"range": 250.0,
+	"fire_interval": 0.05,
+	"ammo": 900,
+	"weight": 12.0,
+	"ammo_weight": 0.03,
+	"spread_deg": 0.9,
+	"tracer_color": "#fff0a0"
+}

@@ -1,0 +1,9 @@
+{
+	"id": "hardened",
+	"name": "Hardened",
+	"weight": 0.0,
+	"mods": {
+		"armor_mult": 1.15,
+		"speed_mult": 0.95
+	}
+}

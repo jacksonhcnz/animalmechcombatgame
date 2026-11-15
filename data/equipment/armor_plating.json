@@ -1,0 +1,8 @@
+{
+	"id": "armor_plating",
+	"name": "Armor Plating",
+	"weight": 20.0,
+	"mods": {
+		"armor_mult": 1.25
+	}
+}

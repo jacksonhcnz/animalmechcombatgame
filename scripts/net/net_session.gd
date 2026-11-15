@@ -27,6 +27,7 @@ class Slot extends RefCounted:
 	var peer: int = 0
 	var pilot_name: String = ""
 	var mech_id: String = ""
+	var loadout: Dictionary = {}
 	var team: int = 1
 	var spawn_index: int = 0
 	var mech: Mech
@@ -65,13 +66,14 @@ var _display_mechs: Dictionary = {}
 var _buffers: Dictionary = {}
 var _pilot_name: String = ""
 var _mech_choice: String = ""
+var _loadout_choice: Dictionary = {}
 ## Tests only: pretend to have a different balance version.
 var test_balance: int = -1
 
 
 # ---------------------------------------------------------------- starting
 
-## Starts a server. With `local_player` (a dictionary with "name" and "mech") the machine
+## Starts a server. With `local_player` (a dictionary with "name", "mech" and optionally "loadout") the machine
 ## also plays, as a listen server; without it the server is dedicated.
 ## Returns an Error code.
 func start_server(port: int, ruleset_id: String, name_text: String, players: int, local_player: Dictionary = {}) -> int:
@@ -100,6 +102,7 @@ func start_server(port: int, ruleset_id: String, name_text: String, players: int
 	if not local_player.is_empty():
 		my_id = 1
 		var slot := _add_slot(1, str(local_player["name"]), str(local_player["mech"]))
+		slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", slot.mech_id), local_player.get("loadout", {}))
 		slot.is_local = true
 		_spawn_mech(slot, slot.spawn_index)
 	connected = true
@@ -109,10 +112,11 @@ func start_server(port: int, ruleset_id: String, name_text: String, players: int
 
 ## Starts a client and connects. The result arrives as the `joined`, `rejected` or
 ## `disconnected` signal. Returns an Error code for an immediate failure.
-func start_client(address: String, port: int, pilot_name: String, mech_id: String) -> int:
+func start_client(address: String, port: int, pilot_name: String, mech_id: String, loadout: Dictionary = {}) -> int:
 	is_server = false
 	_pilot_name = pilot_name
 	_mech_choice = mech_id
+	_loadout_choice = loadout
 	var peer := ENetMultiplayerPeer.new()
 	var error := peer.create_client(address, port)
 	if error != OK:
@@ -280,7 +284,7 @@ func _safest_spawn(slot: Slot) -> int:
 ## Creates (or re-creates) the real mech for a pilot at a spawn point.
 func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	_remove_mech(slot)
-	var mech := Mech.create(slot.mech_id, rules)
+	var mech := Mech.create(slot.mech_id, rules, slot.loadout)
 	mech.team = slot.team
 	mech.altitude_limit = Arena.MATCH_ALTITUDE_LIMIT
 	mechs_root.add_child(mech)
@@ -420,6 +424,7 @@ func c_hello(info: Dictionary) -> void:
 		"match": _match_state(),
 	})
 	var slot := _add_slot(peer, _clean_name(str(info["name"])), str(info["mech"]))
+	slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", slot.mech_id), info.get("loadout", {}))
 	_spawn_mech(slot, slot.spawn_index)
 	_broadcast_match()
 
@@ -464,6 +469,7 @@ func _on_connected() -> void:
 		"balance": test_balance if test_balance >= 0 else GameData.balance_version(),
 		"name": _pilot_name,
 		"mech": _mech_choice,
+		"loadout": _loadout_choice,
 	})
 
 
