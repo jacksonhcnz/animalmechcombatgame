@@ -86,8 +86,8 @@
 		{"id": "hand_r", "name": "Hand", "kind": "limb", "parent": "forearm_r", "damage_to": "arm_r", "tone": "dark", "size": [0.45, 0.3, 0.8], "pos": [1.6, 4.35, -2.55], "visual": [{"shape": "plate", "points": [[0.06766936595030584, 0.2820875207778602], [-0.11233063404969415, -0.3979124792221398], [-0.24766936595030584, -0.3620875207778602], [-0.06766936595030584, 0.3179124792221398]], "thickness": 0.1, "round": 0.06, "pos": [0, 0, 0], "tone": "metal", "rot_deg": [90, 0, 0]}, {"shape": "plate", "points": [[0.06766936595030584, 0.3179124792221398], [0.24766936595030584, -0.3620875207778602], [0.11233063404969415, -0.3979124792221398], [-0.06766936595030584, 0.2820875207778602]], "thickness": 0.1, "round": 0.06, "pos": [0, 0, 0], "tone": "metal", "rot_deg": [90, 0, 0]}, {"shape": "sphere", "size": [0.34, 0.34, 0.34], "pos": [0, 0, 0.3], "tone": "dark"}]}
 	],
 	"mounts": [
-		{"id": "gun_l", "part": "hand_l", "weapon": "autocannon"},
-		{"id": "gun_r", "part": "hand_r", "weapon": "rocket_pod"},
+		{"id": "gun_l", "part": "hand_l", "weapon": "autocannon", "gun_scale": 0.55, "gun_offset": [0.0, 0.0, -0.1]},
+		{"id": "gun_r", "part": "hand_r", "weapon": "rocket_pod", "gun_scale": 0.55, "gun_offset": [0.0, 0.0, -0.1]},
 		{"id": "kick", "part": "foot_r", "weapon": "claw_strike"}
 	]
 }

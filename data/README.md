@@ -60,3 +60,7 @@ Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump
 ## Sprint
 
 Hold Shift (gamepad: left stick click) while moving forward to move faster. `points.json` `sprint.speed_mult` (1.5) sets the boost, which applies to ground speed only, not flight climb. A ruleset can switch it off with `"sprinting": false`. The server applies it, so it cannot be faked. Hardcore and Arcade keep it on.
+
+## Weapon models
+
+A ranged weapon can have a `visual` (the same pieces as a part, drawn with `-Z` as forward) and a `muzzle` distance. The gun is drawn on the part its mount sits on, so choosing a different weapon in the loadout changes what the mech carries. Colours come from the mech's palette (`metal` stays silver). A mount can set `gun_scale` and `gun_offset` (the velociraptor's small hands use 0.55). Shots start at the muzzle. The lion's and hawk's gun pods are now plain mounting brackets.

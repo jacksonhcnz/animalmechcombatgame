@@ -58,6 +58,8 @@ var _hitboxes: Dictionary = {}
 var _base_colors: Dictionary = {}
 ## Extra visual pieces of a part: part id -> [[material, base colour], ...]
 var _piece_materials: Dictionary = {}
+## The visible gun model of each ranged mount, by mount id.
+var _guns: Dictionary = {}
 var _own_rids: Array[RID] = []
 var _aim_pivot: Node3D
 var _aim_base_y: float = 0.0
@@ -180,6 +182,10 @@ func take_hit(part_id: String, amount: float, attacker: Mech = null) -> Dictiona
 func mount_position(mount_id: String) -> Vector3:
 	for mount in def.get("mounts", []):
 		if mount["id"] == mount_id and _part_meshes.has(mount["part"]):
+			if _guns.has(mount_id):
+				var gun: Node3D = _guns[mount_id]
+				var muzzle := float(GameData.get_entry("weapons", str(mount["weapon"])).get("muzzle", 0.0))
+				return gun.global_transform * Vector3(0.0, 0.0, -muzzle)
 			return _part_meshes[mount["part"]].global_position
 	return global_position
 
@@ -480,6 +486,8 @@ func _build_body() -> void:
 		_hitboxes[part_id] = hitbox
 		_own_rids.append(hitbox.get_rid())
 
+	_build_guns(palette)
+
 	var head: Dictionary = _part_defs["head"]
 	var cockpit_pos := _vec3(head["pos"]) + _vec3(def["cockpit"])
 	_aim_pivot = Node3D.new()
@@ -493,9 +501,25 @@ func _build_body() -> void:
 	add_child(_third_pivot)
 
 
+## Draws each ranged mount's weapon (its `visual` in the weapon data) on the part that carries it,
+## pointing forward. A mount can set `gun_scale` and `gun_offset` for a small or offset mount.
+func _build_guns(palette: Dictionary) -> void:
+	for mount in def.get("mounts", []):
+		var weapon_def := GameData.get_entry("weapons", str(mount["weapon"]))
+		if not weapon_def.has("visual") or not _part_meshes.has(mount["part"]):
+			continue
+		var gun := Node3D.new()
+		gun.name = "Gun_" + str(mount["id"])
+		gun.scale = Vector3.ONE * float(mount.get("gun_scale", 1.0))
+		gun.position = _vec3(mount.get("gun_offset", [0.0, 0.0, 0.0]))
+		_part_meshes[mount["part"]].add_child(gun)
+		_build_visual(mount["part"], gun, weapon_def["visual"], palette)
+		_guns[mount["id"]] = gun
+
+
 ## Builds the shaped pieces of a part (see data/README.md, "visual").
 func _build_visual(part_id: String, holder: Node3D, pieces: Array, palette: Dictionary) -> void:
-	var materials: Array = []
+	var materials: Array = _piece_materials.get(part_id, [])
 	for piece in pieces:
 		var mesh_piece := MeshInstance3D.new()
 		var size := _vec3(piece["size"]) if piece.has("size") else Vector3.ONE
