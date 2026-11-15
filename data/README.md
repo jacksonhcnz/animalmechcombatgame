@@ -50,3 +50,9 @@ Every mech has a fixed point budget the player cannot change. `points` (per mech
 - `carry` sets carry capacity. Weapons have a `weight`, and ranged ones an `ammo_weight` per round. A mech whose capacity cannot hold every full ammo load carries less ammo, cut back evenly. The weapons themselves must always fit.
 
 Do not put `speed`, `turn_rate`, `armor`, `jump_speed`, `jump_cooldown` or `climb_speed` in `base`; they come from points. Bump `balance.json` when points or conversions change.
+
+## Loadout (four slots)
+
+A pilot picks four things in the main menu: `primary` and `secondary` weapons (any weapon whose `slot` matches), one `equipment` item (`data/equipment/`) and one `perk` (`data/perks/`). Each has a `weight`; weapons add `weight` plus `ammo_weight` per round. Weapons and gear must fit the mech's carry capacity, otherwise the server uses the default loadout (autocannon, rocket pod, no equipment, no perk). Melee weapons stay fixed per mech.
+
+Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump, climb), `turn_mult`, `damage_mult` and `ammo_mult`. Every folder needs a `none` entry. The server checks every loadout a client sends. Command-line options: `--primary=ID --secondary=ID --equipment=ID --perk=ID`.

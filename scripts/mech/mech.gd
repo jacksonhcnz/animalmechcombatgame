@@ -67,9 +67,9 @@ var _jump_cooldown: float = 0.0
 var _rng := RandomNumberGenerator.new()
 
 
-static func create(mech_id: String, ruleset: Ruleset) -> Mech:
+static func create(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}) -> Mech:
 	var mech := Mech.new()
-	mech.setup(mech_id, ruleset)
+	mech.setup(mech_id, ruleset, loadout)
 	return mech
 
 
@@ -81,8 +81,8 @@ static func create_remote(mech_id: String, ruleset: Ruleset) -> Mech:
 	return mech
 
 
-func setup(mech_id: String, ruleset: Ruleset) -> void:
-	def = GameData.get_entry("mechs", mech_id)
+func setup(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}) -> void:
+	def = Loadout.apply(GameData.get_entry("mechs", mech_id), loadout)
 	rules = ruleset
 	name = def.get("name", mech_id)
 	damage = DamageModel.new(def, ruleset)
@@ -342,7 +342,7 @@ func _fire(weapon: WeaponState) -> void:
 		if collider is Node and collider.has_meta("part_id"):
 			var target: Mech = collider.get_meta("mech")
 			if is_instance_valid(target):
-				target.take_hit(collider.get_meta("part_id"), float(weapon.def["damage"]), self)
+				target.take_hit(collider.get_meta("part_id"), float(weapon.def["damage"]) * float(def.get("damage_mult", 1.0)), self)
 
 	if not weapon.is_melee():
 		var tracer_color := Color.html(weapon.def.get("tracer_color", "#ffffff"))

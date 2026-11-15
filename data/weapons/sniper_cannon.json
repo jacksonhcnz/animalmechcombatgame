@@ -1,0 +1,14 @@
+{
+	"id": "sniper_cannon",
+	"name": "Sniper Cannon",
+	"kind": "ranged",
+	"slot": "primary",
+	"damage": 38.0,
+	"range": 600.0,
+	"fire_interval": 1.4,
+	"ammo": 40,
+	"weight": 22.0,
+	"ammo_weight": 0.6,
+	"spread_deg": 0.05,
+	"tracer_color": "#9fe8ff"
+}

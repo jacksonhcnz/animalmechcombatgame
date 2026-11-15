@@ -59,6 +59,7 @@ static func validate_all() -> Array[String]:
 	if balance_version() <= 0:
 		problems.append("balance.json: version must be a positive integer")
 	problems.append_array(Points.validate())
+	problems.append_array(Loadout.validate())
 	for kind in ["mechs", "weapons", "rulesets"]:
 		if ids(kind).is_empty():
 			problems.append("%s: no data files found" % kind)

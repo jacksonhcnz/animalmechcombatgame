@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## Options: --server (dedicated, no player), --host (listen server, you play too),
 ## --join=ADDRESS[:PORT], --port=N, --ruleset=ID, --name=PILOT, --mech=ID,
-## --max-players=N, --server-name=TEXT.
+## --max-players=N, --server-name=TEXT, and --primary=ID --secondary=ID --equipment=ID --perk=ID.
 
 const SERVER := "server"
 const HOST := "host"
@@ -21,6 +21,8 @@ static var ruleset_id: String = "standard"
 static var server_name: String = "Animal Mech Combat server"
 static var player_name: String = "Pilot"
 static var mech_id: String = "lion"
+## The four loadout slots (primary, secondary, equipment, perk) as item ids.
+static var loadout: Dictionary = {}
 static var max_players: int = 2
 
 
@@ -48,6 +50,14 @@ static func from_args(args: PackedStringArray) -> bool:
 			player_name = arg.trim_prefix("--name=")
 		elif arg.begins_with("--mech="):
 			mech_id = arg.trim_prefix("--mech=")
+		elif arg.begins_with("--primary="):
+			loadout["primary"] = arg.trim_prefix("--primary=")
+		elif arg.begins_with("--secondary="):
+			loadout["secondary"] = arg.trim_prefix("--secondary=")
+		elif arg.begins_with("--equipment="):
+			loadout["equipment"] = arg.trim_prefix("--equipment=")
+		elif arg.begins_with("--perk="):
+			loadout["perk"] = arg.trim_prefix("--perk=")
 		elif arg.begins_with("--max-players="):
 			max_players = clampi(int(arg.trim_prefix("--max-players=")), 2, NetProtocol.MAX_PLAYERS)
 		elif arg.begins_with("--server-name="):

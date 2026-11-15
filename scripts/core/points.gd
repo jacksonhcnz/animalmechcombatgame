@@ -56,7 +56,7 @@ static func weapons_weight(mech_def: Dictionary) -> float:
 	var sum := 0.0
 	for mount in mech_def.get("mounts", []):
 		sum += float(_weapon(mount).get("weight", 0.0))
-	return sum
+	return sum + float(mech_def.get("gear_weight", 0.0))
 
 
 ## Ammo each mount can carry: its full load, cut back evenly when the mech's carry
@@ -65,13 +65,17 @@ static func ammo_for(mech_def: Dictionary) -> Dictionary:
 	var full_weight := 0.0
 	for mount in mech_def.get("mounts", []):
 		var w := _weapon(mount)
-		full_weight += float(w.get("ammo", 0)) * float(w.get("ammo_weight", 0.0))
+		full_weight += _full_ammo(mech_def, w) * float(w.get("ammo_weight", 0.0))
 	var room := maxf(0.0, carry_capacity(mech_def) - weapons_weight(mech_def))
 	var share := 1.0 if full_weight <= 0.0 else minf(1.0, room / full_weight)
 	var result := {}
 	for mount in mech_def.get("mounts", []):
-		result[mount["id"]] = int(floor(float(_weapon(mount).get("ammo", 0)) * share))
+		result[mount["id"]] = int(floor(_full_ammo(mech_def, _weapon(mount)) * share))
 	return result
+
+
+static func _full_ammo(mech_def: Dictionary, weapon: Dictionary) -> float:
+	return float(weapon.get("ammo", 0)) * float(mech_def.get("ammo_mult", 1.0))
 
 
 static func validate() -> Array[String]:
