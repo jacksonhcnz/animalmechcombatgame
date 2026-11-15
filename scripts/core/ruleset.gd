@@ -17,6 +17,7 @@ const DEFAULTS := {
 	"ammo_limits": true,
 	"friendly_fire": false,
 	"jumping": true,
+	"sprinting": true,
 	"durability_mult": 1.0,
 	"match_time": 0.0,
 }
@@ -43,6 +44,8 @@ var ammo_limits: bool
 var friendly_fire: bool
 ## Ground mechs can jump.
 var jumping: bool
+## Mechs can sprint (hold Shift) for extra speed.
+var sprinting: bool
 ## Multiplies every part's health.
 var durability_mult: float
 ## Match length in seconds. 0 means untimed.

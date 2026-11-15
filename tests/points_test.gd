@@ -33,6 +33,7 @@ func _init() -> void:
 	check(m.weapons[0].ammo == int(hawk_ammo["gun_l"]), "mech spawns with the carried ammo")
 	m.free()
 	_loadouts(lion, hawk)
+	_sprint()
 	await _store_and_menus()
 	var problems := GameData.validate_all()
 	check(problems.is_empty(), "data validates: %s" % str(problems))
@@ -95,3 +96,21 @@ func _store_and_menus() -> void:
 	pause.open()
 	check(pause.is_open(), "pause menu opens")
 	pause.free()
+
+
+func _sprint() -> void:
+	var mech := Mech.create("lion", Ruleset.new())
+	check(is_equal_approx(mech.sprint_mult(), 1.0), "no sprint without the key")
+	mech.controls.sprint = true
+	mech.controls.throttle = 1.0
+	check(mech.sprint_mult() > 1.0, "sprint speeds the mech up")
+	mech.controls.throttle = -1.0
+	check(is_equal_approx(mech.sprint_mult(), 1.0), "no sprint when moving backwards")
+	mech.controls.throttle = 1.0
+	mech.rules.sprinting = false
+	check(is_equal_approx(mech.sprint_mult(), 1.0), "a ruleset can switch sprint off")
+	mech.free()
+	var a := MechControls.new()
+	a.sprint = true
+	var b := MechControls.new()
+	check(NetProtocol.apply_input(b, NetProtocol.pack_input(a, 0.0, 0.0)) and b.sprint, "sprint travels over the network")

@@ -30,6 +30,7 @@ Open the project in Godot 4.7 and press Play. Click the window to capture the mo
 | Move forward / back | W / S | Left stick up / down |
 | Turn the legs | A / D | Left stick left / right |
 | Strafe | Q / E | Shoulder buttons |
+| Sprint (hold, moving forward) | Shift | Left stick click |
 | Aim head and weapons | Mouse | Right stick |
 | Centre the aim | Z | Right stick click |
 | Fire primary / secondary | Left / right mouse button | Right / left trigger |

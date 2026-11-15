@@ -8,6 +8,7 @@ var strafe: float = 0.0
 var turn: float = 0.0
 var vertical: float = 0.0
 var jump: bool = false
+var sprint: bool = false
 ## Where the pilot is aiming, as absolute angles. NAN means "use the aim deltas instead".
 ## A server uses these, because a lost packet must not lose a turn.
 var aim_yaw_target: float = NAN
@@ -26,6 +27,7 @@ func clear() -> void:
 	turn = 0.0
 	vertical = 0.0
 	jump = false
+	sprint = false
 	aim_yaw_delta = 0.0
 	aim_pitch_delta = 0.0
 	center_aim = false
