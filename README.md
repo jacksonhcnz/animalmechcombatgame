@@ -58,6 +58,10 @@ Other options: `--host` (listen server, you play too), `--join=ADDRESS[:PORT]`, 
 
 The server decides movement, shooting and damage. There is no client-side prediction or lag compensation yet, so expect the local mech to feel a little delayed on high latency; those come in a later milestone. The game never needs an official server: LAN and direct connect always work.
 
+## Building the Windows game
+
+`tools/build_windows.sh` exports `build/AnimalMechCombat.exe` (a single file, no install needed) and, if NSIS is installed, `build/AnimalMechCombat-Setup.exe` (a per-user installer with Start menu and desktop shortcuts and an uninstaller). It needs Godot's export templates for your Godot version (Editor > Manage Export Templates). The exe is not code-signed, so Windows SmartScreen may warn the first time it runs.
+
 ## Project layout
 
 - `assets/`: art and audio (CC BY-SA 4.0)
