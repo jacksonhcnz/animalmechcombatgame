@@ -87,6 +87,10 @@ static func _validate_weapon(id: String) -> Array[String]:
 	for key in ["damage", "range", "fire_interval"]:
 		if float(w.get(key, 0.0)) <= 0.0:
 			p.append("%s: %s must be greater than 0" % [tag, key])
+	if w.has("visual"):
+		p.append_array(_validate_visual(tag, w["visual"]))
+		if float(w.get("muzzle", 0.0)) <= 0.0:
+			p.append("%s: a weapon with a visual needs muzzle (how far in front of its mount the shots start)" % tag)
 	if w.get("kind", "") == "ranged":
 		if int(w.get("ammo", 0)) <= 0:
 			p.append("%s: ranged weapons need ammo greater than 0" % tag)

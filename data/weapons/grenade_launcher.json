@@ -10,5 +10,22 @@
 	"weight": 14.0,
 	"ammo_weight": 0.5,
 	"spread_deg": 2.0,
-	"tracer_color": "#b6ff6a"
+	"tracer_color": "#b6ff6a",
+	"muzzle": 1.7,
+	"visual": [
+		{"shape": "cylinder", "size": [0.8, 1.4, 0.8], "pos": [0, 0, -0.7], "tone": "primary", "rot_deg": [90, 0, 0]},
+		{"shape": "cylinder", "size": [1.0, 0.2, 1.0], "pos": [0, 0, -1.45], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "cylinder", "size": [0.55, 0.4, 0.55], "pos": [0, 0, -1.6], "tone": "dark", "rot_deg": [90, 0, 0]},
+		{"shape": "cylinder", "size": [1.05, 0.55, 1.05], "pos": [0, 0, 0.25], "tone": "accent", "rot_deg": [90, 0, 0]},
+		{"shape": "box", "size": [0.5, 0.4, 0.6], "pos": [0, 0.55, 0.6], "tone": "dark"},
+		{"shape": "box", "size": [0.9, 0.5, 0.4], "pos": [0, -0.45, 0.7], "tone": "dark"},
+		{"shape": "box", "size": [0.08, 0.4, 0.6], "pos": [0, 0.2, -0.2], "tone": "metal"},
+		{"shape": "hex", "size": [0.16, 0.08, 0.16], "pos": [0.38, 0.0, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "hex", "size": [0.16, 0.08, 0.16], "pos": [0.19, 0.329, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "hex", "size": [0.16, 0.08, 0.16], "pos": [-0.19, 0.329, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "hex", "size": [0.16, 0.08, 0.16], "pos": [-0.38, 0.0, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "hex", "size": [0.16, 0.08, 0.16], "pos": [-0.19, -0.329, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "hex", "size": [0.16, 0.08, 0.16], "pos": [0.19, -0.329, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]},
+		{"shape": "hex", "size": [0.5, 0.1, 0.5], "pos": [0, 0, 0.55], "tone": "metal", "rot_deg": [90, 0, 0]}
+	]
 }
