@@ -3,7 +3,7 @@ extends Node3D
 ## Used to try every mech, weapon and ruleset offline.
 ##
 ## Keys: 1/2/3 pick Lion/Velociraptor/Hawk, F1/F2/F4/F5 pick Practice/Standard/Hardcore/Arcade,
-## F3 developer overlay, R restart, Esc releases the mouse, click to capture it.
+## F3 developer overlay, R restart, Esc opens the pause menu (resume or main menu), click to capture the mouse.
 
 const MECH_KEYS := {KEY_1: "lion", KEY_2: "velociraptor", KEY_3: "hawk"}
 const RULESET_KEYS := {KEY_F1: "practice", KEY_F2: "standard", KEY_F4: "hardcore", KEY_F5: "arcade"}
@@ -33,6 +33,7 @@ var _time_left: float = 0.0
 var _match_over: bool = false
 var _generation: int = 0
 var _mechs_root: Node3D
+var _pause: PauseMenu
 
 
 func _ready() -> void:
@@ -44,6 +45,11 @@ func _ready() -> void:
 	add_child(_mechs_root)
 	hud = Hud.new()
 	add_child(hud)
+	_pause = PauseMenu.new()
+	add_child(_pause)
+	_pause.leave_requested.connect(func() -> void:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn"))
 	controller = PlayerController.new()
 	add_child(controller)
 	start(player_mech_id, ruleset_id)
@@ -61,7 +67,7 @@ func start(mech_id: String, new_ruleset_id: String) -> void:
 	_match_over = false
 	_time_left = rules.match_time
 
-	player = Mech.create(player_mech_id, rules)
+	player = Mech.create(player_mech_id, rules, LoadoutStore.active_loadout(player_mech_id))
 	player.team = 1
 	player.altitude_limit = ALTITUDE_LIMIT
 	_mechs_root.add_child(player)
@@ -95,11 +101,11 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not _pause.is_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_pause.toggle()
 		elif event.keycode == KEY_F3:
 			hud.toggle_debug()
 		elif event.keycode == KEY_BRACKETLEFT or event.keycode == KEY_BRACKETRIGHT:

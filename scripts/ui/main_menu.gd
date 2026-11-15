@@ -10,7 +10,6 @@ static var pending_message: String = ""
 var _name_edit: LineEdit
 var _address_edit: LineEdit
 var _mech_pick: OptionButton
-var _slot_picks: Dictionary = {}
 var _load_label: Label
 var _ruleset_pick: OptionButton
 var _status: Label
@@ -53,17 +52,15 @@ func _build() -> void:
 	_mech_pick = _row(box, "Mech", OptionButton.new()) as OptionButton
 	for id in GameData.ids("mechs"):
 		_mech_pick.add_item(id)
+	_mech_pick.select(maxi(0, GameData.ids("mechs").find(LaunchConfig.mech_id)))
 	_mech_pick.item_selected.connect(func(_i: int) -> void: _update_load())
-	for slot in Loadout.SLOTS:
-		var pick := _row(box, slot.capitalize(), OptionButton.new()) as OptionButton
-		for id in Loadout.options(slot):
-			pick.add_item(str(Loadout.item(slot, id).get("name", id)))
-			pick.set_item_metadata(pick.item_count - 1, id)
-		pick.select(Loadout.options(slot).find(Loadout.DEFAULT[slot]))
-		pick.item_selected.connect(func(_i: int) -> void: _update_load())
-		_slot_picks[slot] = pick
 	_load_label = Label.new()
+	_load_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(_load_label)
+	_button(box, "Loadouts", func() -> void:
+		LaunchConfig.player_name = _name_edit.text.strip_edges() if _name_edit.text.strip_edges() != "" else "Pilot"
+		LaunchConfig.mech_id = _mech_pick.get_item_text(_mech_pick.selected)
+		get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn"))
 	_update_load()
 	_ruleset_pick = _row(box, "Ruleset (hosting)", OptionButton.new()) as OptionButton
 	for id in GameData.ids("rulesets"):
@@ -85,23 +82,12 @@ func _build() -> void:
 	_button(box, "Quit", func() -> void: get_tree().quit())
 
 
-func _chosen_loadout() -> Dictionary:
-	var choice := {}
-	for slot in Loadout.SLOTS:
-		var pick: OptionButton = _slot_picks[slot]
-		choice[slot] = pick.get_item_metadata(pick.selected)
-	return choice
-
-
-## Shows how heavy the chosen loadout is against what the mech can carry.
+## Shows the loadout in use for the chosen mech and how heavy it is.
 func _update_load() -> void:
-	var mech_def := GameData.get_entry("mechs", _mech_pick.get_item_text(_mech_pick.selected))
-	var choice := _chosen_loadout()
-	var used := Loadout.weight(mech_def, choice)
-	var capacity := Points.carry_capacity(mech_def)
-	var ok := used <= capacity
-	_load_label.text = "Carrying %.0f of %.0f%s" % [used, capacity, "" if ok else "  - too heavy, the default loadout will be used"]
-	_load_label.modulate = Color.WHITE if ok else Color(1.0, 0.5, 0.4)
+	var mech_id := _mech_pick.get_item_text(_mech_pick.selected)
+	var mech_def := GameData.get_entry("mechs", mech_id)
+	var choice := LoadoutStore.active_loadout(mech_id)
+	_load_label.text = "Loadout: %s (%s)\nCarrying %.0f of %.0f" % [LoadoutStore.active_name(mech_id), LoadoutStore.summary(choice), Loadout.weight(mech_def, choice), Points.carry_capacity(mech_def)]
 
 
 func _row(parent: Control, label_text: String, control: Control) -> Control:
@@ -128,7 +114,7 @@ func _read_choices() -> void:
 	var cleaned := _name_edit.text.strip_edges()
 	LaunchConfig.player_name = cleaned if cleaned != "" else "Pilot"
 	LaunchConfig.mech_id = _mech_pick.get_item_text(_mech_pick.selected)
-	LaunchConfig.loadout = _chosen_loadout()
+	LaunchConfig.loadout = LoadoutStore.active_loadout(LaunchConfig.mech_id)
 	LaunchConfig.ruleset_id = _ruleset_pick.get_item_text(_ruleset_pick.selected)
 	LaunchConfig.server_name = "%s's match" % LaunchConfig.player_name
 

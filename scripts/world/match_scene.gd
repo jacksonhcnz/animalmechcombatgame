@@ -10,6 +10,7 @@ var controller: PlayerController
 var status_text: String = ""
 
 var _mechs_root: Node3D
+var _pause: PauseMenu
 
 
 func _ready() -> void:
@@ -22,6 +23,9 @@ func _ready() -> void:
 	add_child(_mechs_root)
 	hud = Hud.new()
 	add_child(hud)
+	_pause = PauseMenu.new()
+	add_child(_pause)
+	_pause.leave_requested.connect(func() -> void: _leave(""))
 	controller = PlayerController.new()
 	controller.enabled = false
 	add_child(controller)
@@ -54,11 +58,11 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not _headless():
+	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not _headless() and not _pause.is_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_pause.toggle()
 		elif event.keycode == KEY_F3:
 			hud.toggle_debug()
 		elif event.keycode == KEY_F10:
