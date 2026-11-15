@@ -22,6 +22,8 @@ const AIR_ACCEL := 3.0
 const SINK_SPEED := 14.0
 const AIR_CONTROL := 1.5
 const DEAD_COLOR := Color("#2b2b2b")
+## The colour of the tone "metal" in a part's visual pieces (silver bolts, nuts and joints).
+const METAL_COLOR := Color("#d3d6da")
 
 var def: Dictionary
 var rules: Ruleset
@@ -54,6 +56,8 @@ var _part_defs: Dictionary = {}
 var _part_meshes: Dictionary = {}
 var _hitboxes: Dictionary = {}
 var _base_colors: Dictionary = {}
+## Extra visual pieces of a part: part id -> [[material, base colour], ...]
+var _piece_materials: Dictionary = {}
 var _own_rids: Array[RID] = []
 var _aim_pivot: Node3D
 var _aim_base_y: float = 0.0
@@ -439,6 +443,11 @@ func _build_body() -> void:
 		mesh_node.material_override = material
 		mesh_node.position = local
 		mesh_node.rotation_degrees = rot
+		if part.has("visual"):
+			# The part is drawn as a set of shaped pieces instead of its plain box. Its hitbox
+			# still uses `size`, so the look can change without changing gameplay.
+			mesh_node.mesh = null
+			_build_visual(part_id, mesh_node, part["visual"], palette)
 		pivots[part_id].add_child(mesh_node)
 		_part_meshes[part_id] = mesh_node
 		_base_colors[part_id] = color
@@ -474,6 +483,113 @@ func _build_body() -> void:
 	add_child(_third_pivot)
 
 
+## Builds the shaped pieces of a part (see data/README.md, "visual").
+func _build_visual(part_id: String, holder: Node3D, pieces: Array, palette: Dictionary) -> void:
+	var materials: Array = []
+	for piece in pieces:
+		var mesh_piece := MeshInstance3D.new()
+		var size := _vec3(piece["size"]) if piece.has("size") else Vector3.ONE
+		match piece.get("shape", "box"):
+			"plate":
+				mesh_piece.mesh = _plate_mesh(piece["points"], float(piece["thickness"]), float(piece.get("round", 0.0)))
+			"sphere":
+				var sphere := SphereMesh.new()
+				sphere.radius = size.x * 0.5
+				sphere.height = size.x
+				sphere.radial_segments = 16
+				sphere.rings = 8
+				mesh_piece.mesh = sphere
+			"cylinder", "hex":
+				var cylinder := CylinderMesh.new()
+				cylinder.top_radius = size.x * 0.5
+				cylinder.bottom_radius = size.x * 0.5
+				cylinder.height = size.y
+				cylinder.radial_segments = 6 if piece["shape"] == "hex" else 16
+				cylinder.rings = 1
+				mesh_piece.mesh = cylinder
+			_:
+				var box := BoxMesh.new()
+				box.size = size
+				mesh_piece.mesh = box
+		var tone: String = piece["tone"]
+		var color := METAL_COLOR if tone == "metal" else Color.html(palette[tone])
+		var material := StandardMaterial3D.new()
+		material.albedo_color = color
+		material.roughness = 1.0
+		mesh_piece.material_override = material
+		mesh_piece.position = _vec3(piece.get("pos", [0.0, 0.0, 0.0]))
+		mesh_piece.rotation_degrees = _vec3(piece.get("rot_deg", [0.0, 0.0, 0.0]))
+		holder.add_child(mesh_piece)
+		materials.append([material, color])
+	_piece_materials[part_id] = materials
+
+
+## A flat plate: the outline `points` ([x, y] pairs, drawn in the piece's own XY plane) pushed out
+## to `thickness` along Z, with corners rounded by `round_radius`. Like a stamped metal plate.
+static func _plate_mesh(points: Array, thickness: float, round_radius: float) -> ArrayMesh:
+	var outline := PackedVector2Array()
+	for point in points:
+		outline.append(Vector2(float(point[0]), float(point[1])))
+	if round_radius > 0.0:
+		outline = _round_outline(outline, round_radius)
+	if Geometry2D.is_polygon_clockwise(outline):
+		outline.reverse()
+	var half := thickness * 0.5
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var cap := Geometry2D.triangulate_polygon(outline)
+	for face in [1.0, -1.0]:
+		var normal := Vector3(0.0, 0.0, face)
+		for k in range(0, cap.size(), 3):
+			_add_triangle(tool, normal,
+				Vector3(outline[cap[k]].x, outline[cap[k]].y, half * face),
+				Vector3(outline[cap[k + 1]].x, outline[cap[k + 1]].y, half * face),
+				Vector3(outline[cap[k + 2]].x, outline[cap[k + 2]].y, half * face))
+	for i in outline.size():
+		var a := outline[i]
+		var b := outline[(i + 1) % outline.size()]
+		if a.is_equal_approx(b):
+			continue
+		var edge := b - a
+		var side := Vector3(edge.y, -edge.x, 0.0).normalized()
+		var a_top := Vector3(a.x, a.y, half)
+		var b_top := Vector3(b.x, b.y, half)
+		var a_bottom := Vector3(a.x, a.y, -half)
+		var b_bottom := Vector3(b.x, b.y, -half)
+		_add_triangle(tool, side, a_top, b_top, b_bottom)
+		_add_triangle(tool, side, a_top, b_bottom, a_bottom)
+	return tool.commit()
+
+
+## Adds one triangle, ordered so that it faces along `normal` (Godot treats clockwise as the front).
+static func _add_triangle(tool: SurfaceTool, normal: Vector3, p0: Vector3, p1: Vector3, p2: Vector3) -> void:
+	if (p1 - p0).cross(p2 - p0).dot(normal) > 0.0:
+		var swap := p1
+		p1 = p2
+		p2 = swap
+	for point in [p0, p1, p2]:
+		tool.set_normal(normal)
+		tool.add_vertex(point)
+
+
+## Rounds every corner of an outline with a small curve of the given radius.
+static func _round_outline(outline: PackedVector2Array, radius: float) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	var count := outline.size()
+	var steps := 4
+	for i in count:
+		var corner := outline[i]
+		var to_prev := outline[(i - 1 + count) % count] - corner
+		var to_next := outline[(i + 1) % count] - corner
+		var reach := minf(radius, minf(to_prev.length(), to_next.length()) * 0.5)
+		var start := corner + to_prev.normalized() * reach
+		var end := corner + to_next.normalized() * reach
+		for k in steps + 1:
+			var f := float(k) / float(steps)
+			result.append(start * (1.0 - f) * (1.0 - f) + corner * 2.0 * f * (1.0 - f) + end * f * f)
+	return result
+
+
 func _update_cameras() -> void:
 	if cockpit_camera == null:
 		return
@@ -493,6 +609,10 @@ func _refresh_colors() -> void:
 		else:
 			color = color.lerp(DEAD_COLOR, (1.0 - ratio) * 0.6)
 		_part_meshes[part_id].material_override.albedo_color = color
+		var tint := 1.0 if (_dead or (rules.location_damage and damage.is_part_disabled(part_id))) else (1.0 - ratio) * 0.6
+		for piece in _piece_materials.get(part_id, []):
+			var base: Color = piece[1]
+			piece[0].albedo_color = base.lerp(DEAD_COLOR, tint)
 
 
 func _on_part_disabled(part_id: String) -> void:
