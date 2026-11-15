@@ -7,6 +7,8 @@
 	"range": 400.0,
 	"fire_interval": 0.9,
 	"ammo": 24,
+	"weight": 20.0,
+	"ammo_weight": 1.0,
 	"spread_deg": 1.2,
 	"tracer_color": "#ff8a4a"
 }

@@ -88,8 +88,11 @@ func setup(mech_id: String, ruleset: Ruleset) -> void:
 	damage = DamageModel.new(def, ruleset)
 	damage.part_disabled.connect(_on_part_disabled)
 	damage.destroyed.connect(_on_destroyed)
+	var ammo_load := Points.ammo_for(def)
 	for mount in def.get("mounts", []):
-		weapons.append(WeaponState.new(mount["id"], GameData.get_entry("weapons", mount["weapon"])))
+		var weapon := WeaponState.new(mount["id"], GameData.get_entry("weapons", mount["weapon"]))
+		weapon.ammo = int(ammo_load.get(mount["id"], weapon.ammo))
+		weapons.append(weapon)
 	_build_body()
 	animator = MechAnimator.new(self)
 

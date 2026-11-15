@@ -7,11 +7,12 @@
 		"accent": "#2e7d3c",
 		"dark": "#9a6a30"
 	},
+	"points": {
+		"speed": 22,
+		"armor": 3,
+		"carry": 5
+	},
 	"base": {
-		"speed": 28.0,
-		"turn_rate": 2.6,
-		"armor": 0.8,
-		"climb_speed": 14.0,
 		"spawn_height": 18.0,
 		"twist_limit_deg": 120.0,
 		"pitch_min_deg": -50.0,
