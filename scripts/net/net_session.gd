@@ -67,6 +67,8 @@ var _buffers: Dictionary = {}
 var _pilot_name: String = ""
 var _mech_choice: String = ""
 var _loadout_choice: Dictionary = {}
+## Display copies of the server's projectiles, by id (clients only).
+var _shots: Dictionary = {}
 ## Tests only: pretend to have a different balance version.
 var test_balance: int = -1
 
@@ -297,6 +299,12 @@ func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	mech.fired.connect(func(from: Vector3, to: Vector3, color: Color) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_tracer.rpc(from, to, color.to_html(false)))
+	mech.projectile_launched.connect(func(info: Dictionary) -> void:
+		if not multiplayer.get_peers().is_empty():
+			s_projectile.rpc(info))
+	mech.projectile_ended.connect(func(id: int, pos: Vector3, exploded: bool) -> void:
+		if not multiplayer.get_peers().is_empty():
+			s_projectile_end.rpc(id, pos, exploded))
 	if slot.is_local:
 		mech.make_player()
 		local_mech = mech
@@ -612,6 +620,29 @@ func s_match(state: Dictionary) -> void:
 @rpc("authority", "call_remote", "unreliable")
 func s_tracer(from: Vector3, to: Vector3, color_html: String) -> void:
 	Mech.spawn_tracer(mechs_root, from, to, Color.html(color_html))
+
+
+## A projectile left a muzzle. The client flies a display copy the same way.
+@rpc("authority", "call_remote", "reliable")
+func s_projectile(info: Dictionary) -> void:
+	if not (info.get("pos") is Vector3 and info.get("vel") is Vector3):
+		return
+	var shot := Projectile.from_info(info)
+	_shots[shot.id] = shot
+	shot.tree_exited.connect(func() -> void: _shots.erase(shot.id))
+	mechs_root.add_child(shot)
+	shot.global_position = info["pos"]
+
+
+## The server says a projectile ended: remove the copy and show the burst.
+@rpc("authority", "call_remote", "reliable")
+func s_projectile_end(id: int, pos: Vector3, exploded: bool) -> void:
+	var shot: Projectile = _shots.get(id)
+	if shot != null and is_instance_valid(shot):
+		if exploded:
+			Projectile.spawn_explosion(mechs_root, pos, shot.splash_radius, shot.color)
+		shot.queue_free()
+	_shots.erase(id)
 
 
 ## Where every mech is, a few times a second.

@@ -11,6 +11,10 @@ signal part_disabled(part_id: String)
 signal destroyed(mech: Mech)
 ## A shot was fired. Servers broadcast it so every client can draw the tracer.
 signal fired(from: Vector3, to: Vector3, color: Color)
+## A real projectile left the muzzle: its start data, so a server can tell its clients.
+signal projectile_launched(info: Dictionary)
+## A projectile ended (hit something or ran out of life) at a position.
+signal projectile_ended(id: int, pos: Vector3, exploded: bool)
 
 const LAYER_WORLD := 1
 const LAYER_HITBOX := 2
@@ -86,6 +90,7 @@ static func create_remote(mech_id: String, ruleset: Ruleset) -> Mech:
 func setup(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}) -> void:
 	def = Loadout.apply(GameData.get_entry("mechs", mech_id), loadout)
 	rules = ruleset
+	add_to_group("mechs")
 	name = def.get("name", mech_id)
 	damage = DamageModel.new(def, ruleset)
 	damage.part_disabled.connect(_on_part_disabled)
@@ -336,6 +341,9 @@ func _handle_fire() -> void:
 
 
 func _fire(weapon: WeaponState) -> void:
+	if weapon.def.has("projectile"):
+		_launch(weapon)
+		return
 	var origin := aim_origin()
 	var dir := aim_direction()
 	var spread := deg_to_rad(float(weapon.def.get("spread_deg", 0.0)))
@@ -362,6 +370,51 @@ func _fire(weapon: WeaponState) -> void:
 		var muzzle := mount_position(weapon.mount_id)
 		fired.emit(muzzle, end, tracer_color)
 		spawn_tracer(get_parent(), muzzle, end, tracer_color)
+
+
+## Fires a projectile from the muzzle at the point the crosshair is on. Grenades are lobbed
+## on an arc to land there.
+func _launch(weapon: WeaponState) -> void:
+	var origin := aim_origin()
+	var dir := aim_direction()
+	var spread := deg_to_rad(float(weapon.def.get("spread_deg", 0.0)))
+	if spread > 0.0:
+		dir = _apply_spread(dir, spread)
+	var reach := float(weapon.def["range"])
+	var aim_point := origin + dir * reach
+	var query := PhysicsRayQueryParameters3D.create(origin, aim_point, LAYER_WORLD | LAYER_HITBOX)
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
+	query.exclude = _own_rids
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		aim_point = hit["position"]
+	var muzzle := mount_position(weapon.mount_id)
+	var shot := Projectile.fire(weapon.def, muzzle, aim_point, self, float(def.get("damage_mult", 1.0)))
+	var parent := get_parent()
+	if parent == null:
+		shot.free()
+		return
+	parent.add_child(shot)
+	shot.global_position = muzzle
+	shot.finished.connect(func(id: int, pos: Vector3, exploded: bool) -> void: projectile_ended.emit(id, pos, exploded))
+	projectile_launched.emit(shot.to_info())
+
+
+func own_rids() -> Array[RID]:
+	return _own_rids
+
+
+## The part whose hitbox is nearest a point, as [part id, distance]. Used for blast damage.
+func nearest_part(point: Vector3) -> Array:
+	var best_id := ""
+	var best := INF
+	for part_id in _hitboxes:
+		var distance := (_hitboxes[part_id] as Node3D).global_position.distance_to(point)
+		if distance < best:
+			best = distance
+			best_id = part_id
+	return [best_id, best]
 
 
 func _apply_spread(dir: Vector3, spread: float) -> Vector3:

@@ -10,6 +10,7 @@
 	"weight": 10.0,
 	"ammo_weight": 0.2,
 	"spread_deg": 3.0,
+	"projectile": {"model": "pellet", "speed": 180.0, "gravity": 4.0, "splash_radius": 4.0, "splash_damage": 8.0},
 	"tracer_color": "#ff6ad5",
 	"muzzle": 1.6,
 	"visual": [
