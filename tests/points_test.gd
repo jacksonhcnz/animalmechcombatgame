@@ -33,6 +33,7 @@ func _init() -> void:
 	check(m.weapons[0].ammo == int(hawk_ammo["gun_l"]), "mech spawns with the carried ammo")
 	m.free()
 	_loadouts(lion, hawk)
+	await _store_and_menus()
 	var problems := GameData.validate_all()
 	check(problems.is_empty(), "data validates: %s" % str(problems))
 	if failures > 0:
@@ -62,3 +63,35 @@ func _loadouts(lion: Dictionary, hawk: Dictionary) -> void:
 	var crate := Points.ammo_for(Loadout.apply(lion, {"equipment": "ammo_crate"}))
 	check(int(crate["gun_l"]) > 400, "ammo crate carries more rounds when there is room")
 	check(gun["mounts"][0]["weapon"] == "machine_gun", "mount weapon swapped")
+
+
+func _store_and_menus() -> void:
+	LoadoutStore.path = "user://loadouts_test.json"
+	DirAccess.remove_absolute(LoadoutStore.path)
+	LoadoutStore.reset()
+	check(LoadoutStore.slots("lion").size() == 4, "four boxes per mech")
+	check(LoadoutStore.active_name("lion") == "Loadout 1", "default box name")
+	LoadoutStore.save_slot("lion", 2, "  Sniper nest  ", {"primary": "sniper_cannon", "perk": "hardened"})
+	LoadoutStore.set_active("lion", 2)
+	LoadoutStore.reset()
+	check(LoadoutStore.active_index("lion") == 2, "active box is remembered")
+	check(LoadoutStore.active_name("lion") == "Sniper nest", "box name is saved and trimmed")
+	check(LoadoutStore.active_loadout("lion")["primary"] == "sniper_cannon", "active loadout is the saved one")
+	check(LoadoutStore.active_loadout("hawk")["primary"] == "autocannon", "other mechs are untouched")
+	LoadoutStore.save_slot("hawk", 0, "", {"primary": "sniper_cannon", "equipment": "armor_plating"})
+	check(LoadoutStore.active_loadout("hawk") == Loadout.default_loadout(), "a loadout too heavy for the mech is not used")
+	DirAccess.remove_absolute(LoadoutStore.path)
+	LoadoutStore.reset()
+	for scene in ["res://scenes/main_menu.tscn", "res://scenes/loadout_menu.tscn"]:
+		var menu: Node = load(scene).instantiate()
+		root.add_child(menu)
+		await process_frame
+		check(menu.get_child_count() > 0, "%s builds" % scene)
+		menu.free()
+	var pause := PauseMenu.new()
+	root.add_child(pause)
+	await process_frame
+	check(not pause.is_open(), "pause menu starts closed")
+	pause.open()
+	check(pause.is_open(), "pause menu opens")
+	pause.free()

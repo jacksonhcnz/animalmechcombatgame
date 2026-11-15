@@ -23,7 +23,7 @@ An open-source, multiplayer tournament game where players pilot animal-shaped me
 
 ## Try the test range
 
-Open the project in Godot 4.7 and press Play. Click the window to capture the mouse, and press Esc to release it.
+Open the project in Godot 4.7 and press Play. Click the window to capture the mouse, and press Esc to open the pause menu (resume or return to the main menu).
 
 | Action | Keyboard and mouse | Gamepad |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ All gameplay numbers (mech parts and stats, weapons, rulesets) are JSON files in
 
 ## Multiplayer
 
-The game opens on a menu: **Test range** (offline), **Host a match**, **Join by address** and **Scan local network**. A match is a timed 1v1 (up to 8 pilots can join; most kills when the time runs out wins). `F10` leaves a match.
+The game opens on a menu: **Test range** (offline), **Host a match**, **Join by address** and **Scan local network**. A match is a timed 1v1 (up to 8 pilots can join; most kills when the time runs out wins). Esc opens a pause menu with a Main menu button (`F10` also leaves a match). **Loadouts** on the menu opens four named loadout boxes per mech: Use picks the one taken into matches, Edit renames it and sets primary, secondary, equipment and perk. They are saved in the game's user folder.
 
 Run a dedicated server (no player, no window needed) on any machine with Godot:
 
