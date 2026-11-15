@@ -8,6 +8,7 @@ const VISUAL_SHAPES: Array[String] = ["box", "sphere", "cylinder", "hex", "plate
 const MOVEMENT_TYPES: Array[String] = ["ground", "flying"]
 const WEAPON_KINDS: Array[String] = ["ranged", "melee"]
 const WEAPON_SLOTS: Array[String] = ["primary", "secondary", "melee"]
+const PROJECTILE_MODELS: Array[String] = ["bullet", "pellet", "rocket", "grenade"]
 const TONES: Array[String] = ["primary", "accent", "dark"]
 
 static var _cache: Dictionary = {}
@@ -87,6 +88,16 @@ static func _validate_weapon(id: String) -> Array[String]:
 	for key in ["damage", "range", "fire_interval"]:
 		if float(w.get(key, 0.0)) <= 0.0:
 			p.append("%s: %s must be greater than 0" % [tag, key])
+	if w.has("projectile"):
+		var shot: Variant = w["projectile"]
+		if not shot is Dictionary or float(shot.get("speed", 0.0)) <= 0.0:
+			p.append("%s: projectile needs a speed above 0" % tag)
+		elif not PROJECTILE_MODELS.has(str(shot.get("model", ""))):
+			p.append("%s: projectile model must be one of %s" % [tag, PROJECTILE_MODELS])
+		elif float(shot.get("gravity", 0.0)) < 0.0 or float(shot.get("splash_radius", 0.0)) < 0.0 or float(shot.get("splash_damage", 0.0)) < 0.0:
+			p.append("%s: projectile gravity, splash_radius and splash_damage cannot be negative" % tag)
+		if w.get("kind", "") == "melee":
+			p.append("%s: melee weapons cannot fire projectiles" % tag)
 	if w.has("visual"):
 		p.append_array(_validate_visual(tag, w["visual"]))
 		if float(w.get("muzzle", 0.0)) <= 0.0:

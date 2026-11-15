@@ -10,6 +10,7 @@
 	"weight": 20.0,
 	"ammo_weight": 1.0,
 	"spread_deg": 1.2,
+	"projectile": {"model": "rocket", "speed": 130.0, "splash_radius": 6.0, "splash_damage": 25.0},
 	"tracer_color": "#ff8a4a",
 	"muzzle": 1.0,
 	"visual": [

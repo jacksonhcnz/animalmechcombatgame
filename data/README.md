@@ -64,3 +64,7 @@ Hold Shift (gamepad: left stick click) while moving forward to move faster. `poi
 ## Weapon models
 
 A ranged weapon can have a `visual` (the same pieces as a part, drawn with `-Z` as forward) and a `muzzle` distance. The gun is drawn on the part its mount sits on, so choosing a different weapon in the loadout changes what the mech carries. Colours come from the mech's palette (`metal` stays silver). A mount can set `gun_scale` and `gun_offset` (the velociraptor's small hands use 0.55). Shots start at the muzzle. The lion's and hawk's gun pods are now plain mounting brackets.
+
+## Projectiles
+
+A ranged weapon with a `projectile` block fires a real shot that flies, instead of hitting instantly: `model` (`bullet`, `pellet`, `rocket` or `grenade`), `speed` (m/s), optional `gravity` (a grenade arcs under it), optional `min_arc_deg` (the flattest lob; a close target is lobbed slower so the arc stays visible), `splash_radius` and `splash_damage` (a blast that hurts other mechs near where it lands, weaker with distance). Shots start at the gun's muzzle and head for the point under the crosshair, which for a grenade means a lobbed arc that lands there. The server flies and judges every shot; clients draw a copy and show the burst when told. Weapons without `projectile` are still instant hits. Direct hits do the weapon's `damage` to the part hit.

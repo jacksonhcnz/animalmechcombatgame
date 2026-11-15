@@ -10,6 +10,7 @@
 	"weight": 12.0,
 	"ammo_weight": 0.03,
 	"spread_deg": 0.9,
+	"projectile": {"model": "bullet", "speed": 240.0},
 	"tracer_color": "#fff0a0",
 	"muzzle": 1.5,
 	"visual": [

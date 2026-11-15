@@ -10,6 +10,7 @@
 	"weight": 14.0,
 	"ammo_weight": 0.5,
 	"spread_deg": 2.0,
+	"projectile": {"model": "grenade", "speed": 75.0, "gravity": 22.0, "min_arc_deg": 20.0, "splash_radius": 7.0, "splash_damage": 30.0},
 	"tracer_color": "#b6ff6a",
 	"muzzle": 1.7,
 	"visual": [
