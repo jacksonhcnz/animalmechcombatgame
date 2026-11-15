@@ -22,6 +22,8 @@ const AIR_ACCEL := 3.0
 const SINK_SPEED := 14.0
 const AIR_CONTROL := 1.5
 const DEAD_COLOR := Color("#2b2b2b")
+## The colour of the tone "metal" in a part's visual pieces (bolts, nuts, joints).
+const METAL_COLOR := Color("#cfd3d8")
 
 var def: Dictionary
 var rules: Ruleset
@@ -54,6 +56,8 @@ var _part_defs: Dictionary = {}
 var _part_meshes: Dictionary = {}
 var _hitboxes: Dictionary = {}
 var _base_colors: Dictionary = {}
+## Extra visual pieces of a part: part id -> [[material, base colour], ...]
+var _piece_materials: Dictionary = {}
 var _own_rids: Array[RID] = []
 var _aim_pivot: Node3D
 var _aim_base_y: float = 0.0
@@ -439,6 +443,11 @@ func _build_body() -> void:
 		mesh_node.material_override = material
 		mesh_node.position = local
 		mesh_node.rotation_degrees = rot
+		if part.has("visual"):
+			# The part is drawn as a set of shaped pieces instead of its plain box. Its hitbox
+			# still uses `size`, so the look can change without changing gameplay.
+			mesh_node.mesh = null
+			_build_visual(part_id, mesh_node, part["visual"], palette)
 		pivots[part_id].add_child(mesh_node)
 		_part_meshes[part_id] = mesh_node
 		_base_colors[part_id] = color
@@ -474,6 +483,45 @@ func _build_body() -> void:
 	add_child(_third_pivot)
 
 
+## Builds the shaped pieces of a part (see data/README.md, "visual").
+func _build_visual(part_id: String, holder: Node3D, pieces: Array, palette: Dictionary) -> void:
+	var materials: Array = []
+	for piece in pieces:
+		var mesh_piece := MeshInstance3D.new()
+		var size := _vec3(piece["size"])
+		match piece.get("shape", "box"):
+			"sphere":
+				var sphere := SphereMesh.new()
+				sphere.radius = size.x * 0.5
+				sphere.height = size.x
+				sphere.radial_segments = 16
+				sphere.rings = 8
+				mesh_piece.mesh = sphere
+			"cylinder", "hex":
+				var cylinder := CylinderMesh.new()
+				cylinder.top_radius = size.x * 0.5
+				cylinder.bottom_radius = size.x * 0.5
+				cylinder.height = size.y
+				cylinder.radial_segments = 6 if piece["shape"] == "hex" else 16
+				cylinder.rings = 1
+				mesh_piece.mesh = cylinder
+			_:
+				var box := BoxMesh.new()
+				box.size = size
+				mesh_piece.mesh = box
+		var tone: String = piece["tone"]
+		var color := METAL_COLOR if tone == "metal" else Color.html(palette[tone])
+		var material := StandardMaterial3D.new()
+		material.albedo_color = color
+		material.roughness = 1.0
+		mesh_piece.material_override = material
+		mesh_piece.position = _vec3(piece.get("pos", [0.0, 0.0, 0.0]))
+		mesh_piece.rotation_degrees = _vec3(piece.get("rot_deg", [0.0, 0.0, 0.0]))
+		holder.add_child(mesh_piece)
+		materials.append([material, color])
+	_piece_materials[part_id] = materials
+
+
 func _update_cameras() -> void:
 	if cockpit_camera == null:
 		return
@@ -493,6 +541,10 @@ func _refresh_colors() -> void:
 		else:
 			color = color.lerp(DEAD_COLOR, (1.0 - ratio) * 0.6)
 		_part_meshes[part_id].material_override.albedo_color = color
+		var tint := 1.0 if (_dead or (rules.location_damage and damage.is_part_disabled(part_id))) else (1.0 - ratio) * 0.6
+		for piece in _piece_materials.get(part_id, []):
+			var base: Color = piece[1]
+			piece[0].albedo_color = base.lerp(DEAD_COLOR, tint)
 
 
 func _on_part_disabled(part_id: String) -> void:

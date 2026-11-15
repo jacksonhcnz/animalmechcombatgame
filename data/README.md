@@ -17,6 +17,8 @@ Mechs are animated in code from their data file, with no animation assets.
 
 ## Cockpit
 
+`visual` (per part, optional) draws the part as a set of shaped pieces instead of its plain box, so a mech can look like a build of metal strips and plates. Each piece has `size`, `pos` (offset from the part's centre), optional `rot_deg`, `tone` (`primary`, `accent`, `dark`, or `metal` for silver bolts and joints) and `shape` (`box`, `sphere` of diameter `size[0]`, `cylinder` or `hex` of diameter `size[0]` and length `size[1]`, both along the up axis). The part's hitbox still uses its own `size`, so changing the look never changes gameplay.
+
 `cockpit_frame` (per mech) shapes the frame the pilot sees in cockpit view: `window` (half width and half height of the opening), `distance` (at least 0.4), `pillar_tilt_deg` and `console_height`. The frame is built from flat-coloured boxes in the mech's palette and is hidden in third-person view.
 
 ## Segmented limbs

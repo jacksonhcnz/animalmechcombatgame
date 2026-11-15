@@ -4,6 +4,7 @@ extends RefCounted
 ## All gameplay numbers live in those JSON files, so balance changes are data edits.
 
 const DATA_DIR := "res://data"
+const VISUAL_SHAPES: Array[String] = ["box", "sphere", "cylinder", "hex"]
 const MOVEMENT_TYPES: Array[String] = ["ground", "flying"]
 const WEAPON_KINDS: Array[String] = ["ranged", "melee"]
 const WEAPON_SLOTS: Array[String] = ["primary", "secondary", "melee"]
@@ -176,6 +177,8 @@ static func _validate_mech(id: String) -> Array[String]:
 			p.append("%s: health must be greater than 0" % ptag)
 		if not TONES.has(part.get("tone", "")):
 			p.append("%s: tone must be one of %s" % [ptag, TONES])
+		if part.has("visual"):
+			p.append_array(_validate_visual(ptag, part["visual"]))
 		if not _is_vec3(part.get("size")) or not _is_vec3(part.get("pos")):
 			p.append("%s: size and pos must be [x, y, z]" % ptag)
 		if part.get("fatal", false):
@@ -265,6 +268,29 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 			steps += 1
 		if steps > parts.size():
 			p.append("%s: parent chain loops" % ptag)
+	return p
+
+
+## Checks a part's "visual" pieces.
+static func _validate_visual(ptag: String, pieces: Variant) -> Array[String]:
+	var p: Array[String] = []
+	if not pieces is Array or (pieces as Array).is_empty():
+		p.append("%s: visual must be a list of at least one piece" % ptag)
+		return p
+	for piece in pieces:
+		if not piece is Dictionary:
+			p.append("%s: every visual piece must be an object" % ptag)
+			continue
+		if not _is_vec3(piece.get("size")):
+			p.append("%s: visual piece needs a size [x, y, z]" % ptag)
+		if piece.has("pos") and not _is_vec3(piece["pos"]):
+			p.append("%s: visual piece pos must be [x, y, z]" % ptag)
+		if piece.has("rot_deg") and not _is_vec3(piece["rot_deg"]):
+			p.append("%s: visual piece rot_deg must be [x, y, z]" % ptag)
+		if not VISUAL_SHAPES.has(piece.get("shape", "box")):
+			p.append("%s: visual piece shape must be one of %s" % [ptag, VISUAL_SHAPES])
+		if not TONES.has(piece.get("tone", "")) and piece.get("tone", "") != "metal":
+			p.append("%s: visual piece tone must be one of %s or metal" % [ptag, TONES])
 	return p
 
 
