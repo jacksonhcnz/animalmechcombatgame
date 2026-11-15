@@ -81,6 +81,8 @@ static func _full_ammo(mech_def: Dictionary, weapon: Dictionary) -> float:
 static func validate() -> Array[String]:
 	var p: Array[String] = []
 	var t := table()
+	if float(t.get("sprint", {}).get("speed_mult", 0.0)) < 1.0:
+		p.append("points.json: sprint.speed_mult must be 1 or more")
 	if int(t.get("budget", 0)) <= 0:
 		p.append("points.json: budget must be a positive integer")
 	for group in ["speed", "armor", "carry"]:

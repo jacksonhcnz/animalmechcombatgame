@@ -11,6 +11,7 @@
 	"armor": {
 		"armor": {"base": 0.5, "per_point": 0.1}
 	},
+	"sprint": {"speed_mult": 1.5},
 	"carry": {
 		"capacity": {"base": 30.0, "per_point": 6.0}
 	}

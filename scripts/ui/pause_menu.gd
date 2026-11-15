@@ -30,7 +30,7 @@ func _ready() -> void:
 	_button(box, "Resume", close)
 	_button(box, "Main menu", func() -> void: leave_requested.emit())
 	var help := Label.new()
-	help.text = "Melee: F (gamepad X)   Jump: Space   View: C"
+	help.text = "Sprint: Shift   Melee: F (gamepad X)   Jump: Space   View: C"
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(help)
 

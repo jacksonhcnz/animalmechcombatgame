@@ -260,6 +260,13 @@ func _apply_aim_pivots() -> void:
 	_third_pivot.rotation = Vector3(aim_pitch, aim_yaw, 0.0)
 
 
+## Speed multiplier while sprinting: Shift held, moving forward, ruleset allows it.
+func sprint_mult() -> float:
+	if controls.sprint and rules.sprinting and controls.throttle > 0.0:
+		return float(Points.table().get("sprint", {}).get("speed_mult", 1.0))
+	return 1.0
+
+
 func _move(delta: float) -> void:
 	var base: Dictionary = def["base"]
 	var c := controls
@@ -271,7 +278,7 @@ func _move(delta: float) -> void:
 	var wish := forward * c.throttle + right * c.strafe
 	if wish.length() > 1.0:
 		wish = wish.normalized()
-	var target := wish * float(base["speed"]) * damage.speed_mult()
+	var target := wish * float(base["speed"]) * damage.speed_mult() * sprint_mult()
 
 	if is_flying():
 		var lift := damage.lift_mult()
