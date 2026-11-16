@@ -308,11 +308,11 @@ func set_boost(ratio: float, locked: bool) -> void:
 	boost_locked = locked
 
 
-## A flying mech holds Shift to boost: faster in every direction, for a tank of 10 seconds. When the
+## A flying mech holds Space to boost: faster in every direction, for a tank of 10 seconds. When the
 ## tank runs empty the boost is locked until it has refilled, which takes the cooldown.
 func _update_boost(delta: float) -> void:
 	var capacity := boost_capacity()
-	var moving := controls.throttle != 0.0 or controls.strafe != 0.0 or controls.vertical != 0.0
+	var moving := true  # a flyer is always moving
 	boosting = is_flying() and rules.sprinting and controls.sprint and moving and not boost_locked and boost_left > 0.0
 	if boosting:
 		boost_left = maxf(0.0, boost_left - delta)
@@ -374,8 +374,8 @@ func stall_air_speed() -> float:
 	return top * Points.flight("stall_fraction") / maxf(damage.lift_mult(), 0.2)
 
 
-## Flying like a plane. A flyer is always moving along its nose. W and S set the throttle,
-## A and D bank and turn, Space and Ctrl pitch the nose up and down (Q and E nudge the
+## Flying like a plane. A flyer is always moving along its nose. Shift and Ctrl set the
+## throttle, A and D bank and turn, W and S pitch the nose down and up (Q and E nudge the
 ## rudder). Climbing and turning cost speed and diving gains it. Below the stall speed the
 ## wings stop lifting: the controls go soft, the nose drops and the mech falls until it picks
 ## speed up again.
