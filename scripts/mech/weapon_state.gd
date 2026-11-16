@@ -8,6 +8,8 @@ var ammo: int = 0
 var cooldown: float = 0.0
 ## Seconds the fire button has been held on a weapon that is cocked before it fires.
 var charge_time: float = 0.0
+## Whether the fire button was down on the last frame (to tell a new press from a hold).
+var button_was_down: bool = false
 
 
 ## Which fire button works the weapon. It belongs to the mount, not the weapon, so any ranged
@@ -34,6 +36,12 @@ func is_two_slot() -> bool:
 ## True for a weapon that only fires after a full charge; letting go early cancels the shot.
 func needs_full_charge() -> bool:
 	return bool(def.get("charge", {}).get("full_only", false))
+
+
+## True for a scoped weapon (the raptor's sniper): the first press of its button engages the scope
+## and turns the mech tail first; after that the button fires.
+func is_scoped() -> bool:
+	return def.has("scope")
 
 
 func is_melee() -> bool:

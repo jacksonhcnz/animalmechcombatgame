@@ -49,6 +49,12 @@ var flight_pitch: float = 0.0
 var flight_roll: float = 0.0
 var stalled: bool = false
 var _sink: float = 0.0
+## Sniper mode (the raptor's tail sniper): the mech has stopped and turned tail first to the aim,
+## and the scope is up. `realigning` is the turn back round afterwards.
+var sniping: bool = false
+var realigning: bool = false
+## How far the scope is zoomed in (1 is the plain view). Only the local pilot's copy uses it.
+var scope_zoom: float = 1.0
 var remote_grounded: bool = true
 ## Whoever last damaged this mech, so a server can credit the kill.
 var last_attacker: Mech
@@ -263,6 +269,8 @@ func _physics_process(delta: float) -> void:
 		_animate(delta)
 		return
 	_update_aim()
+	if sniping and (not controls.is_idle_movement() or _dead or not _sniper_online()):
+		set_sniping(false)
 	_move(delta)
 	_animate(delta)
 	_handle_fire(delta)
@@ -270,6 +278,16 @@ func _physics_process(delta: float) -> void:
 
 func _animate(delta: float) -> void:
 	animator.update(delta)
+	if is_player and cockpit_camera != null:
+		# Looking back through the scope, the mech's own tail would fill the view: hide it.
+		var hide_tail := sniping and not view_third_person
+		for part in def["parts"]:
+			if part.get("kind", "") == "tail" and _part_meshes.has(part["id"]):
+				_part_meshes[part["id"]].visible = not hide_tail
+		# The scope narrows the view: a zoom of 4 shows a quarter of the width.
+		var narrow := 1.0 / maxf(scope_zoom, 1.0)
+		cockpit_camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(80.0) * 0.5) * narrow))
+		third_person_camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(70.0) * 0.5) * narrow))
 	# The cockpit camera follows only a share of the body bob, set by the player's head bob setting.
 	_aim_pivot.position.y = _aim_base_y + animator.bob_y * GameSettings.head_bob
 
@@ -289,7 +307,12 @@ func _update_aim() -> void:
 		# A server is told where the pilot is aiming, not how far they turned.
 		wanted_yaw = controls.aim_yaw_target
 		wanted_pitch = controls.aim_pitch_target
-	if twist >= PI:
+		if controls.aim_world:
+			wanted_yaw = wrapf(wanted_yaw - rotation.y, -PI, PI)
+	if sniping or realigning:
+		# While turning round the aim may point anywhere; the body swings under it.
+		aim_yaw = wrapf(wanted_yaw, -PI, PI)
+	elif twist >= PI:
 		# A twist limit of 180 degrees or more means the aim can spin freely all the way round.
 		aim_yaw = wrapf(wanted_yaw, -PI, PI)
 	else:
@@ -338,6 +361,75 @@ func _update_boost(delta: float) -> void:
 			boost_locked = false
 
 
+func _sniper_online() -> bool:
+	for weapon in weapons:
+		if weapon.is_scoped() and damage.mount_online(weapon.mount_id):
+			return true
+	return false
+
+
+## Engages or leaves sniper mode. Leaving it turns the mech back round until the aim is inside its
+## normal twist again (see _sniper_turn).
+func set_sniping(on: bool) -> void:
+	if on == sniping:
+		return
+	sniping = on
+	if on:
+		realigning = false
+		scope_zoom = float(sniper_scope().get("start_zoom", 4.0))
+	else:
+		scope_zoom = 1.0
+		var twist := deg_to_rad(float(def["base"]["twist_limit_deg"]))
+		realigning = twist < PI and absf(aim_yaw) > twist
+
+
+## The scope settings of the first scoped weapon this mech carries, or an empty dictionary.
+func sniper_scope() -> Dictionary:
+	for weapon in weapons:
+		if weapon.is_scoped():
+			return weapon.def["scope"]
+	return {}
+
+
+## Zooms the scope in (positive) or out (negative) by notches.
+func zoom_scope(notches: float) -> void:
+	if not sniping:
+		return
+	var scope := sniper_scope()
+	scope_zoom = clampf(scope_zoom * pow(1.25, notches), float(scope.get("min_zoom", 2.0)), float(scope.get("max_zoom", 16.0)))
+
+
+## True once the tail points at the aim (the aim is straight behind the body).
+func sniper_aligned() -> bool:
+	return PI - absf(wrapf(aim_yaw, -PI, PI)) < deg_to_rad(4.0)
+
+
+## In sniper mode the mech stands still and swings round until its tail points along the aim,
+## which stays fixed in the world. Afterwards it swings back until the aim is inside its normal
+## twist limit. A server waits for the pilot to confirm the world aim before it turns.
+func _sniper_turn(delta: float) -> void:
+	velocity.x = 0.0
+	velocity.z = 0.0
+	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+	move_and_slide()
+	if not is_nan(controls.aim_yaw_target) and not controls.aim_world:
+		return
+	var a := wrapf(aim_yaw, -PI, PI)
+	var needed := 0.0
+	if sniping:
+		needed = a - (PI if a >= 0.0 else -PI)
+	else:
+		var limit := deg_to_rad(float(def["base"]["twist_limit_deg"]))
+		if absf(a) <= limit:
+			realigning = false
+			return
+		needed = a - signf(a) * limit * 0.9
+	var step := clampf(needed, -1.0, 1.0) * minf(absf(needed), float(def["base"]["turn_rate"]) * 1.5 * damage.turn_mult() * delta)
+	rotation.y += step
+	aim_yaw = wrapf(aim_yaw - step, -PI, PI)
+	_apply_aim_pivots()
+
+
 ## Speed multiplier while sprinting on the ground: Shift held, moving forward, ruleset allows it.
 ## Flying mechs boost instead (see _update_boost).
 func sprint_mult() -> float:
@@ -349,6 +441,9 @@ func sprint_mult() -> float:
 func _move(delta: float) -> void:
 	if is_flying():
 		_fly(delta)
+		return
+	if sniping or realigning:
+		_sniper_turn(delta)
 		return
 	var base: Dictionary = def["base"]
 	var c := controls
@@ -478,6 +573,17 @@ func _handle_fire(delta: float) -> void:
 				"bomb":
 					wanted = controls.fire_bomb
 		var usable := weapon.ready_to_fire() and weapon.has_ammo(rules) and damage.mount_online(weapon.mount_id)
+		if weapon.is_scoped():
+			var fresh_press := wanted and not weapon.button_was_down
+			weapon.button_was_down = wanted
+			if not sniping:
+				# The first press engages the scope; the mech stops and turns tail first.
+				if fresh_press and damage.mount_online(weapon.mount_id):
+					set_sniping(true)
+			elif wanted and usable and sniper_aligned():
+				weapon.consume(rules)
+				_fire(weapon)
+			continue
 		if weapon.is_charged():
 			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
 			if wanted and usable:
@@ -746,6 +852,8 @@ func _build_guns(palette: Dictionary) -> void:
 		gun.name = "Gun_" + str(mount["id"])
 		gun.scale = Vector3.ONE * float(mount.get("gun_scale", 1.0))
 		gun.position = _vec3(mount.get("gun_offset", [0.0, 0.0, 0.0]))
+		if mount.has("gun_rot_deg"):
+			gun.rotation_degrees = _vec3(mount["gun_rot_deg"])
 		_part_meshes[mount["part"]].add_child(gun)
 		_build_visual(mount["part"], gun, weapon_def["visual"], palette)
 		_guns[mount["id"]] = gun

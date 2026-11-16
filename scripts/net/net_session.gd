@@ -523,6 +523,8 @@ func _send_snapshots() -> void:
 		ammo["boost_locked"] = slot.mech.boost_locked
 		ammo["air_speed"] = slot.mech.air_speed
 		ammo["stalled"] = slot.mech.stalled
+		ammo["sniping"] = slot.mech.sniping
+		ammo["aim_world"] = slot.mech.sniping or slot.mech.realigning
 		s_self.rpc_id(slot.peer, ammo)
 
 
@@ -626,10 +628,13 @@ func _client_tick(delta: float) -> void:
 			_place_display_mech(peer, mech)
 	if local_mech != null and is_instance_valid(local_mech):
 		var data: Array
+		var world_aim := local_mech.sniping or local_mech.realigning
+		var sent_yaw := wrapf(local_mech.aim_yaw + local_mech.rotation.y, -PI, PI) if world_aim else local_mech.aim_yaw
 		if local_mech.is_dead() or not _controls_open():
 			data = NetProtocol.pack_input(MechControls.new(), local_mech.aim_yaw, local_mech.aim_pitch)
 		else:
-			data = NetProtocol.pack_input(local_mech.controls, local_mech.aim_yaw, local_mech.aim_pitch)
+			local_mech.controls.aim_world = world_aim
+			data = NetProtocol.pack_input(local_mech.controls, sent_yaw, local_mech.aim_pitch)
 		c_input.rpc_id(1, data)
 		_refresh_local_controller()
 
@@ -674,6 +679,9 @@ func _place_display_mech(peer: int, mech: Mech) -> void:
 		aim_pitch = lerpf(float(a["ap"]), float(b["ap"]), f)
 		grounded = a["gr"]
 		tilt = Vector2(lerpf(a["rx"], b["rx"], f), lerpf(a["rz"], b["rz"], f))
+	if mech == local_mech and (mech.sniping or mech.realigning):
+		# The mech is swinging round under the pilot's aim: keep the aim fixed in the world.
+		mech.aim_yaw = wrapf(mech.aim_yaw - wrapf(yaw - mech.rotation.y, -PI, PI), -PI, PI)
 	mech.global_position = pos
 	mech.rotation = Vector3(tilt.x, yaw, tilt.y)
 	mech.velocity = vel
@@ -817,6 +825,8 @@ func s_self(ammo: Dictionary) -> void:
 	local_mech.set_boost(float(ammo.get("boost", 1.0)), bool(ammo.get("boost_locked", false)))
 	local_mech.air_speed = float(ammo.get("air_speed", -1.0))
 	local_mech.stalled = bool(ammo.get("stalled", false))
+	local_mech.realigning = bool(ammo.get("aim_world", false)) and not bool(ammo.get("sniping", false))
+	local_mech.set_sniping(bool(ammo.get("sniping", false)))
 
 
 # ---------------------------------------------------------------- shared

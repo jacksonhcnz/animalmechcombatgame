@@ -12,6 +12,7 @@ var _mech: Mech
 var _rules: Ruleset
 var _panels: Control
 var _crosshair: Control
+var _scope: ScopeOverlay
 var _parts_label: Label
 var _weapons_label: Label
 var _info_label: Label
@@ -46,6 +47,9 @@ func _ready() -> void:
 	add_child(_crosshair)
 	_add_bar(_crosshair, Vector2(-9, -1), Vector2(18, 2))
 	_add_bar(_crosshair, Vector2(-1, -9), Vector2(2, 18))
+
+	_scope = ScopeOverlay.new()
+	add_child(_scope)
 
 	# Where a bomb dropped now would land (flying mechs that carry one).
 	_bomb_sight = _make_label(self, Control.PRESET_TOP_LEFT, HORIZONTAL_ALIGNMENT_CENTER)
@@ -113,6 +117,13 @@ func _process(_delta: float) -> void:
 		return
 	_update_layout()
 	_update_bomb_sight()
+	var scoped := _mech.sniping and _mech.is_player
+	var rounds := ""
+	for weapon in _mech.weapons:
+		if weapon.is_scoped():
+			rounds = "%s rounds" % (str(weapon.ammo) if _rules.ammo_limits else "unlimited")
+	_scope.show_scope(scoped, _mech.scope_zoom, _mech.sniper_aligned(), rounds)
+	_panels.modulate.a = 0.0 if scoped else 1.0
 	if _panels.visible:
 		_info_label.text = "%s  |  %s  |  %s view" % [
 			_mech.def["name"],
@@ -235,6 +246,8 @@ func _weapons_text() -> String:
 				cocked = "  [%s%s] %s" % ["=".repeat(notches), " ".repeat(8 - notches), "READY" if weapon.charge_ratio() >= 1.0 else "charging"]
 			else:
 				cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
+		if weapon.is_scoped():
+			cocked = "  [scope: wheel zooms, move to leave]" if _mech.sniping else "  [click to scope]"
 		lines.append("%s  %s%s%s" % [weapon.def["name"], ammo_text, cocked, "" if online else "  OFFLINE"])
 	if _mech.is_flying():
 		var warning := "   STALL" if _mech.stalled else ""

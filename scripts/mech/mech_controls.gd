@@ -20,6 +20,14 @@ var fire_primary: bool = false
 var fire_secondary: bool = false
 var fire_melee: bool = false
 var fire_bomb: bool = false
+## The aim sent with the controls is a world heading, not one relative to the body (set while the
+## pilot is turning round for the sniper, so the aim stays put while the body swings).
+var aim_world: bool = false
+
+
+## True when the pilot is asking to move or turn the legs.
+func is_idle_movement() -> bool:
+	return throttle == 0.0 and strafe == 0.0 and turn == 0.0
 
 
 func clear() -> void:
@@ -36,3 +44,4 @@ func clear() -> void:
 	fire_secondary = false
 	fire_melee = false
 	fire_bomb = false
+	aim_world = false
