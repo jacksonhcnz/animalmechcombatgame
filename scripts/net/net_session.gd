@@ -423,6 +423,9 @@ func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	mech.fired.connect(func(from: Vector3, to: Vector3, color: Color) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_tracer.rpc(from, to, color.to_html(false)))
+	mech.beam_fired.connect(func(from: Vector3, to: Vector3, color: Color, width: float, fade: float) -> void:
+		if not multiplayer.get_peers().is_empty():
+			s_beam.rpc(from, to, color.to_html(false), width, fade))
 	mech.projectile_launched.connect(func(info: Dictionary) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_projectile.rpc(info))
@@ -765,6 +768,11 @@ func s_hit(peer: int, part: String, raw_damage: float) -> void:
 @rpc("authority", "call_remote", "reliable")
 func s_match(state: Dictionary) -> void:
 	_apply_match(state)
+
+
+@rpc("authority", "call_remote", "reliable")
+func s_beam(from: Vector3, to: Vector3, color_html: String, width: float, fade: float) -> void:
+	Mech.spawn_beam(mechs_root, from, to, Color.html(color_html), width, fade)
 
 
 @rpc("authority", "call_remote", "unreliable")

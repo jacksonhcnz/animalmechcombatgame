@@ -243,7 +243,7 @@ func _weapons_text() -> String:
 		if weapon.is_charged() and weapon.charge_time > 0.0:
 			var notches := roundi(weapon.charge_ratio() * 8.0)
 			if weapon.needs_full_charge():
-				cocked = "  [%s%s] %s" % ["=".repeat(notches), " ".repeat(8 - notches), "READY" if weapon.charge_ratio() >= 1.0 else "charging"]
+				cocked = "  [%s%s] %s" % ["=".repeat(notches), " ".repeat(8 - notches), "READY" if weapon.charge_ratio() >= 1.0 else "charging %.1f / %.0f s" % [weapon.charge_time, weapon.charge_max()]]
 			else:
 				cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
 		if weapon.is_scoped():

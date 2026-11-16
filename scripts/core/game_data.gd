@@ -8,7 +8,7 @@ const VISUAL_SHAPES: Array[String] = ["box", "sphere", "cylinder", "hex", "plate
 const MOVEMENT_TYPES: Array[String] = ["ground", "flying"]
 const WEAPON_KINDS: Array[String] = ["ranged", "melee"]
 const WEAPON_SLOTS: Array[String] = ["primary", "secondary", "melee", "bomb"]
-const PROJECTILE_MODELS: Array[String] = ["bullet", "pellet", "rocket", "grenade", "bomb", "ion"]
+const PROJECTILE_MODELS: Array[String] = ["bullet", "pellet", "rocket", "grenade", "bomb"]
 const TONES: Array[String] = ["primary", "accent", "dark"]
 
 static var _cache: Dictionary = {}
@@ -107,6 +107,12 @@ static func _validate_weapon(id: String) -> Array[String]:
 				p.append("%s: charge needs max_time above 0, and max_height above 0 unless full_only" % tag)
 			elif not full_only and not (shot is Dictionary and float(shot.get("splash_radius", 0.0)) > 0.0):
 				p.append("%s: a charged weapon bursts, so its projectile needs a splash_radius" % tag)
+	if w.has("beam"):
+		var beam: Variant = w["beam"]
+		if not (beam is Dictionary and float(beam.get("width", 0.0)) > 0.0 and float(beam.get("fade", 0.0)) > 0.0):
+			p.append("%s: beam needs a width and a fade time above 0" % tag)
+		if w.has("projectile"):
+			p.append("%s: a weapon is a beam or fires projectiles, not both" % tag)
 	if w.has("visual"):
 		p.append_array(_validate_visual(tag, w["visual"]))
 		if float(w.get("muzzle", 0.0)) <= 0.0:
