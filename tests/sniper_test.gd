@@ -78,17 +78,20 @@ func _run() -> void:
 	var start_position := raptor.global_position
 	raptor.controls.fire_primary = true
 	await _frames(3)
-	_check(seen.is_empty(), "it will not fire until the tail points at the aim")
 	raptor.controls.fire_primary = false
+	await _frames(3)
+	_check(seen.is_empty(), "it will not fire until the tail points at the aim")
 	await _frames(300)
 	_check(raptor.sniper_aligned(), "the mech turns until its tail points at the aim")
 	_check(raptor.global_position.distance_to(start_position) < 0.5, "it stands still while it turns")
 	var held := wrapf(raptor.rotation.y + raptor.aim_yaw - world_aim, -PI, PI)
 	_check(absf(held) < 0.05, "the aim stays fixed in the world while the body swings (off by %.3f)" % held)
 	raptor.controls.fire_primary = true
-	await _frames(2)
+	await _frames(20)
+	_check(seen.is_empty(), "the sniper does not fire while the button is held")
 	raptor.controls.fire_primary = false
-	_check(seen.size() == 1 and sniper.ammo == ammo - 1, "once aligned the sniper fires")
+	await _frames(2)
+	_check(seen.size() == 1 and sniper.ammo == ammo - 1, "once aligned the sniper fires when the button is let go")
 
 	raptor.zoom_scope(2.0)
 	_check(raptor.scope_zoom > float(sniper.def["scope"]["start_zoom"]), "the wheel zooms in")

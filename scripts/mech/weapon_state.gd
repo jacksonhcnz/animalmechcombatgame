@@ -10,6 +10,8 @@ var cooldown: float = 0.0
 var charge_time: float = 0.0
 ## Whether the fire button was down on the last frame (to tell a new press from a hold).
 var button_was_down: bool = false
+## A scoped weapon fires when its button is released, but only for a press that began in the scope.
+var sniper_armed: bool = false
 
 
 ## Which fire button works the weapon. It belongs to the mount, not the weapon, so any ranged
