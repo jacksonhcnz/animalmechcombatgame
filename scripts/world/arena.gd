@@ -15,6 +15,14 @@ const MATCH_SPAWNS := 8
 
 ## Builds the world under `parent`. `keep_clear` lists rectangles (x, z, width, depth) that get no blocks.
 static func build(parent: Node3D, half: float, block_count: int, keep_clear: Array[Rect2], seed_value: int) -> void:
+	add_environment(parent)
+
+	add_block(parent, Vector3(0.0, -0.5, 0.0), Vector3(half * 2.0, 1.0, half * 2.0), Color("#7c9a68"))
+	_scatter(parent, half, block_count, keep_clear, seed_value)
+
+
+## Sky, light and ambient colour.
+static func add_environment(parent: Node3D) -> void:
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color("#8fc4e8")
@@ -31,8 +39,8 @@ static func build(parent: Node3D, half: float, block_count: int, keep_clear: Arr
 	sun.shadow_enabled = true
 	parent.add_child(sun)
 
-	add_block(parent, Vector3(0.0, -0.5, 0.0), Vector3(half * 2.0, 1.0, half * 2.0), Color("#7c9a68"))
 
+static func _scatter(parent: Node3D, half: float, block_count: int, keep_clear: Array[Rect2], seed_value: int) -> void:
 	# Walls around the field, so nothing wanders off the edge.
 	var wall_color := Color("#5d6b5a")
 	add_block(parent, Vector3(0.0, 20.0, -half), Vector3(half * 2.0, 40.0, 8.0), wall_color)
@@ -59,6 +67,32 @@ static func build(parent: Node3D, half: float, block_count: int, keep_clear: Arr
 			continue
 		add_block(parent, Vector3(x, h * 0.5, z), Vector3(w, h, d), color)
 		placed += 1
+
+
+## A canyon map from data/maps. Returns its grid. A tall barrier closes the edge of the map.
+static func build_canyon(parent: Node3D, map_id: String) -> Canyon.Grid:
+	add_environment(parent)
+	var grid := Canyon.build(parent, Canyon.load_map(map_id))
+	var rock := Color("#a98a5c")
+	var half_x := grid.half_x()
+	var half_z := grid.half_z()
+	add_block(parent, Vector3(0.0, 40.0, -half_z - 4.0), Vector3(half_x * 2.0 + 16.0, 80.0, 8.0), rock)
+	add_block(parent, Vector3(0.0, 40.0, half_z + 4.0), Vector3(half_x * 2.0 + 16.0, 80.0, 8.0), rock)
+	add_block(parent, Vector3(-half_x - 4.0, 40.0, 0.0), Vector3(8.0, 80.0, half_z * 2.0), rock)
+	add_block(parent, Vector3(half_x + 4.0, 40.0, 0.0), Vector3(8.0, 80.0, half_z * 2.0), rock)
+	return grid
+
+
+## Where spawn `index` is at one end of a map ("north" or "south"): a point from the map data,
+## facing the other end.
+static func map_spawn(map_id: String, end: String, index: int) -> Transform3D:
+	var spawns: Dictionary = Canyon.load_map(map_id)["spawns"][end]
+	var points: Array = spawns["points"]
+	var point: Array = points[index % points.size()]
+	var position := Vector3(float(point[0]), 0.0, float(point[1]))
+	# Forward is -Z: facing north is yaw 0, facing south is yaw PI.
+	var yaw := PI if str(spawns["facing"]) == "south" else 0.0
+	return Transform3D(Basis(Vector3.UP, yaw), position)
 
 
 ## The multiplayer arena. Spawn areas are kept clear of blocks.

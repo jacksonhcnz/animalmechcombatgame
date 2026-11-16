@@ -11,13 +11,18 @@ var status_text: String = ""
 
 var _mechs_root: Node3D
 var _pause: PauseMenu
+var _world_built: bool = false
 
 
 func _ready() -> void:
 	name = "MatchScene"
 	GameSettings.load_settings()
 	InputSetup.ensure_actions()
-	Arena.build_match_arena(self)
+	# The map comes from the ruleset: a server knows it now, a client is told when it joins.
+	session = NetSession.new()
+	session.world_ready.connect(_build_world)
+	if LaunchConfig.mode != LaunchConfig.CLIENT:
+		_build_world(Ruleset.load_id(LaunchConfig.ruleset_id))
 	_mechs_root = Node3D.new()
 	_mechs_root.name = "Mechs"
 	add_child(_mechs_root)
@@ -30,7 +35,6 @@ func _ready() -> void:
 	controller.enabled = false
 	add_child(controller)
 
-	session = NetSession.new()
 	session.name = "NetSession"
 	session.mechs_root = _mechs_root
 	session.hud = hud
@@ -55,6 +59,16 @@ func _ready() -> void:
 				_leave("Could not connect (error %d)" % error)
 			else:
 				hud.show_message("Connecting to %s ..." % LaunchConfig.address)
+
+
+func _build_world(rules: Ruleset) -> void:
+	if _world_built:
+		return
+	_world_built = true
+	if rules.map == "field":
+		Arena.build_match_arena(self)
+	else:
+		Arena.build_canyon(self, rules.map)
 
 
 func _unhandled_input(event: InputEvent) -> void:

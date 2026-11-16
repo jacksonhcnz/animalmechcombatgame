@@ -19,8 +19,10 @@ signal joined
 signal rejected(reason: String)
 signal disconnected(reason: String)
 signal match_changed
+## A client has been told the ruleset, so it knows which map to build.
+signal world_ready(rules: Ruleset)
 
-enum Phase { WAITING, COUNTDOWN, ACTIVE, FINISHED }
+enum Phase { WAITING, COUNTDOWN, ACTIVE, FINISHED, ROUND_OVER }
 
 ## One connected pilot, on the server.
 class Slot extends RefCounted:
@@ -49,6 +51,9 @@ var time_left: float = 0.0
 ## [[peer, name, kills, deaths], ...]
 var scores: Array = []
 var result_text: String = ""
+## Round matches: which round it is (1 for the first) and how many rounds each team has won.
+var round_number: int = 0
+var team_wins: Array = [0, 0]
 var local_mech: Mech
 var my_id: int = 0
 var connected: bool = false
@@ -177,24 +182,32 @@ func _server_tick(delta: float) -> void:
 	_clock += delta
 	match phase:
 		Phase.WAITING:
-			if _slots.size() >= 2:
+			if _can_play():
 				_set_phase(Phase.COUNTDOWN)
 		Phase.COUNTDOWN:
 			_phase_left -= delta
-			if _slots.size() < 2:
+			if not _can_play():
 				_set_phase(Phase.WAITING)
 			elif _phase_left <= 0.0:
 				_set_phase(Phase.ACTIVE)
 		Phase.ACTIVE:
 			time_left -= delta
-			if _slots.size() < 2:
+			if not _can_play():
 				_set_phase(Phase.WAITING)
+			elif _round_mode():
+				_check_round()
+				if phase == Phase.ACTIVE and time_left <= 0.0:
+					_end_round(_winner_on_time())
 			elif time_left <= 0.0:
 				_set_phase(Phase.FINISHED)
+		Phase.ROUND_OVER:
+			_phase_left -= delta
+			if _phase_left <= 0.0:
+				_set_phase(Phase.COUNTDOWN if _can_play() else Phase.WAITING)
 		Phase.FINISHED:
 			_phase_left -= delta
 			if _phase_left <= 0.0:
-				_set_phase(Phase.COUNTDOWN if _slots.size() >= 2 else Phase.WAITING)
+				_set_phase(Phase.COUNTDOWN if _can_play() else Phase.WAITING)
 
 	if phase == Phase.WAITING or phase == Phase.ACTIVE:
 		for slot: Slot in _slots.values():
@@ -212,28 +225,137 @@ func _server_tick(delta: float) -> void:
 
 
 func _set_phase(new_phase: Phase) -> void:
+	var old_phase := phase
 	phase = new_phase
 	match phase:
 		Phase.WAITING:
 			_reset_scores()
+			_reset_rounds()
 			time_left = 0.0
 			result_text = ""
 		Phase.COUNTDOWN:
-			_reset_scores()
 			result_text = ""
+			if _round_mode():
+				# A new round of the same match carries the scores on; anything else starts a match.
+				if old_phase != Phase.ROUND_OVER:
+					_reset_scores()
+					_reset_rounds()
+				round_number += 1
+			else:
+				_reset_scores()
 			_phase_left = NetProtocol.COUNTDOWN_TIME
 			for slot: Slot in _slots.values():
 				_spawn_mech(slot, slot.spawn_index)
 		Phase.ACTIVE:
 			time_left = rules.match_time if rules.match_time > 0.0 else NetProtocol.DEFAULT_MATCH_TIME
+		Phase.ROUND_OVER:
+			_phase_left = NetProtocol.ROUND_OVER_TIME
 		Phase.FINISHED:
-			result_text = _work_out_result()
+			if not _round_mode():
+				result_text = _work_out_result()
 			_phase_left = NetProtocol.RESULT_TIME
 	for slot: Slot in _slots.values():
 		if not _controls_open() and slot.mech != null:
 			slot.mech.controls.clear()
 	_refresh_local_controller()
 	_broadcast_match()
+
+
+func _round_mode() -> bool:
+	return rules != null and rules.is_round_match()
+
+
+func _reset_rounds() -> void:
+	round_number = 0
+	team_wins = [0, 0]
+
+
+func _team_size(team: int) -> int:
+	var count := 0
+	for slot: Slot in _slots.values():
+		if slot.team == team:
+			count += 1
+	return count
+
+
+## Whether there is anyone to play against: two pilots, or in a round match a pilot on each team.
+func _can_play() -> bool:
+	if _round_mode():
+		return _team_size(1) >= 1 and _team_size(2) >= 1
+	return _slots.size() >= 2
+
+
+## The team with fewer pilots, so teams stay level (team 1 on a tie).
+func _pick_team() -> int:
+	return 1 if _team_size(1) <= _team_size(2) else 2
+
+
+## Which end of the map a team starts at this round, "north" or "south". Team 1 starts at the
+## north end, and with swap_ends the teams change ends after every round.
+func _end_for(slot: Slot) -> String:
+	if not _round_mode():
+		return "north" if slot.spawn_index % 2 == 0 else "south"
+	var swapped := rules.swap_ends and round_number > 0 and round_number % 2 == 0
+	var north := (slot.team == 1) != swapped
+	return "north" if north else "south"
+
+
+## Where a pilot's mech starts: a ring spawn on the field, or a spot at their end of a map.
+func _spawn_spot(slot: Slot, spawn_index: int) -> Transform3D:
+	if rules.map == "field":
+		return Arena.spawn_transform(spawn_index)
+	var index := 0
+	for other: Slot in _slots.values():
+		if other != slot and other.peer < slot.peer and _end_for(other) == _end_for(slot):
+			index += 1
+	return Arena.map_spawn(rules.map, _end_for(slot), index)
+
+
+## Ends the round if one team has no mech left standing.
+func _check_round() -> void:
+	var alive := [0, 0]
+	for slot: Slot in _slots.values():
+		if slot.mech != null and is_instance_valid(slot.mech) and not slot.mech.is_dead() and (slot.team == 1 or slot.team == 2):
+			alive[slot.team - 1] += 1
+	if alive[0] == 0 and alive[1] == 0:
+		_end_round(0)
+	elif alive[0] == 0:
+		_end_round(2)
+	elif alive[1] == 0:
+		_end_round(1)
+
+
+## When the round clock runs out: the team with more mechs standing wins, and if that is level,
+## the team with more health left (total of what each mech has left). Still level is a draw.
+func _winner_on_time() -> int:
+	var standing := [0, 0]
+	var health := [0.0, 0.0]
+	for slot: Slot in _slots.values():
+		if slot.mech != null and is_instance_valid(slot.mech) and not slot.mech.is_dead() and (slot.team == 1 or slot.team == 2):
+			standing[slot.team - 1] += 1
+			health[slot.team - 1] += slot.mech.damage.total_ratio()
+	if standing[0] != standing[1]:
+		return 1 if standing[0] > standing[1] else 2
+	if is_equal_approx(health[0], health[1]):
+		return 0
+	return 1 if health[0] > health[1] else 2
+
+
+## Scores the round for `winner` (a team number, or 0 for a draw), then moves on to the next
+## round, or ends the match when a team has won enough.
+func _end_round(winner: int) -> void:
+	if winner > 0:
+		team_wins[winner - 1] += 1
+	var tally := "%d - %d" % [team_wins[0], team_wins[1]]
+	if winner > 0 and team_wins[winner - 1] >= rules.rounds_to_win():
+		result_text = "Team %d wins the match\n%s" % [winner, tally]
+		_set_phase(Phase.FINISHED)
+	else:
+		if winner > 0:
+			result_text = "Team %d wins round %d\nRounds %s" % [winner, round_number, tally]
+		else:
+			result_text = "Round %d is a draw\nRounds %s" % [round_number, tally]
+		_set_phase(Phase.ROUND_OVER)
 
 
 func _reset_scores() -> void:
@@ -263,12 +385,14 @@ func _add_slot(peer: int, pilot_name: String, mech_id: String) -> Slot:
 	slot.mech_id = mech_id
 	slot.spawn_index = _next_spawn_index
 	_next_spawn_index += 1
-	slot.team = peer
+	slot.team = _pick_team() if _round_mode() else peer
 	_slots[peer] = slot
 	return slot
 
 
 func _safest_spawn(slot: Slot) -> int:
+	if rules.map != "field":
+		return slot.spawn_index
 	var best_index := slot.spawn_index
 	var best_distance := -1.0
 	for index in Arena.MATCH_SPAWNS:
@@ -290,7 +414,7 @@ func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	mech.team = slot.team
 	mech.altitude_limit = Arena.MATCH_ALTITUDE_LIMIT
 	mechs_root.add_child(mech)
-	var spot := Arena.spawn_transform(spawn_index)
+	var spot := _spawn_spot(slot, spawn_index)
 	mech.global_transform = Transform3D(spot.basis, spot.origin + Vector3(0.0, mech.spawn_height(), 0.0))
 	slot.mech = mech
 	slot.respawn_left = -1.0
@@ -341,7 +465,8 @@ func _spawn_info(slot: Slot) -> Dictionary:
 
 
 func _on_mech_destroyed(slot: Slot, dead: Mech) -> void:
-	slot.respawn_left = NetProtocol.RESPAWN_TIME
+	# With one life a destroyed mech stays out until the next round.
+	slot.respawn_left = -1.0 if rules.one_life else NetProtocol.RESPAWN_TIME
 	if phase == Phase.ACTIVE:
 		slot.deaths += 1
 		var killer := dead.last_attacker
@@ -376,8 +501,8 @@ func _broadcast_match() -> void:
 func _match_state() -> Dictionary:
 	var table: Array = []
 	for slot: Slot in _slots.values():
-		table.append([slot.peer, slot.pilot_name, slot.kills, slot.deaths])
-	return {"phase": int(phase), "time_left": time_left, "scores": table, "result": result_text}
+		table.append([slot.peer, slot.pilot_name, slot.kills, slot.deaths, slot.team])
+	return {"phase": int(phase), "time_left": time_left, "scores": table, "result": result_text, "round": round_number, "wins": team_wins}
 
 
 func _send_snapshots() -> void:
@@ -433,8 +558,16 @@ func c_hello(info: Dictionary) -> void:
 	})
 	var slot := _add_slot(peer, _clean_name(str(info["name"])), str(info["mech"]))
 	slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", slot.mech_id), info.get("loadout", {}))
-	_spawn_mech(slot, slot.spawn_index)
+	# In a round match a late arrival waits for the next round, so nobody joins a fight half way.
+	if _joins_now():
+		_spawn_mech(slot, slot.spawn_index)
 	_broadcast_match()
+
+
+## Whether a pilot who arrives now gets a mech at once. In a round match, one arriving after the
+## round has begun waits for the next round.
+func _joins_now() -> bool:
+	return not (_round_mode() and (phase == Phase.ACTIVE or phase == Phase.ROUND_OVER or phase == Phase.FINISHED))
 
 
 func _check_hello(info: Dictionary) -> String:
@@ -578,6 +711,7 @@ func _client_despawn(peer: int) -> void:
 func s_welcome(info: Dictionary) -> void:
 	rules = Ruleset.from_dict(info["ruleset"], str(info["ruleset_id"]))
 	server_name = str(info["server_name"])
+	world_ready.emit(rules)
 	_apply_match(info["match"])
 	for mech_info: Dictionary in info["mechs"]:
 		_client_spawn(mech_info)
@@ -681,6 +815,8 @@ func _apply_match(state: Dictionary) -> void:
 	time_left = float(state["time_left"])
 	scores = state["scores"]
 	result_text = str(state["result"])
+	round_number = int(state.get("round", 0))
+	team_wins = state.get("wins", [0, 0])
 	_refresh_local_controller()
 	match_changed.emit()
 
@@ -692,20 +828,37 @@ func _update_hud(delta: float) -> void:
 		time_left = maxf(0.0, time_left - delta)
 	hud.set_timer(time_left if phase == Phase.ACTIVE else -1.0)
 	var parts: Array[String] = []
-	for row: Array in scores:
-		parts.append("%s %d" % [row[1], row[2]])
+	if rules != null and rules.is_round_match():
+		var mine := 0
+		for row: Array in scores:
+			if int(row[0]) == my_id:
+				mine = int(row[4])
+		parts.append("Round %d   Team 1  %d - %d  Team 2   (first to %d)" % [maxi(1, round_number), team_wins[0], team_wins[1], rules.rounds_to_win()])
+		if mine > 0:
+			parts.append("You are on team %d" % mine)
+	else:
+		for row: Array in scores:
+			parts.append("%s %d" % [row[1], row[2]])
 	hud.set_scoreline("   ".join(parts))
 	var message := ""
 	var dead := local_mech != null and is_instance_valid(local_mech) and local_mech.is_dead()
 	match phase:
 		Phase.WAITING:
-			message = "Waiting for an opponent\n%d / %d pilots" % [_pilot_total(), max_players]
+			if rules != null and rules.is_round_match():
+				message = "Waiting for pilots on both teams\n%d / %d pilots" % [_pilot_total(), max_players]
+			else:
+				message = "Waiting for an opponent\n%d / %d pilots" % [_pilot_total(), max_players]
 		Phase.COUNTDOWN:
-			message = str(ceili(_phase_left)) if is_server else "Get ready"
+			var count := str(ceili(_phase_left)) if is_server else "Get ready"
+			message = "Round %d\n%s" % [round_number, count] if rules.is_round_match() else count
+		Phase.ROUND_OVER:
+			message = "%s\nNext round shortly" % result_text
 		Phase.FINISHED:
 			message = "%s\nNext match shortly" % result_text
-	if dead and phase != Phase.FINISHED:
-		message = "DESTROYED\nRespawning shortly"
+	if phase == Phase.ACTIVE and local_mech == null and rules != null and rules.is_round_match():
+		message = "Round in progress\nYou join the next round"
+	if dead and phase != Phase.FINISHED and phase != Phase.ROUND_OVER:
+		message = "DESTROYED\nWaiting for the next round" if rules.one_life else "DESTROYED\nRespawning shortly"
 	hud.show_message(message)
 
 
