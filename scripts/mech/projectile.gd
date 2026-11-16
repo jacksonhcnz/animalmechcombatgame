@@ -233,10 +233,6 @@ func _build_model() -> void:
 			_build_grenade()
 		"bomb":
 			_build_bomb()
-		"ion":
-			# A long, bright bolt of ions: a white core in a cyan sheath.
-			_add_mesh(_box(Vector3(0.9, 0.9, 7.0)), Vector3.ZERO, Vector3.ZERO, color, true)
-			_add_mesh(_box(Vector3(0.35, 0.35, 9.0)), Vector3.ZERO, Vector3.ZERO, Color.WHITE, true)
 		"pellet":
 			_add_mesh(_sphere(0.34), Vector3.ZERO, Vector3.ZERO, color, true)
 		_:

@@ -5,7 +5,7 @@ extends RefCounted
 ## The protocol version changes whenever the messages change. The balance version
 ## (data/balance.json) must match too, so every server plays by the same numbers.
 
-const VERSION := 4
+const VERSION := 5
 const DEFAULT_PORT := 7777
 const DISCOVERY_PORT := 7778
 const MAX_PLAYERS := 8

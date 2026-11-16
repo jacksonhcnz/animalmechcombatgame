@@ -6,16 +6,12 @@
 	"two_slot": true,
 	"damage": 1000.0,
 	"kill": true,
-	"range": 900.0,
+	"range": 1500.0,
 	"fire_interval": 4.0,
 	"ammo": 6,
 	"weight": 45.0,
 	"ammo_weight": 2.0,
 	"spread_deg": 0.0,
-	"projectile": {
-		"model": "ion",
-		"speed": 900.0
-	},
 	"charge": {
 		"max_time": 3.0,
 		"full_only": true
@@ -193,5 +189,9 @@
 			],
 			"tone": "dark"
 		}
-	]
+	],
+	"beam": {
+		"width": 1.6,
+		"fade": 3.0
+	}
 }

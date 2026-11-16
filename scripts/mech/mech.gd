@@ -11,6 +11,8 @@ signal part_disabled(part_id: String)
 signal destroyed(mech: Mech)
 ## A shot was fired. Servers broadcast it so every client can draw the tracer.
 signal fired(from: Vector3, to: Vector3, color: Color)
+## A beam weapon fired: the beam stays where it is and fades over `fade` seconds.
+signal beam_fired(from: Vector3, to: Vector3, color: Color, width: float, fade: float)
 ## A real projectile left the muzzle: its start data, so a server can tell its clients.
 signal projectile_launched(info: Dictionary)
 ## A projectile ended (hit something or ran out of life) at a position.
@@ -278,6 +280,7 @@ func _physics_process(delta: float) -> void:
 
 func _animate(delta: float) -> void:
 	animator.update(delta)
+	_update_charge_glow()
 	if is_player and cockpit_camera != null:
 		# Looking back through the scope, the mech's own tail would fill the view: hide it.
 		var hide_tail := sniping and not view_third_person
@@ -598,7 +601,10 @@ func _handle_fire(delta: float) -> void:
 			if weapon.needs_full_charge() and held < weapon.charge_max() - 0.001:
 				continue  # let go too soon: the shot is lost
 			weapon.consume(rules)
-			_launch(weapon, weapon.burst_height(held))
+			if weapon.def.has("projectile"):
+				_launch(weapon, weapon.burst_height(held))
+			else:
+				_fire(weapon)
 			continue
 		if not wanted or not usable:
 			continue
@@ -629,9 +635,18 @@ func _fire(weapon: WeaponState) -> void:
 		if collider is Node and collider.has_meta("part_id"):
 			var target: Mech = collider.get_meta("mech")
 			if is_instance_valid(target):
-				target.take_hit(collider.get_meta("part_id"), float(weapon.def["damage"]) * float(def.get("damage_mult", 1.0)), self)
+				if bool(weapon.def.get("kill", false)):
+					target.take_kill(self)
+				else:
+					target.take_hit(collider.get_meta("part_id"), float(weapon.def["damage"]) * float(def.get("damage_mult", 1.0)), self)
 
-	if not weapon.is_melee():
+	if weapon.def.has("beam"):
+		var beam: Dictionary = weapon.def["beam"]
+		var beam_color := Color.html(weapon.def.get("tracer_color", "#ffffff"))
+		var beam_from := mount_position(weapon.mount_id)
+		beam_fired.emit(beam_from, end, beam_color, float(beam["width"]), float(beam["fade"]))
+		spawn_beam(get_parent(), beam_from, end, beam_color, float(beam["width"]), float(beam["fade"]))
+	elif not weapon.is_melee():
 		var tracer_color := Color.html(weapon.def.get("tracer_color", "#ffffff"))
 		var muzzle := mount_position(weapon.mount_id)
 		fired.emit(muzzle, end, tracer_color)
@@ -733,6 +748,41 @@ static func spawn_tracer(parent: Node, from: Vector3, to: Vector3, color: Color)
 	var up := Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT
 	tracer.look_at_from_position((from + to) * 0.5, to, up)
 	parent.get_tree().create_timer(0.08).timeout.connect(tracer.queue_free)
+
+
+## Draws a beam that stays where it was fired and fades away over `fade` seconds: a white core
+## inside a coloured sheath. Clients use it for the beams the server reports.
+static func spawn_beam(parent: Node, from: Vector3, to: Vector3, color: Color, width: float, fade: float) -> void:
+	if parent == null or not parent.is_inside_tree():
+		return
+	var length := from.distance_to(to)
+	if length < 0.1:
+		return
+	var holder := Node3D.new()
+	parent.add_child(holder)
+	var dir := (to - from).normalized()
+	var up := Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT
+	holder.look_at_from_position((from + to) * 0.5, to, up)
+	var materials: Array[StandardMaterial3D] = []
+	for layer in [[width, color], [width * 0.35, Color.WHITE]]:
+		var piece := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(layer[0], layer[0], length)
+		piece.mesh = box
+		var material := StandardMaterial3D.new()
+		material.albedo_color = layer[1]
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		piece.material_override = material
+		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		holder.add_child(piece)
+		materials.append(material)
+	var tween := holder.create_tween()
+	tween.tween_method(func(alpha: float) -> void:
+		for material in materials:
+			material.albedo_color.a = alpha, 1.0, 0.0, fade)
+	tween.tween_callback(holder.queue_free)
 
 
 func _build_body() -> void:
@@ -839,6 +889,31 @@ func _build_body() -> void:
 	_third_pivot.name = "ThirdPersonPivot"
 	_third_pivot.position = cockpit_pos
 	add_child(_third_pivot)
+
+
+## A glowing ball at the muzzle of a weapon that needs a full charge, growing as it charges.
+func _update_charge_glow() -> void:
+	for weapon in weapons:
+		if not weapon.needs_full_charge() or not _guns.has(weapon.mount_id):
+			continue
+		var glow: MeshInstance3D = _guns[weapon.mount_id].get_node_or_null("ChargeGlow")
+		if glow == null:
+			glow = MeshInstance3D.new()
+			glow.name = "ChargeGlow"
+			var ball := SphereMesh.new()
+			ball.radius = 0.5
+			ball.height = 1.0
+			glow.mesh = ball
+			var material := StandardMaterial3D.new()
+			material.albedo_color = Color.html(str(weapon.def.get("tracer_color", "#ffffff")))
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			glow.material_override = material
+			glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			glow.position = Vector3(0.0, 0.0, -float(weapon.def.get("muzzle", 1.0)))
+			_guns[weapon.mount_id].add_child(glow)
+		var ratio := weapon.charge_ratio()
+		glow.visible = ratio > 0.0
+		glow.scale = Vector3.ONE * (0.3 + 1.7 * ratio)
 
 
 ## Draws each ranged mount's weapon (its `visual` in the weapon data) on the part that carries it,

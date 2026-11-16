@@ -263,22 +263,26 @@ func _test_ion_cannon() -> void:
 		if w != weapon:
 			w.ammo = 0  # the real loadout has no other weapon mounts
 	var seen: Array[Dictionary] = []
+	var beams: Array[Dictionary] = []
 	player.projectile_launched.connect(func(info: Dictionary) -> void: seen.append(info))
+	player.beam_fired.connect(func(from: Vector3, to: Vector3, _c: Color, _w: float, fade: float) -> void: beams.append({"from": from, "to": to, "fade": fade}))
+	_check(not weapon.def.has("projectile") and weapon.def.has("beam"), "the ion cannon is an instant beam, not a projectile")
+	_check(is_equal_approx(float(weapon.def["beam"]["fade"]), 3.0), "the beam fades over 3 seconds")
 	_check(weapon.is_two_slot() and weapon.needs_full_charge(), "the ion cannon is a two slot weapon that needs a full charge")
 	player.controls.fire_secondary = true
 	await _frames(60)
 	player.controls.fire_secondary = false
 	await _frames(3)
-	_check(seen.is_empty() and weapon.ammo == 6, "letting go before 3 seconds loses the shot and costs no ammo")
+	_check(beams.is_empty() and weapon.ammo == 6, "letting go before 3 seconds loses the shot and costs no ammo")
+	_check(target.damage.total_ratio() == 1.0, "a cancelled shot hurts nothing")
 	player.controls.fire_primary = true
 	await _frames(int(3.3 * Engine.physics_ticks_per_second))
-	_check(seen.is_empty(), "it does not fire while it is still held")
+	_check(beams.is_empty(), "it does not fire while it is still held")
 	_check(weapon.charge_ratio() >= 1.0, "the charge is full after 3 seconds")
 	player.controls.fire_primary = false
 	await _frames(3)
-	_check(seen.size() == 1 and weapon.ammo == 5, "letting go with a full charge fires one ion bolt")
-	target.take_kill(player)
-	_check(target.damage.is_destroyed(), "an ion hit destroys a mech outright")
+	_check(beams.size() == 1 and weapon.ammo == 5 and seen.is_empty(), "letting go with a full charge fires one beam at once")
+	_check(target.damage.is_destroyed(), "the beam destroys the mech it hits outright, the moment it fires")
 
 
 func _test_info_round_trip() -> void:

@@ -73,7 +73,7 @@ The hawk's belly rack carries an air bomb (`weapons/air_bomb.json`, weapon `slot
 
 ## Ion cannon
 
-`weapons/ion_cannon.json` is a two-slot weapon: choosing it in either weapon slot fills both (the loadout menu does this for you), it sits on the primary mount, and the secondary mount is left empty. Its weight (45) is counted once. Hold either fire button for `charge.max_time` (3 s) and let go to fire; `"full_only": true` means letting go early cancels the shot and costs no ammo. `"kill": true` makes a direct hit destroy the whole mech whatever part it strikes (friendly fire rules still apply). Six shots (`ammo`), 4 s between them. The bolt is a fast, straight `ion` projectile and the HUD shows a charge bar that reads READY when full.
+`weapons/ion_cannon.json` is a two-slot weapon: choosing it in either weapon slot fills both (the loadout menu does this for you), it sits on the primary mount, and the secondary mount is left empty. Its weight (45) is counted once. It is an instant beam (`"beam": {"width", "fade"}` instead of a `projectile`): the beam is a ray from the aim point out to `range`, hits the first thing on its path the moment it fires, then stays where it is and fades out over `fade` seconds (3). Hold either fire button for `charge.max_time` (3 s) and let go to fire; `"full_only": true` means letting go early cancels the shot and costs no ammo. A glowing ball grows at the muzzle while it charges and the HUD counts the seconds. `"kill": true` makes a hit destroy the whole mech whatever part it strikes (friendly fire rules still apply). Six shots (`ammo`), 4 s between them.
 
 ## Sniper cannon (raptor only)
 
