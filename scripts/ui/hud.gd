@@ -247,7 +247,7 @@ func _weapons_text() -> String:
 			else:
 				cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
 		if weapon.is_scoped():
-			cocked = "  [scope: wheel zooms, move to leave]" if _mech.sniping else "  [click to scope]"
+			cocked = "  [scope: wheel zooms, release to fire, move to leave]" if _mech.sniping else "  [click to scope]"
 		lines.append("%s  %s%s%s" % [weapon.def["name"], ammo_text, cocked, "" if online else "  OFFLINE"])
 	if _mech.is_flying():
 		var warning := "   STALL" if _mech.stalled else ""

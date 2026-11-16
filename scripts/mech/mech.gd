@@ -578,14 +578,22 @@ func _handle_fire(delta: float) -> void:
 		var usable := weapon.ready_to_fire() and weapon.has_ammo(rules) and damage.mount_online(weapon.mount_id)
 		if weapon.is_scoped():
 			var fresh_press := wanted and not weapon.button_was_down
+			var released := weapon.button_was_down and not wanted
 			weapon.button_was_down = wanted
 			if not sniping:
 				# The first press engages the scope; the mech stops and turns tail first.
+				weapon.sniper_armed = false
 				if fresh_press and damage.mount_online(weapon.mount_id):
 					set_sniping(true)
-			elif wanted and usable and sniper_aligned():
-				weapon.consume(rules)
-				_fire(weapon)
+			else:
+				# Once scoped, a press takes aim and letting go fires (if the tail is on the aim).
+				if fresh_press:
+					weapon.sniper_armed = true
+				elif released and weapon.sniper_armed:
+					weapon.sniper_armed = false
+					if usable and sniper_aligned():
+						weapon.consume(rules)
+						_fire(weapon)
 			continue
 		if weapon.is_charged():
 			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
