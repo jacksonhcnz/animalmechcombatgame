@@ -42,6 +42,13 @@ var remote_mode: bool = false
 var boost_left: float = 10.0
 var boost_locked: bool = false
 var boosting: bool = false
+## Flying mechs: speed along the nose (m/s, negative until the first frame sets it), the nose pitch
+## and bank in radians, whether the wings have stalled, and how fast it is falling in a stall.
+var air_speed: float = -1.0
+var flight_pitch: float = 0.0
+var flight_roll: float = 0.0
+var stalled: bool = false
+var _sink: float = 0.0
 var remote_grounded: bool = true
 ## Whoever last damaged this mech, so a server can credit the kill.
 var last_attacker: Mech
@@ -321,14 +328,15 @@ func _update_boost(delta: float) -> void:
 ## Speed multiplier while sprinting on the ground: Shift held, moving forward, ruleset allows it.
 ## Flying mechs boost instead (see _update_boost).
 func sprint_mult() -> float:
-	if is_flying():
-		return Points.flight("boost_speed_mult") if boosting else 1.0
 	if controls.sprint and rules.sprinting and controls.throttle > 0.0:
 		return float(Points.table().get("sprint", {}).get("speed_mult", 1.0))
 	return 1.0
 
 
 func _move(delta: float) -> void:
+	if is_flying():
+		_fly(delta)
+		return
 	var base: Dictionary = def["base"]
 	var c := controls
 	# Turning right is a clockwise (negative) rotation about Y.
@@ -339,38 +347,99 @@ func _move(delta: float) -> void:
 	var wish := forward * c.throttle + right * c.strafe
 	if wish.length() > 1.0:
 		wish = wish.normalized()
-	if is_flying():
-		_update_boost(delta)
-	# Diving is fast: going down, a flyer speeds up along the ground as well as dropping quicker.
-	var diving := is_flying() and c.vertical < 0.0
-	var target := wish * float(base["speed"]) * damage.speed_mult() * sprint_mult() * (Points.flight("dive_speed_mult") if diving else 1.0)
+	var target := wish * float(base["speed"]) * damage.speed_mult() * sprint_mult()
 
-	if is_flying():
-		var lift := damage.lift_mult()
-		var climb := c.vertical * float(base.get("climb_speed", 10.0)) * lift
-		if diving:
-			climb *= Points.flight("dive_descent_mult")
-		if boosting:
-			climb *= Points.flight("boost_speed_mult")
-		if is_zero_approx(c.vertical) and lift < 0.5:
-			climb = -SINK_SPEED * (1.0 - lift)
-		target.y = climb
-		velocity = velocity.lerp(target, clampf(AIR_ACCEL * delta, 0.0, 1.0))
-	else:
-		# In the air a mech can steer only a little, so a jump commits it to a direction.
-		var accel := GROUND_ACCEL if is_on_floor() else AIR_CONTROL
-		var flat := Vector2(velocity.x, velocity.z).lerp(Vector2(target.x, target.z), clampf(accel * delta, 0.0, 1.0))
-		velocity.x = flat.x
-		velocity.z = flat.y
-		velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
-		if c.jump and can_jump():
-			velocity.y = float(base["jump_speed"]) * damage.speed_mult()
-			_jump_cooldown = float(base.get("jump_cooldown", 0.8))
+	# In the air a mech can steer only a little, so a jump commits it to a direction.
+	var accel := GROUND_ACCEL if is_on_floor() else AIR_CONTROL
+	var flat := Vector2(velocity.x, velocity.z).lerp(Vector2(target.x, target.z), clampf(accel * delta, 0.0, 1.0))
+	velocity.x = flat.x
+	velocity.z = flat.y
+	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+	if c.jump and can_jump():
+		velocity.y = float(base["jump_speed"]) * damage.speed_mult()
+		_jump_cooldown = float(base.get("jump_cooldown", 0.8))
 	move_and_slide()
 
-	if is_flying() and global_position.y > altitude_limit:
+
+## The most a flying mech can fly, in m/s along its nose: its speed stat times the flight multiplier,
+## and faster again while boosting.
+func top_air_speed() -> float:
+	var top := float(def["base"]["speed"]) * damage.speed_mult() * Points.flight("max_speed_mult")
+	return top * (Points.flight("boost_speed_mult") if boosting else 1.0)
+
+
+## The speed below which a flying mech stalls. Damaged wings give less lift, so it stalls sooner.
+func stall_air_speed() -> float:
+	var top := float(def["base"]["speed"]) * damage.speed_mult() * Points.flight("max_speed_mult")
+	return top * Points.flight("stall_fraction") / maxf(damage.lift_mult(), 0.2)
+
+
+## Flying like a plane. A flyer is always moving along its nose. W and S set the throttle,
+## A and D bank and turn, Space and Ctrl pitch the nose up and down (Q and E nudge the
+## rudder). Climbing and turning cost speed and diving gains it. Below the stall speed the
+## wings stop lifting: the controls go soft, the nose drops and the mech falls until it picks
+## speed up again.
+func _fly(delta: float) -> void:
+	var c := controls
+	_update_boost(delta)
+	var top := top_air_speed()
+	var cruise := float(def["base"]["speed"]) * damage.speed_mult() * Points.flight("max_speed_mult") * Points.flight("cruise_fraction")
+	var idle := top / maxf(1.0, Points.flight("boost_speed_mult") if boosting else 1.0) * Points.flight("idle_fraction")
+	var stall := stall_air_speed()
+	if air_speed < 0.0:
+		air_speed = cruise
+	# The throttle sets the speed it settles at: idle when pulled right back, the top when pushed.
+	var target := cruise
+	if c.throttle < 0.0:
+		target = lerpf(cruise, idle, -c.throttle)
+	elif c.throttle > 0.0:
+		target = lerpf(cruise, top, c.throttle)
+	if boosting:
+		target = top
+	air_speed += (target - air_speed) * clampf(Points.flight("throttle_response") * delta, 0.0, 1.0)
+	# Gravity: climbing bleeds speed, diving builds it.
+	air_speed -= sin(flight_pitch) * Points.flight("gravity_coupling") * delta
+	air_speed = clampf(air_speed, 0.0, top * 1.4)
+
+	var lift_factor := clampf(air_speed / stall, 0.0, 1.0)
+	stalled = lift_factor < 1.0
+	var max_pitch := deg_to_rad(Points.flight("max_pitch_deg"))
+	flight_pitch += c.vertical * Points.flight("pitch_rate") * lift_factor * delta
+	if stalled:
+		flight_pitch = move_toward(flight_pitch, -1.0, (1.0 - lift_factor) * Points.flight("stall_nose_drop") * delta)
+	flight_pitch = clampf(flight_pitch, -max_pitch, max_pitch)
+	# Turning right banks right: a negative roll. The bank is what turns the nose.
+	var roll_target := -c.turn * deg_to_rad(Points.flight("max_roll_deg")) * lift_factor
+	flight_roll = move_toward(flight_roll, roll_target, Points.flight("roll_rate") * delta)
+	var turn_scale := clampf(air_speed / maxf(cruise, 1.0), 0.6, 1.2)
+	rotation.y += sin(flight_roll) * Points.flight("turn_rate") * damage.turn_mult() * turn_scale * delta
+	rotation.y -= c.strafe * Points.flight("rudder_rate") * lift_factor * delta
+	rotation.x = flight_pitch
+	rotation.z = flight_roll
+
+	if stalled:
+		_sink = minf(_sink + GRAVITY * (1.0 - lift_factor) * delta, 55.0)
+	else:
+		_sink = maxf(0.0, _sink - 60.0 * delta)
+	var forward := -global_transform.basis.z
+	velocity = forward * air_speed + Vector3.DOWN * _sink
+	move_and_slide()
+
+	for index in get_slide_collision_count():
+		var hit := get_slide_collision(index)
+		if hit.get_normal().y > 0.7:
+			# Belly on the ground: the nose cannot point into it, and it skids to a stop.
+			flight_pitch = maxf(flight_pitch, 0.0)
+			air_speed = maxf(0.0, air_speed - 25.0 * delta)
+			_sink = 0.0
+		else:
+			# Struck a wall or a cliff.
+			air_speed *= 0.6
+
+	if global_position.y > altitude_limit:
 		global_position.y = altitude_limit
 		velocity.y = minf(velocity.y, 0.0)
+		flight_pitch = minf(flight_pitch, 0.0)
 
 
 func _fall(delta: float) -> void:
@@ -390,6 +459,8 @@ func _handle_fire(delta: float) -> void:
 				wanted = controls.fire_secondary
 			"melee":
 				wanted = controls.fire_melee
+			"bomb":
+				wanted = controls.fire_bomb
 		var usable := weapon.ready_to_fire() and weapon.has_ammo(rules) and damage.mount_online(weapon.mount_id)
 		if weapon.is_charged():
 			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
@@ -441,6 +512,27 @@ func _fire(weapon: WeaponState) -> void:
 		var muzzle := mount_position(weapon.mount_id)
 		fired.emit(muzzle, end, tracer_color)
 		spawn_tracer(get_parent(), muzzle, end, tracer_color)
+
+
+## Where a bomb dropped now would land: its arc is followed step by step until it meets the world
+## or a mech. Returns the point, or null if it would not land within a few seconds.
+func predict_drop(weapon: WeaponState) -> Variant:
+	var cfg: Dictionary = weapon.def["projectile"]
+	var gravity := float(cfg.get("gravity", 0.0))
+	var position := mount_position(weapon.mount_id)
+	var speed := velocity + Vector3.DOWN * float(cfg["speed"])
+	var space := get_world_3d().direct_space_state
+	for step in 160:
+		var next := position + speed * 0.05
+		var query := PhysicsRayQueryParameters3D.create(position, next, LAYER_WORLD | LAYER_HITBOX)
+		query.collide_with_areas = true
+		query.exclude = _own_rids
+		var hit := space.intersect_ray(query)
+		if not hit.is_empty():
+			return hit["position"]
+		position = next
+		speed.y -= gravity * 0.05
+	return null
 
 
 ## Fires a projectile from the muzzle at the point the crosshair is on. Grenades are lobbed

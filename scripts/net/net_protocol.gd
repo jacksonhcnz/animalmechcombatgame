@@ -5,7 +5,7 @@ extends RefCounted
 ## The protocol version changes whenever the messages change. The balance version
 ## (data/balance.json) must match too, so every server plays by the same numbers.
 
-const VERSION := 2
+const VERSION := 3
 const DEFAULT_PORT := 7777
 const DISCOVERY_PORT := 7778
 const MAX_PLAYERS := 8
@@ -28,6 +28,7 @@ const FLAG_FIRE_PRIMARY := 2
 const FLAG_FIRE_SECONDARY := 4
 const FLAG_FIRE_MELEE := 8
 const FLAG_SPRINT := 16
+const FLAG_FIRE_BOMB := 32
 
 
 ## Packs one frame of a pilot's controls into a small array for the network.
@@ -43,6 +44,8 @@ static func pack_input(controls: MechControls, aim_yaw: float, aim_pitch: float)
 		flags |= FLAG_FIRE_MELEE
 	if controls.sprint:
 		flags |= FLAG_SPRINT
+	if controls.fire_bomb:
+		flags |= FLAG_FIRE_BOMB
 	return [controls.throttle, controls.strafe, controls.turn, controls.vertical, flags, aim_yaw, aim_pitch]
 
 
@@ -66,6 +69,7 @@ static func apply_input(controls: MechControls, data: Variant) -> bool:
 	controls.fire_secondary = flags & FLAG_FIRE_SECONDARY != 0
 	controls.fire_melee = flags & FLAG_FIRE_MELEE != 0
 	controls.sprint = flags & FLAG_SPRINT != 0
+	controls.fire_bomb = flags & FLAG_FIRE_BOMB != 0
 	controls.aim_yaw_target = float(data[5])
 	controls.aim_pitch_target = float(data[6])
 	return true

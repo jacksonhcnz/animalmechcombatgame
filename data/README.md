@@ -61,9 +61,15 @@ Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump
 
 Hold Shift (gamepad: left stick click) while moving forward to move faster. `points.json` `sprint.speed_mult` (1.5) sets the boost, which applies to ground speed only, not flight climb. A ruleset can switch it off with `"sprinting": false`. The server applies it, so it cannot be faked. Hardcore and Arcade keep it on.
 
-## Flight: diving and boost
+## Flight: flying like a plane
 
-Flying mechs (the hawk) use the `flight` block in `points.json`. Going down (the descend control) is faster: the descent is `dive_descent_mult` times the normal climb speed (2.0) and ground speed is `dive_speed_mult` times faster (1.3). Shift is boost for a flyer instead of a sprint: `boost_speed_mult` (1.6) faster in every direction for `boost_time` seconds (10) per tank. When the tank is empty the boost is locked until it has refilled, which takes `boost_cooldown` seconds (8); letting go early refills it at the same rate. The HUD shows the tank on the weapons readout. The server works it out. A ruleset's `"sprinting": false` switches boost off too.
+Flying mechs (the hawk) fly like a plane, using the `flight` block in `points.json`. They never hover: a flyer is always moving along its nose. W and S set the throttle (pulled back it settles at `idle_fraction` of top speed, pushed at the top, hands off at `cruise_fraction`); A and D bank and turn (the bank is what turns the nose, up to `max_roll_deg`); Space and Ctrl pitch the nose up and down; Q and E nudge the rudder. The top speed is the mech's speed stat times `max_speed_mult`. Gravity trades speed for height: climbing bleeds speed and diving builds it (`gravity_coupling`). Below `stall_fraction` of top speed the wings stall: the controls go soft, the nose drops (`stall_nose_drop`) and the mech falls until it has built speed again. Wing damage gives less lift, so a damaged flyer stalls at a higher speed. Hitting a cliff slows it, and the ground skids it to a stop (a mech left on the ground can take off again). The whole body pitches and banks, so the cockpit view tilts with it.
+
+Shift is boost for a flyer instead of a sprint: `boost_speed_mult` (1.6) faster for `boost_time` seconds (10) per tank. When the tank is empty the boost is locked until it has refilled, which takes `boost_cooldown` seconds (8); letting go early refills it at the same rate. The HUD shows airspeed, altitude, a STALL warning and the boost tank on the weapons readout. The server works it all out. A ruleset's `"sprinting": false` switches boost off.
+
+## Air bomb
+
+The hawk's belly rack carries an air bomb (`weapons/air_bomb.json`, weapon `slot` `bomb`, fired with B or the d-pad down). A weapon on the `bomb` slot has its own button and is not offered in the loadout screen. Its `projectile` has `"drop": true`: it is not aimed, it leaves with the mech's own velocity (plus `speed` straight down) and falls on an arc under `gravity`, bursting where it lands (`splash_radius`, `splash_damage`). An orange marker on the HUD shows where a bomb dropped now would land.
 
 ## Weapon models
 

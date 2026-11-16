@@ -89,10 +89,15 @@ static func validate() -> Array[String]:
 	if float(t.get("sprint", {}).get("speed_mult", 0.0)) < 1.0:
 		p.append("points.json: sprint.speed_mult must be 1 or more")
 	var flight: Dictionary = t.get("flight", {})
-	for key in ["dive_speed_mult", "dive_descent_mult", "boost_speed_mult"]:
+	for key in ["max_speed_mult", "boost_speed_mult"]:
 		if float(flight.get(key, 0.0)) < 1.0:
 			p.append("points.json: flight.%s must be 1 or more" % key)
-	for key in ["boost_time", "boost_cooldown"]:
+	var idle := float(flight.get("idle_fraction", 0.0))
+	var cruise := float(flight.get("cruise_fraction", 0.0))
+	var stall := float(flight.get("stall_fraction", 0.0))
+	if not (0.0 < stall and stall < idle and idle <= cruise and cruise <= 1.0):
+		p.append("points.json: flight fractions must satisfy 0 < stall_fraction < idle_fraction <= cruise_fraction <= 1, so idling never stalls")
+	for key in ["throttle_response", "gravity_coupling", "pitch_rate", "max_pitch_deg", "max_roll_deg", "roll_rate", "turn_rate", "rudder_rate", "stall_nose_drop", "boost_time", "boost_cooldown"]:
 		if float(flight.get(key, 0.0)) <= 0.0:
 			p.append("points.json: flight.%s must be above 0 (seconds)" % key)
 	if int(t.get("budget", 0)) <= 0:

@@ -511,7 +511,7 @@ func _send_snapshots() -> void:
 		var mech := slot.mech
 		if mech == null or not is_instance_valid(mech):
 			continue
-		entries.append([slot.peer, mech.global_position, mech.rotation.y, mech.velocity, mech.is_on_floor(), mech.aim_yaw, mech.aim_pitch])
+		entries.append([slot.peer, mech.global_position, mech.rotation.y, mech.velocity, mech.is_on_floor(), mech.aim_yaw, mech.aim_pitch, mech.rotation.x, mech.rotation.z])
 	s_state.rpc(_clock, entries)
 	for slot: Slot in _slots.values():
 		if slot.is_local or slot.mech == null or not is_instance_valid(slot.mech):
@@ -521,6 +521,8 @@ func _send_snapshots() -> void:
 			ammo[weapon.mount_id] = weapon.ammo
 		ammo["boost"] = slot.mech.boost_ratio()
 		ammo["boost_locked"] = slot.mech.boost_locked
+		ammo["air_speed"] = slot.mech.air_speed
+		ammo["stalled"] = slot.mech.stalled
 		s_self.rpc_id(slot.peer, ammo)
 
 
@@ -644,16 +646,19 @@ func _place_display_mech(peer: int, mech: Mech) -> void:
 	var vel: Vector3
 	var aim_yaw: float
 	var aim_pitch: float
+	var tilt := Vector2.ZERO
 	var grounded: bool
 	if _render_time <= float(first["t"]):
 		pos = first["pos"]; yaw = first["yaw"]; vel = first["vel"]
 		aim_yaw = first["ay"]; aim_pitch = first["ap"]; grounded = first["gr"]
+		tilt = Vector2(first["rx"], first["rz"])
 	elif _render_time >= float(last["t"]):
 		# Ran out of snapshots (a late packet): carry on at the last known speed for a moment.
 		var gap := minf(_render_time - float(last["t"]), 0.15)
 		pos = (last["pos"] as Vector3) + (last["vel"] as Vector3) * gap
 		yaw = last["yaw"]; vel = last["vel"]
 		aim_yaw = last["ay"]; aim_pitch = last["ap"]; grounded = last["gr"]
+		tilt = Vector2(last["rx"], last["rz"])
 	else:
 		var index := 0
 		while index < buffer.size() - 2 and float(buffer[index + 1]["t"]) < _render_time:
@@ -668,8 +673,9 @@ func _place_display_mech(peer: int, mech: Mech) -> void:
 		aim_yaw = lerp_angle(float(a["ay"]), float(b["ay"]), f)
 		aim_pitch = lerpf(float(a["ap"]), float(b["ap"]), f)
 		grounded = a["gr"]
+		tilt = Vector2(lerpf(a["rx"], b["rx"], f), lerpf(a["rz"], b["rz"], f))
 	mech.global_position = pos
-	mech.rotation.y = yaw
+	mech.rotation = Vector3(tilt.x, yaw, tilt.y)
 	mech.velocity = vel
 	mech.remote_grounded = grounded
 	if mech != local_mech:
@@ -795,7 +801,7 @@ func s_state(server_time: float, entries: Array) -> void:
 		if not _buffers.has(peer):
 			continue
 		var buffer: Array = _buffers[peer]
-		buffer.append({"t": server_time, "pos": entry[1], "yaw": entry[2], "vel": entry[3], "gr": entry[4], "ay": entry[5], "ap": entry[6]})
+		buffer.append({"t": server_time, "pos": entry[1], "yaw": entry[2], "vel": entry[3], "gr": entry[4], "ay": entry[5], "ap": entry[6], "rx": entry[7], "rz": entry[8]})
 		while buffer.size() > 12:
 			buffer.pop_front()
 
@@ -809,6 +815,8 @@ func s_self(ammo: Dictionary) -> void:
 		if ammo.has(weapon.mount_id):
 			weapon.ammo = int(ammo[weapon.mount_id])
 	local_mech.set_boost(float(ammo.get("boost", 1.0)), bool(ammo.get("boost_locked", false)))
+	local_mech.air_speed = float(ammo.get("air_speed", -1.0))
+	local_mech.stalled = bool(ammo.get("stalled", false))
 
 
 # ---------------------------------------------------------------- shared

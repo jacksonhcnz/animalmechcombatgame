@@ -158,6 +158,12 @@ func _run() -> void:
 		min_z = minf(min_z, z)
 		max_z = maxf(max_z, z)
 	_check(max_z - min_z > deg_to_rad(20.0), "hawk wings flap (range %.2f rad)" % (max_z - min_z))
+	# Flying like a plane, the whole body pitches up in a climb, and the neck keeps the head level.
+	hawk.controls.vertical = 1.0
+	await _frames(40)
+	_check(hawk.rotation.x > 0.05, "the hawk pitches up as it climbs (pitch %.2f)" % hawk.rotation.x)
+	_check(hawk.pivots["neck_a"].rotation.x < -0.02, "the neck turns against the pitch to keep the head level")
+	hawk.controls.vertical = 0.0
 	hawk.take_hit("wing_l", 9999.0)
 	await _frames(120)
 	var drooped: float = hawk.pivots["wing_l"].rotation.z + hawk.pivots["wing_mid_l"].rotation.z + hawk.pivots["wing_tip_l"].rotation.z
@@ -165,7 +171,7 @@ func _run() -> void:
 	hawk.controls.turn = 1.0
 	await _frames(60)
 	hawk.controls.turn = 0.0
-	_check(hawk.rig.rotation.z < -0.1, "hawk banks into a right turn")
+	_check(hawk.rotation.z < -0.1, "hawk banks into a right turn (roll %.2f)" % hawk.rotation.z)
 
 	# The hawk's neck and head share the turn between them, up to the hawk's limit.
 	hawk.aim_yaw = 1.0
@@ -181,11 +187,6 @@ func _run() -> void:
 	_check(hawk.pivots["head"].get_parent() == hawk.pivots["neck_b"], "the head sits on the neck")
 	hawk.take_hit("wing_tip_r", 10.0)
 	_check(hawk.damage.health["wing_r"] < hawk.damage.max_health["wing_r"], "a hit on the primaries counts against the wing")
-	hawk.controls.vertical = 1.0
-	await _frames(100)
-	_check(hawk.rig.rotation.x > 0.05, "the hawk pitches up as it climbs")
-	_check(hawk.pivots["neck_a"].rotation.x < -0.02, "the neck turns against the pitch to keep the head level")
-	hawk.controls.vertical = 0.0
 	# Without a lag the tip would just be a scaled copy of the root; with one it falls out of step.
 	var out_of_step := 0.0
 	for i in 120:

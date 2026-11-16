@@ -145,8 +145,8 @@ func _update_walk(delta: float) -> void:
 
 
 func _update_flight(delta: float) -> void:
-	var climb_speed := float(_mech.def["base"]["climb_speed"])
-	var climb := clampf(_mech.velocity.y / climb_speed, -1.0, 1.0)
+	# The whole body pitches and banks as a plane now, so the wings only flap: hard in a climb, easy in a dive.
+	var climb := clampf(sin(_mech.flight_pitch) / sin(deg_to_rad(Points.flight("max_pitch_deg"))), -1.0, 1.0)
 	var climbing := maxf(climb, 0.0)
 	var descending := maxf(-climb, 0.0)
 
@@ -159,10 +159,9 @@ func _update_flight(delta: float) -> void:
 
 	bob_y = float(_cfg["hover_bob_m"]) * _flap_amp * sin(flap_phase * TAU)
 	# Turning right banks right (right side down, a negative roll).
-	var bank_target := -_mech.controls.turn * deg_to_rad(float(_cfg["bank_deg"]))
-	_bank = lerpf(_bank, bank_target, clampf(4.0 * delta, 0.0, 1.0))
-	_pitch = lerpf(_pitch, climb * deg_to_rad(float(_cfg["pitch_deg"])), clampf(3.0 * delta, 0.0, 1.0))
-	_roll = _bank
+	_bank = 0.0
+	_pitch = 0.0
+	_roll = 0.0
 	_yaw = 0.0
 	_crouch = 0.0
 
@@ -200,7 +199,9 @@ func _apply_parts(delta: float) -> void:
 			rotation.x += _look_pitch[id] * alive
 
 		# A stabilised part (a bird's neck) turns against the body's pitch, so the head stays level.
-		rotation.x -= _pitch * float(entry["stabilize"]) * alive
+		# The neck keeps the head level against the body pitching, whether that is the rig or a plane's whole body.
+		var body_pitch := _mech.flight_pitch if _mech.is_flying() else 0.0
+		rotation.x -= (_pitch + body_pitch) * float(entry["stabilize"]) * alive
 
 		# Gimbal parts follow where the pilot is aiming, and freeze when destroyed.
 		match entry["aim"]:
