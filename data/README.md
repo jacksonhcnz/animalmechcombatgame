@@ -53,7 +53,7 @@ Do not put `speed`, `turn_rate`, `armor`, `jump_speed`, `jump_cooldown` or `clim
 
 ## Loadout (four slots)
 
-A pilot picks four things in the main menu: `primary` and `secondary` weapons (any weapon whose `slot` matches), one `equipment` item (`data/equipment/`) and one `perk` (`data/perks/`). Each has a `weight`; weapons add `weight` plus `ammo_weight` per round. Weapons and gear must fit the mech's carry capacity, otherwise the server uses the default loadout (autocannon, rocket pod, no equipment, no perk). Melee weapons stay fixed per mech.
+A pilot picks four things in the main menu: `primary` and `secondary` weapons (either slot takes any ranged weapon, so two machine guns or two sniper cannons are fine; a weapon's own `slot` is only where it sits by default, and melee weapons are never offered), one `equipment` item (`data/equipment/`) and one `perk` (`data/perks/`). Each has a `weight`; weapons add `weight` plus `ammo_weight` per round. Weapons and gear must fit the mech's carry capacity, otherwise the server uses the default loadout (autocannon, rocket pod, no equipment, no perk). Melee weapons stay fixed per mech.
 
 Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump, climb), `turn_mult`, `damage_mult` and `ammo_mult`. Every folder needs a `none` entry. The server checks every loadout a client sends. Command-line options: `--primary=ID --secondary=ID --equipment=ID --perk=ID`.
 
