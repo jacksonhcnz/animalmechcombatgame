@@ -6,6 +6,8 @@ var mount_id: String
 var def: Dictionary
 var ammo: int = 0
 var cooldown: float = 0.0
+## Seconds the fire button has been held on a weapon that is cocked before it fires.
+var charge_time: float = 0.0
 
 
 func _init(mount: String, weapon_def: Dictionary) -> void:
@@ -20,6 +22,31 @@ func slot() -> String:
 
 func is_melee() -> bool:
 	return def.get("kind", "ranged") == "melee"
+
+
+## True for a weapon fired on release, after being cocked ("charge" in its data).
+func is_charged() -> bool:
+	return def.has("charge")
+
+
+func charge_max() -> float:
+	return float(def.get("charge", {}).get("max_time", 1.0))
+
+
+## 0 to 1: how far the weapon is cocked.
+func charge_ratio() -> float:
+	return clampf(charge_time / maxf(0.01, charge_max()), 0.0, 1.0)
+
+
+## How high above the aim point a shell cocked for `held` seconds bursts.
+func burst_height(held: float) -> float:
+	var charge: Dictionary = def.get("charge", {})
+	return clampf(held / maxf(0.01, charge_max()), 0.0, 1.0) * float(charge.get("max_height", 0.0))
+
+
+## Mirrors the cocking on a client's own mech so the HUD can show it (the server does the firing).
+func show_charge(held: bool, delta: float) -> void:
+	charge_time = minf(charge_time + delta, charge_max()) if held else 0.0
 
 
 func tick(delta: float) -> void:

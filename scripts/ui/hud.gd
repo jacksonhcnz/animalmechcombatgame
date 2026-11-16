@@ -199,7 +199,11 @@ func _weapons_text() -> String:
 		if not weapon.is_melee():
 			ammo_text = str(weapon.ammo) if _rules.ammo_limits else "unlimited"
 		var online := _mech.damage.mount_online(weapon.mount_id)
-		lines.append("%s  %s%s" % [weapon.def["name"], ammo_text, "" if online else "  OFFLINE"])
+		var cocked := ""
+		if weapon.is_charged() and weapon.charge_time > 0.0:
+			var notches := roundi(weapon.charge_ratio() * 8.0)
+			cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
+		lines.append("%s  %s%s%s" % [weapon.def["name"], ammo_text, cocked, "" if online else "  OFFLINE"])
 	return "\n".join(lines)
 
 

@@ -36,6 +36,9 @@ func _run() -> void:
 	await _test_bullet_takes_time()
 	await _test_grenade_arc()
 	await _test_rocket_splash()
+	await _test_sniper_knockout()
+	await _test_flak_airburst()
+	await _test_flak_hold_and_release()
 	_test_info_round_trip()
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
@@ -125,6 +128,76 @@ func _test_rocket_splash() -> void:
 			break
 	_check(not is_instance_valid(shot), "the rocket burst on the ground")
 	_check(target.damage.total_ratio() < before, "the rocket's blast hurts a mech standing nearby")
+
+
+func _test_sniper_knockout() -> void:
+	_range.start("lion", "standard")
+	await _frames(10)
+	var target: Mech = _range.targets[0]
+	var player := await _stand_back(target)
+	var sniper := GameData.get_entry("weapons", "sniper_cannon")
+	_check(bool(sniper.get("knockout", false)), "the sniper cannon is a knockout weapon")
+	var limb := "front_left_leg" if target.damage.health.has("front_left_leg") else ""
+	for id in target.damage.health:
+		if id != "head" and id != "torso" and id != "hips" and not target.damage.is_part_disabled(id):
+			limb = id
+			break
+	var head_hits := target.damage.knockout_amount("head")
+	_check(head_hits > target.damage.health["head"], "a head hit is enough to knock the pilot out")
+	_check(target.damage.knockout_amount("torso") < 0.0, "the torso is too big for a one shot knockout")
+	target.take_knockout(limb, 38.0, player)
+	_check(target.damage.is_part_disabled(limb), "one sniper hit puts out the limb it hits (%s)" % limb)
+	target.take_knockout("head", 38.0, player)
+	_check(target.damage.is_destroyed(), "a head shot knocks the mech out")
+
+
+func _test_flak_airburst() -> void:
+	_range.start("lion", "standard")
+	await _frames(10)
+	var target: Mech = _range.targets[0]
+	var player := await _stand_back(target)
+	var flak := GameData.get_entry("weapons", "flak_burst")
+	var weapon := WeaponState.new("test", flak)
+	_check(weapon.is_charged() and is_zero_approx(weapon.burst_height(0.0)), "uncocked flak bursts at the aim point")
+	_check(is_equal_approx(weapon.burst_height(99.0), float(flak["charge"]["max_height"])), "fully cocked flak bursts at its top height")
+	var held := weapon.burst_height(0.6)
+	_check(held > 0.0 and held < weapon.burst_height(1.2), "the longer it is held, the higher it bursts")
+	var aim := target.global_position + Vector3(0.0, 1.0, 0.0)
+	var shot := Projectile.fire(flak, player.global_position + Vector3(0.0, 6.0, 0.0), aim, player, 1.0, 10.0)
+	_range.add_child(shot)
+	shot.global_position = player.global_position + Vector3(0.0, 6.0, 0.0)
+	var burst: Array[Vector3] = []
+	shot.finished.connect(func(_id: int, pos: Vector3, _exploded: bool) -> void: burst.append(pos))
+	for i in 200:
+		await physics_frame
+		if not is_instance_valid(shot):
+			break
+	var burst_at: Vector3 = burst[0] if not burst.is_empty() else Vector3.ZERO
+	_check(burst_at.y > aim.y + 8.0, "cocked flak bursts in the air above the target (%.1f m up)" % (burst_at.y - aim.y))
+	_check(burst_at.distance_to(aim + Vector3.UP * 10.0) < 1.5, "it bursts at the height it was cocked to")
+
+
+func _test_flak_hold_and_release() -> void:
+	_range.start("lion", "standard")
+	await _frames(10)
+	var target: Mech = _range.targets[0]
+	var player := await _stand_back(target)
+	var weapon: WeaponState
+	for w in player.weapons:
+		if w.slot() == "secondary":
+			weapon = w
+	weapon.def = GameData.get_entry("weapons", "flak_burst")
+	weapon.ammo = 50
+	var seen: Array[Dictionary] = []
+	player.projectile_launched.connect(func(info: Dictionary) -> void: seen.append(info))
+	player.controls.fire_secondary = true
+	await _frames(30)
+	_check(seen.is_empty(), "holding the button cocks the flak without firing it")
+	_check(weapon.charge_ratio() > 0.1, "the flak charge builds while held")
+	player.controls.fire_secondary = false
+	await _frames(2)
+	_check(seen.size() == 1, "letting go fires the flak shell")
+	_check(weapon.charge_time == 0.0, "the charge resets after firing")
 
 
 func _test_info_round_trip() -> void:

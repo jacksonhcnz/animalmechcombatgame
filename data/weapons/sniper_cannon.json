@@ -4,6 +4,7 @@
 	"kind": "ranged",
 	"slot": "primary",
 	"damage": 38.0,
+	"knockout": true,
 	"range": 600.0,
 	"fire_interval": 1.4,
 	"ammo": 40,

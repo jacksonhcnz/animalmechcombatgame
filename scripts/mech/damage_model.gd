@@ -78,6 +78,23 @@ func apply_damage(part_id: String, amount: float) -> Dictionary:
 	return result
 
 
+## How much damage it takes to put a part out in one hit (the sniper's "knockout" shot), or
+## a negative number when a knockout does not apply and the shot should do its normal damage.
+## A head is a knockout: the pilot is out. Torso and hindquarters are fatal parts too, but
+## are too big for one shot, so they take ordinary damage. Any limb, joint or mount is put out.
+func knockout_amount(part_id: String) -> float:
+	part_id = resolve(part_id)
+	if not _rules.location_damage or not _parts.has(part_id):
+		return -1.0
+	var part: Dictionary = _parts[part_id]
+	if _parts[part_id].get("joint", false) and not _rules.joint_criticals:
+		part_id = part.get("parent", "torso")
+		part = _parts.get(part_id, part)
+	if part.get("fatal", false) and part.get("kind", "") != "head":
+		return -1.0
+	return float(health.get(part_id, 0.0)) * _armor + 1.0
+
+
 ## The part that really owns a piece of the body: itself, or the part it stands in for.
 func resolve(part_id: String) -> String:
 	return _parts.get(part_id, {}).get("damage_to", part_id)
