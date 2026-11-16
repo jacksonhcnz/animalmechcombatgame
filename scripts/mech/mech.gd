@@ -97,7 +97,7 @@ func setup(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}) -> void:
 	damage.destroyed.connect(_on_destroyed)
 	var ammo_load := Points.ammo_for(def)
 	for mount in def.get("mounts", []):
-		var weapon := WeaponState.new(mount["id"], GameData.get_entry("weapons", mount["weapon"]))
+		var weapon := WeaponState.new(mount["id"], GameData.get_entry("weapons", mount["weapon"]), str(mount.get("slot", "")))
 		weapon.ammo = int(ammo_load.get(mount["id"], weapon.ammo))
 		weapons.append(weapon)
 	_build_body()

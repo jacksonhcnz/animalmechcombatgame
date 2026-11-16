@@ -18,8 +18,9 @@ static func options(slot: String) -> Array[String]:
 	var result: Array[String] = []
 	match slot:
 		"primary", "secondary":
+			# Either weapon slot takes any ranged weapon, so two of the same is fine.
 			for id in GameData.ids("weapons"):
-				if GameData.get_entry("weapons", id).get("slot", "") == slot:
+				if GameData.get_entry("weapons", id).get("kind", "ranged") != "melee":
 					result.append(id)
 		"equipment":
 			result.assign(GameData.ids("equipment"))
@@ -88,6 +89,7 @@ static func apply(mech_def: Dictionary, choice: Variant) -> Dictionary:
 		var slot: String = GameData.get_entry("weapons", mount["weapon"]).get("slot", "")
 		if slot == "primary" or slot == "secondary":
 			mount["weapon"] = load[slot]
+			mount["slot"] = slot
 	var gear := 0.0
 	for slot in ["equipment", "perk"]:
 		gear += float(item(slot, load[slot]).get("weight", 0.0))

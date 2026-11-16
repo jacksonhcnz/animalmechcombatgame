@@ -10,14 +10,20 @@ var cooldown: float = 0.0
 var charge_time: float = 0.0
 
 
-func _init(mount: String, weapon_def: Dictionary) -> void:
+## Which fire button works the weapon. It belongs to the mount, not the weapon, so any ranged
+## weapon can go in either weapon slot; with no mount slot given, the weapon's own is used.
+var mount_slot: String = ""
+
+
+func _init(mount: String, weapon_def: Dictionary, slot_override: String = "") -> void:
 	mount_id = mount
+	mount_slot = slot_override
 	def = weapon_def
 	ammo = int(weapon_def.get("ammo", 0))
 
 
 func slot() -> String:
-	return def.get("slot", "primary")
+	return mount_slot if mount_slot != "" else def.get("slot", "primary")
 
 
 func is_melee() -> bool:
