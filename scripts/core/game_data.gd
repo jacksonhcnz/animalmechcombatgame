@@ -98,6 +98,12 @@ static func _validate_weapon(id: String) -> Array[String]:
 			p.append("%s: projectile gravity, splash_radius and splash_damage cannot be negative" % tag)
 		if w.get("kind", "") == "melee":
 			p.append("%s: melee weapons cannot fire projectiles" % tag)
+		if w.has("charge"):
+			var charge: Variant = w["charge"]
+			if not (charge is Dictionary and float(charge.get("max_time", 0.0)) > 0.0 and float(charge.get("max_height", 0.0)) > 0.0):
+				p.append("%s: charge needs max_time and max_height above 0" % tag)
+			elif not (shot is Dictionary and float(shot.get("splash_radius", 0.0)) > 0.0):
+				p.append("%s: a charged weapon bursts, so its projectile needs a splash_radius" % tag)
 	if w.has("visual"):
 		p.append_array(_validate_visual(tag, w["visual"]))
 		if float(w.get("muzzle", 0.0)) <= 0.0:

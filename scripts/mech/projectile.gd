@@ -22,16 +22,25 @@ var splash_radius: float = 0.0
 var splash_damage: float = 0.0
 var shooter: Mech
 var authoritative: bool = false
+## Set for an airburst: the shell bursts when it reaches this point.
+var burst_point: Vector3 = Vector3.ZERO
+var has_burst_point: bool = false
+var knockout: bool = false
 
 var _done: bool = false
 
 
 ## A real projectile for a weapon, fired from `muzzle` towards `aim_point`.
-static func fire(weapon_def: Dictionary, muzzle: Vector3, aim_point: Vector3, shooter_mech: Mech, damage_mult: float) -> Projectile:
+static func fire(weapon_def: Dictionary, muzzle: Vector3, aim_point: Vector3, shooter_mech: Mech, damage_mult: float, burst_height: float = 0.0) -> Projectile:
 	var cfg: Dictionary = weapon_def["projectile"]
 	var p := Projectile.new()
 	p.id = _next_id
 	_next_id += 1
+	p.knockout = bool(weapon_def.get("knockout", false))
+	if burst_height > 0.5:
+		aim_point += Vector3.UP * burst_height
+		p.burst_point = aim_point
+		p.has_burst_point = true
 	p.model = str(cfg.get("model", "bullet"))
 	p.gravity = float(cfg.get("gravity", 0.0))
 	var speed := float(cfg["speed"])
@@ -116,9 +125,17 @@ func _physics_process(delta: float) -> void:
 			global_position = hit["position"]
 			_impact(hit["collider"])
 			return
+		if has_burst_point and (burst_point - to).dot(velocity) <= 0.0:
+			# Reached the point it was cocked to burst at: set off in the air.
+			global_position = burst_point
+			_blast(null)
+			return
 		if life <= 0.0:
 			# A lob that never reached anything still bursts where it stopped.
-			_end(gravity > 0.0 and splash_radius > 0.0)
+			if gravity > 0.0 and splash_radius > 0.0:
+				_blast(null)
+			else:
+				_end(false)
 			return
 	elif life <= 0.0:
 		_end(false)
@@ -139,9 +156,17 @@ func _impact(collider: Object) -> void:
 	if collider is Node and collider.has_meta("part_id"):
 		direct = collider.get_meta("mech")
 		if is_instance_valid(direct) and shooter != null:
-			direct.take_hit(collider.get_meta("part_id"), damage_amount, shooter)
+			if knockout:
+				direct.take_knockout(collider.get_meta("part_id"), damage_amount, shooter)
+			else:
+				direct.take_hit(collider.get_meta("part_id"), damage_amount, shooter)
 		else:
 			direct = null
+	_blast(direct)
+
+
+## Blast damage to every other mech near the burst, then the shot ends.
+func _blast(direct: Mech) -> void:
 	if splash_radius > 0.0 and splash_damage > 0.0:
 		for node in get_tree().get_nodes_in_group("mechs"):
 			var other := node as Mech

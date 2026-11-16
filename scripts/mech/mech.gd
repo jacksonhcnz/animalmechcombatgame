@@ -183,6 +183,13 @@ func take_hit(part_id: String, amount: float, attacker: Mech = null) -> Dictiona
 	return result
 
 
+## A knockout shot: puts the part it hit out of action in one hit (a head hit knocks the
+## pilot out). Falls back to `fallback` damage where a knockout does not apply.
+func take_knockout(part_id: String, fallback: float, attacker: Mech = null) -> Dictionary:
+	var amount := damage.knockout_amount(part_id)
+	return take_hit(part_id, amount if amount > 0.0 else fallback, attacker)
+
+
 ## World position of the weapon mount, used as the muzzle for tracers.
 func mount_position(mount_id: String) -> Vector3:
 	for mount in def.get("mounts", []):
@@ -217,6 +224,9 @@ func _physics_process(delta: float) -> void:
 		# A display copy only animates. The local player's copy still turns its own head at once.
 		if is_player and not _dead:
 			_update_aim()
+			for weapon in weapons:
+				if weapon.is_charged():
+					weapon.show_charge(controls.fire_primary if weapon.slot() == "primary" else controls.fire_secondary, delta)
 		else:
 			_apply_aim_pivots()
 		_animate(delta)
@@ -231,7 +241,7 @@ func _physics_process(delta: float) -> void:
 	_update_aim()
 	_move(delta)
 	_animate(delta)
-	_handle_fire()
+	_handle_fire(delta)
 
 
 func _animate(delta: float) -> void:
@@ -322,7 +332,7 @@ func _fall(delta: float) -> void:
 	move_and_slide()
 
 
-func _handle_fire() -> void:
+func _handle_fire(delta: float) -> void:
 	for weapon in weapons:
 		var wanted := false
 		match weapon.slot():
@@ -332,9 +342,22 @@ func _handle_fire() -> void:
 				wanted = controls.fire_secondary
 			"melee":
 				wanted = controls.fire_melee
-		if not wanted or not weapon.ready_to_fire() or not weapon.has_ammo(rules):
+		var usable := weapon.ready_to_fire() and weapon.has_ammo(rules) and damage.mount_online(weapon.mount_id)
+		if weapon.is_charged():
+			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
+			if wanted and usable:
+				weapon.charge_time = minf(weapon.charge_time + delta, weapon.charge_max())
+				continue
+			if weapon.charge_time <= 0.0:
+				continue
+			var held := weapon.charge_time
+			weapon.charge_time = 0.0
+			if not usable:
+				continue
+			weapon.consume(rules)
+			_launch(weapon, weapon.burst_height(held))
 			continue
-		if not damage.mount_online(weapon.mount_id):
+		if not wanted or not usable:
 			continue
 		weapon.consume(rules)
 		_fire(weapon)
@@ -374,7 +397,7 @@ func _fire(weapon: WeaponState) -> void:
 
 ## Fires a projectile from the muzzle at the point the crosshair is on. Grenades are lobbed
 ## on an arc to land there.
-func _launch(weapon: WeaponState) -> void:
+func _launch(weapon: WeaponState, burst_height: float = 0.0) -> void:
 	var origin := aim_origin()
 	var dir := aim_direction()
 	var spread := deg_to_rad(float(weapon.def.get("spread_deg", 0.0)))
@@ -390,7 +413,7 @@ func _launch(weapon: WeaponState) -> void:
 	if not hit.is_empty():
 		aim_point = hit["position"]
 	var muzzle := mount_position(weapon.mount_id)
-	var shot := Projectile.fire(weapon.def, muzzle, aim_point, self, float(def.get("damage_mult", 1.0)))
+	var shot := Projectile.fire(weapon.def, muzzle, aim_point, self, float(def.get("damage_mult", 1.0)), burst_height)
 	var parent := get_parent()
 	if parent == null:
 		shot.free()
