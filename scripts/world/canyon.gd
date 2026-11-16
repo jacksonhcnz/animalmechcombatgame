@@ -13,7 +13,7 @@ const TOP_GREENS: Array[String] = ["#74a554", "#6b9a4d", "#7dae5c"]
 const FLOOR_GREENS: Array[String] = ["#5d8a44", "#56803f", "#65944b"]
 const ROCK_TANS: Array[String] = ["#c19a62", "#b0894f", "#caa46e", "#a3804a"]
 ## A rock face is drawn in layers this tall, each a slightly different tan.
-const LAYER_HEIGHT := 5.0
+const LAYER_HEIGHT := 7.5
 ## Patches of ground tone are this many cells across.
 const PATCH := 10
 
