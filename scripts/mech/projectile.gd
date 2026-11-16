@@ -26,6 +26,7 @@ var authoritative: bool = false
 var burst_point: Vector3 = Vector3.ZERO
 var has_burst_point: bool = false
 var knockout: bool = false
+var kill: bool = false
 
 var _done: bool = false
 
@@ -37,6 +38,7 @@ static func fire(weapon_def: Dictionary, muzzle: Vector3, aim_point: Vector3, sh
 	p.id = _next_id
 	_next_id += 1
 	p.knockout = bool(weapon_def.get("knockout", false))
+	p.kill = bool(weapon_def.get("kill", false))
 	if burst_height > 0.5:
 		aim_point += Vector3.UP * burst_height
 		p.burst_point = aim_point
@@ -160,7 +162,9 @@ func _impact(collider: Object) -> void:
 	if collider is Node and collider.has_meta("part_id"):
 		direct = collider.get_meta("mech")
 		if is_instance_valid(direct) and shooter != null:
-			if knockout:
+			if kill:
+				direct.take_kill(shooter)
+			elif knockout:
 				direct.take_knockout(collider.get_meta("part_id"), damage_amount, shooter)
 			else:
 				direct.take_hit(collider.get_meta("part_id"), damage_amount, shooter)
@@ -229,6 +233,10 @@ func _build_model() -> void:
 			_build_grenade()
 		"bomb":
 			_build_bomb()
+		"ion":
+			# A long, bright bolt of ions: a white core in a cyan sheath.
+			_add_mesh(_box(Vector3(0.9, 0.9, 7.0)), Vector3.ZERO, Vector3.ZERO, color, true)
+			_add_mesh(_box(Vector3(0.35, 0.35, 9.0)), Vector3.ZERO, Vector3.ZERO, Color.WHITE, true)
 		"pellet":
 			_add_mesh(_sphere(0.34), Vector3.ZERO, Vector3.ZERO, color, true)
 		_:

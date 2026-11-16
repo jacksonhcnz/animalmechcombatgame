@@ -1,0 +1,197 @@
+{
+	"id": "ion_cannon",
+	"name": "Ion Cannon",
+	"kind": "ranged",
+	"slot": "primary",
+	"two_slot": true,
+	"damage": 1000.0,
+	"kill": true,
+	"range": 900.0,
+	"fire_interval": 4.0,
+	"ammo": 6,
+	"weight": 45.0,
+	"ammo_weight": 2.0,
+	"spread_deg": 0.0,
+	"projectile": {
+		"model": "ion",
+		"speed": 900.0
+	},
+	"charge": {
+		"max_time": 3.0,
+		"full_only": true
+	},
+	"tracer_color": "#6af0ff",
+	"muzzle": 4.2,
+	"visual": [
+		{
+			"shape": "box",
+			"size": [
+				1.1,
+				1.1,
+				1.8
+			],
+			"pos": [
+				0,
+				0,
+				0.6
+			],
+			"tone": "accent"
+		},
+		{
+			"shape": "cylinder",
+			"size": [
+				0.5,
+				4.2,
+				0.5
+			],
+			"pos": [
+				0,
+				0,
+				-2.2
+			],
+			"tone": "metal",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "cylinder",
+			"size": [
+				0.9,
+				0.9,
+				0.9
+			],
+			"pos": [
+				0,
+				0,
+				-0.4
+			],
+			"tone": "primary",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "hex",
+			"size": [
+				1.0,
+				0.16,
+				1.0
+			],
+			"pos": [
+				0,
+				0,
+				-1.2
+			],
+			"tone": "primary",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "hex",
+			"size": [
+				1.0,
+				0.16,
+				1.0
+			],
+			"pos": [
+				0,
+				0,
+				-2.0
+			],
+			"tone": "primary",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "hex",
+			"size": [
+				1.0,
+				0.16,
+				1.0
+			],
+			"pos": [
+				0,
+				0,
+				-2.8
+			],
+			"tone": "primary",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "hex",
+			"size": [
+				0.8,
+				0.12,
+				0.8
+			],
+			"pos": [
+				0,
+				0,
+				-3.6
+			],
+			"tone": "dark",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "box",
+			"size": [
+				0.18,
+				0.18,
+				3.2
+			],
+			"pos": [
+				-0.7,
+				0,
+				-1.8
+			],
+			"tone": "dark"
+		},
+		{
+			"shape": "box",
+			"size": [
+				0.18,
+				0.18,
+				3.2
+			],
+			"pos": [
+				0.7,
+				0,
+				-1.8
+			],
+			"tone": "dark"
+		},
+		{
+			"shape": "box",
+			"size": [
+				0.7,
+				0.5,
+				0.5
+			],
+			"pos": [
+				0,
+				0.8,
+				0.3
+			],
+			"tone": "dark"
+		}
+	]
+}

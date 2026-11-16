@@ -71,6 +71,10 @@ Space is boost for a flyer instead of Shift being a sprint: `boost_speed_mult` (
 
 The hawk's belly rack carries an air bomb (`weapons/air_bomb.json`, weapon `slot` `bomb`, fired with B or the d-pad down). A weapon on the `bomb` slot has its own button and is not offered in the loadout screen. Its `projectile` has `"drop": true`: it is not aimed, it leaves with the mech's own velocity (plus `speed` straight down) and falls on an arc under `gravity`, bursting where it lands (`splash_radius`, `splash_damage`). An orange marker on the HUD shows where a bomb dropped now would land.
 
+## Ion cannon
+
+`weapons/ion_cannon.json` is a two-slot weapon: choosing it in either weapon slot fills both (the loadout menu does this for you), it sits on the primary mount, and the secondary mount is left empty. Its weight (45) is counted once. Hold either fire button for `charge.max_time` (3 s) and let go to fire; `"full_only": true` means letting go early cancels the shot and costs no ammo. `"kill": true` makes a direct hit destroy the whole mech whatever part it strikes (friendly fire rules still apply). Six shots (`ammo`), 4 s between them. The bolt is a fast, straight `ion` projectile and the HUD shows a charge bar that reads READY when full.
+
 ## Weapon models
 
 A ranged weapon can have a `visual` (the same pieces as a part, drawn with `-Z` as forward) and a `muzzle` distance. The gun is drawn on the part its mount sits on, so choosing a different weapon in the loadout changes what the mech carries. Colours come from the mech's palette (`metal` stays silver). A mount can set `gun_scale` and `gun_offset` (the velociraptor's small hands use 0.55). Shots start at the muzzle. The lion's and hawk's gun pods are now plain mounting brackets.

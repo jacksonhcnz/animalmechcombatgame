@@ -201,6 +201,19 @@ func take_knockout(part_id: String, fallback: float, attacker: Mech = null) -> D
 	return take_hit(part_id, amount if amount > 0.0 else fallback, attacker)
 
 
+## A shot that destroys the whole mech outright (the ion cannon), wherever it lands.
+func take_kill(attacker: Mech = null) -> Dictionary:
+	if attacker != null and attacker != self and attacker.team == team and not rules.friendly_fire:
+		return {"part": "", "applied": 0.0, "disabled": false, "destroyed": false}
+	var result := damage.kill()
+	if attacker != null and attacker != self:
+		last_attacker = attacker
+	_refresh_colors()
+	result["raw"] = 0.0
+	hit_taken.emit(result)
+	return result
+
+
 ## World position of the weapon mount, used as the muzzle for tracers.
 func mount_position(mount_id: String) -> Vector3:
 	for mount in def.get("mounts", []):
@@ -237,7 +250,7 @@ func _physics_process(delta: float) -> void:
 			_update_aim()
 			for weapon in weapons:
 				if weapon.is_charged():
-					weapon.show_charge(controls.fire_primary if weapon.slot() == "primary" else controls.fire_secondary, delta)
+					weapon.show_charge((controls.fire_primary or controls.fire_secondary) if weapon.is_two_slot() else (controls.fire_primary if weapon.slot() == "primary" else controls.fire_secondary), delta)
 		else:
 			_apply_aim_pivots()
 		_animate(delta)
@@ -452,15 +465,18 @@ func _fall(delta: float) -> void:
 func _handle_fire(delta: float) -> void:
 	for weapon in weapons:
 		var wanted := false
-		match weapon.slot():
-			"primary":
-				wanted = controls.fire_primary
-			"secondary":
-				wanted = controls.fire_secondary
-			"melee":
-				wanted = controls.fire_melee
-			"bomb":
-				wanted = controls.fire_bomb
+		if weapon.is_two_slot():
+			wanted = controls.fire_primary or controls.fire_secondary
+		else:
+			match weapon.slot():
+				"primary":
+					wanted = controls.fire_primary
+				"secondary":
+					wanted = controls.fire_secondary
+				"melee":
+					wanted = controls.fire_melee
+				"bomb":
+					wanted = controls.fire_bomb
 		var usable := weapon.ready_to_fire() and weapon.has_ammo(rules) and damage.mount_online(weapon.mount_id)
 		if weapon.is_charged():
 			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
@@ -473,6 +489,8 @@ func _handle_fire(delta: float) -> void:
 			weapon.charge_time = 0.0
 			if not usable:
 				continue
+			if weapon.needs_full_charge() and held < weapon.charge_max() - 0.001:
+				continue  # let go too soon: the shot is lost
 			weapon.consume(rules)
 			_launch(weapon, weapon.burst_height(held))
 			continue

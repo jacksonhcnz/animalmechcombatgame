@@ -231,7 +231,10 @@ func _weapons_text() -> String:
 		var cocked := ""
 		if weapon.is_charged() and weapon.charge_time > 0.0:
 			var notches := roundi(weapon.charge_ratio() * 8.0)
-			cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
+			if weapon.needs_full_charge():
+				cocked = "  [%s%s] %s" % ["=".repeat(notches), " ".repeat(8 - notches), "READY" if weapon.charge_ratio() >= 1.0 else "charging"]
+			else:
+				cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
 		lines.append("%s  %s%s%s" % [weapon.def["name"], ammo_text, cocked, "" if online else "  OFFLINE"])
 	if _mech.is_flying():
 		var warning := "   STALL" if _mech.stalled else ""
