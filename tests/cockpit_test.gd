@@ -41,21 +41,30 @@ func _run() -> void:
 		_check(player.cockpit_interior.get_parent() == player.get_node("AimPivot"), "%s interior is attached to the cockpit camera pivot" % mech_id)
 		_check(player.cockpit_interior.visible, "%s interior shows in cockpit view" % mech_id)
 
-		# The opening around the crosshair stays clear: the centre of the view is empty.
+		# The opening around the crosshair stays clear: no structure crosses the centre of the view.
 		var camera: Camera3D = player.cockpit_camera
 		var clear := true
+		var has_console := false
 		for child in player.cockpit_interior.get_children():
 			var node := child as MeshInstance3D
+			if not node.mesh is BoxMesh:
+				if node.name == "Console":
+					has_console = true
+					# The console is below the line of sight, from its near edge to its far edge.
+					for vertex in (node.mesh as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+						if (vertex as Vector3).y > 0.0:
+							clear = false
+				continue
 			var local: Vector3 = camera.global_transform.affine_inverse() * node.global_position
 			var half: Vector3 = (node.mesh as BoxMesh).size * 0.5
 			var rotated := node.global_transform.basis.inverse() * (camera.global_position - node.global_position)
 			if absf(rotated.x) < half.x and absf(rotated.y) < half.y and absf(rotated.z) < half.z:
 				clear = false
-			if node.name != "Console" and node.name != "Display":
-				# A ray straight ahead of the camera must pass the frame without touching it.
-				var ahead := node.global_transform.basis.inverse() * (camera.global_position - camera.global_transform.basis.z * local.length() - node.global_position)
-				if absf(ahead.x) < half.x and absf(ahead.y) < half.y and absf(ahead.z) < half.z:
-					clear = false
+			# A ray straight ahead of the camera must pass the frame without touching it.
+			var ahead := node.global_transform.basis.inverse() * (camera.global_position - camera.global_transform.basis.z * local.length() - node.global_position)
+			if absf(ahead.x) < half.x and absf(ahead.y) < half.y and absf(ahead.z) < half.z:
+				clear = false
+		_check(has_console, "%s has a console for the readouts" % mech_id)
 		_check(clear, "%s cockpit frame leaves the centre of the view clear" % mech_id)
 
 		player.toggle_view()

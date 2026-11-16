@@ -35,13 +35,16 @@
 		-0.3
 	],
 	"cockpit_frame": {
-		"window": [
-			1.05,
-			0.56
+		"distance": 1.2,
+		"top": [
+			0.66,
+			0.7
 		],
-		"distance": 1.0,
-		"pillar_tilt_deg": 14.0,
-		"console_height": 0.18
+		"bottom": [
+			0.4,
+			-0.46
+		],
+		"beam": 0.06
 	},
 	"third_person": {
 		"height": 5.0,
