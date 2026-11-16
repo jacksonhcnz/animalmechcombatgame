@@ -7,8 +7,8 @@ const DATA_DIR := "res://data"
 const VISUAL_SHAPES: Array[String] = ["box", "sphere", "cylinder", "hex", "plate"]
 const MOVEMENT_TYPES: Array[String] = ["ground", "flying"]
 const WEAPON_KINDS: Array[String] = ["ranged", "melee"]
-const WEAPON_SLOTS: Array[String] = ["primary", "secondary", "melee"]
-const PROJECTILE_MODELS: Array[String] = ["bullet", "pellet", "rocket", "grenade"]
+const WEAPON_SLOTS: Array[String] = ["primary", "secondary", "melee", "bomb"]
+const PROJECTILE_MODELS: Array[String] = ["bullet", "pellet", "rocket", "grenade", "bomb"]
 const TONES: Array[String] = ["primary", "accent", "dark"]
 
 static var _cache: Dictionary = {}

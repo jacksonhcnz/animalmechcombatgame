@@ -20,7 +20,9 @@ static func options(slot: String) -> Array[String]:
 		"primary", "secondary":
 			# Either weapon slot takes any ranged weapon, so two of the same is fine.
 			for id in GameData.ids("weapons"):
-				if GameData.get_entry("weapons", id).get("kind", "ranged") != "melee":
+				var weapon := GameData.get_entry("weapons", id)
+				# Melee weapons and the hawk's bomb (its own slot and button) are not for the loadout.
+				if weapon.get("kind", "ranged") != "melee" and ["primary", "secondary"].has(weapon.get("slot", "")):
 					result.append(id)
 		"equipment":
 			result.assign(GameData.ids("equipment"))

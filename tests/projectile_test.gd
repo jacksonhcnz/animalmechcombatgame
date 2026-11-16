@@ -39,6 +39,7 @@ func _run() -> void:
 	await _test_sniper_knockout()
 	await _test_flak_airburst()
 	await _test_flak_hold_and_release()
+	await _test_bomb()
 	_test_info_round_trip()
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
@@ -198,6 +199,37 @@ func _test_flak_hold_and_release() -> void:
 	await _frames(2)
 	_check(seen.size() == 1, "letting go fires the flak shell")
 	_check(weapon.charge_time == 0.0, "the charge resets after firing")
+
+
+func _test_bomb() -> void:
+	_range.start("hawk", "standard")
+	await _frames(10)
+	var hawk: Mech = _range.player
+	var target: Mech = _range.targets[0]
+	var bomb: WeaponState
+	for w in hawk.weapons:
+		if w.slot() == "bomb":
+			bomb = w
+	_check(bomb != null and bomb.def["id"] == "air_bomb", "the hawk carries an air bomb on its own slot")
+	_check(not Loadout.options("primary").has("air_bomb") and not Loadout.options("secondary").has("air_bomb"), "the bomb is not a loadout choice")
+	hawk.global_position = Vector3(target.global_position.x, 45.0, target.global_position.z + 140.0)
+	hawk.rotation = Vector3.ZERO
+	hawk.air_speed = 40.0
+	hawk.velocity = Vector3(0.0, 0.0, -40.0)
+	var spot: Variant = hawk.predict_drop(bomb)
+	_check(spot != null and (spot as Vector3).z < hawk.global_position.z - 30.0, "the sight shows the bomb landing ahead of the plane, not straight below")
+	var seen: Array[Dictionary] = []
+	hawk.projectile_launched.connect(func(info: Dictionary) -> void: seen.append(info))
+	target.global_position = Vector3(spot.x, 0.5, spot.z)
+	var before: float = target.damage.total_ratio()
+	hawk.controls.fire_bomb = true
+	await physics_frame
+	hawk.controls.fire_bomb = false
+	_check(seen.size() == 1 and seen[0]["model"] == "bomb", "firing drops a bomb")
+	_check(absf((seen[0]["vel"] as Vector3).z + 40.0) < 3.0 and (seen[0]["vel"] as Vector3).y < 0.0, "the bomb carries the plane's speed and starts to fall")
+	await _frames(200)
+	_check(target.damage.total_ratio() < before, "the bomb lands where the sight showed and its blast hurts the mech there")
+	_check(bomb.ammo == int(bomb.def["ammo"]) - 1 or bomb.ammo < int(bomb.def["ammo"]), "the bomb uses up ammunition")
 
 
 func _test_info_round_trip() -> void:

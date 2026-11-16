@@ -1,0 +1,114 @@
+{
+	"id": "air_bomb",
+	"name": "Air Bomb",
+	"kind": "ranged",
+	"slot": "bomb",
+	"damage": 60.0,
+	"range": 400.0,
+	"fire_interval": 1.2,
+	"ammo": 8,
+	"weight": 6.0,
+	"ammo_weight": 1.2,
+	"spread_deg": 0.0,
+	"projectile": {
+		"model": "bomb",
+		"speed": 6.0,
+		"gravity": 22.0,
+		"drop": true,
+		"splash_radius": 15.0,
+		"splash_damage": 70.0
+	},
+	"tracer_color": "#ffb347",
+	"muzzle": 0.3,
+	"visual": [
+		{
+			"shape": "box",
+			"size": [
+				0.18,
+				0.14,
+				1.5
+			],
+			"pos": [
+				0,
+				0.42,
+				0
+			],
+			"tone": "metal"
+		},
+		{
+			"shape": "sphere",
+			"size": [
+				0.8,
+				0.8,
+				0.8
+			],
+			"pos": [
+				0,
+				0,
+				0
+			],
+			"tone": "dark"
+		},
+		{
+			"shape": "cylinder",
+			"size": [
+				0.78,
+				1.0,
+				0.78
+			],
+			"pos": [
+				0,
+				0,
+				0.15
+			],
+			"tone": "dark",
+			"rot_deg": [
+				90,
+				0,
+				0
+			]
+		},
+		{
+			"shape": "box",
+			"size": [
+				0.8,
+				0.06,
+				0.3
+			],
+			"pos": [
+				0,
+				0,
+				0.7
+			],
+			"tone": "accent"
+		},
+		{
+			"shape": "box",
+			"size": [
+				0.06,
+				0.8,
+				0.3
+			],
+			"pos": [
+				0,
+				0,
+				0.7
+			],
+			"tone": "accent"
+		},
+		{
+			"shape": "hex",
+			"size": [
+				0.2,
+				0.08,
+				0.2
+			],
+			"pos": [
+				0,
+				0.28,
+				-0.3
+			],
+			"tone": "metal"
+		}
+	]
+}

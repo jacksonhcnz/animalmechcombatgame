@@ -31,6 +31,8 @@ Open the project in Godot 4.7 and press Play. Click the window to capture the mo
 | Turn the legs | A / D | Left stick left / right |
 | Strafe | Q / E | Shoulder buttons |
 | Sprint (hold, moving forward); flying mechs boost for 10 s, then recharge | Shift | Left stick click |
+| Flying mech: throttle / bank / pitch nose / rudder | W S / A D / Space Ctrl / Q E | Left stick, A and B |
+| Drop the hawk's bomb | B | D-pad down |
 | Aim head and weapons | Mouse | Right stick |
 | Centre the aim | Z | Right stick click |
 | Fire primary / secondary | Left / right mouse button | Right / left trigger |

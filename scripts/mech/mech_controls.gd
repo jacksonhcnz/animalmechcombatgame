@@ -19,6 +19,7 @@ var center_aim: bool = false
 var fire_primary: bool = false
 var fire_secondary: bool = false
 var fire_melee: bool = false
+var fire_bomb: bool = false
 
 
 func clear() -> void:
@@ -34,3 +35,4 @@ func clear() -> void:
 	fire_primary = false
 	fire_secondary = false
 	fire_melee = false
+	fire_bomb = false

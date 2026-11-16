@@ -19,6 +19,7 @@ var _timer_label: Label
 var _score_label: Label
 var _message_label: Label
 var _debug_label: Label
+var _bomb_sight: Label
 var _timer_value: float = -1.0
 var _debug_extra: String = ""
 ## Which layout the parts and weapons readouts are in: "" (not yet), "corners" or "console".
@@ -45,6 +46,11 @@ func _ready() -> void:
 	add_child(_crosshair)
 	_add_bar(_crosshair, Vector2(-9, -1), Vector2(18, 2))
 	_add_bar(_crosshair, Vector2(-1, -9), Vector2(2, 18))
+
+	# Where a bomb dropped now would land (flying mechs that carry one).
+	_bomb_sight = _make_label(self, Control.PRESET_TOP_LEFT, HORIZONTAL_ALIGNMENT_CENTER)
+	_bomb_sight.add_theme_color_override("font_color", Color("#ffb347"))
+	_bomb_sight.visible = false
 
 	# Messages stay visible in every ruleset: they are state, not HUD.
 	_message_label = _make_label(self, Control.PRESET_CENTER, HORIZONTAL_ALIGNMENT_CENTER)
@@ -106,6 +112,7 @@ func _process(_delta: float) -> void:
 	if _mech == null or not is_instance_valid(_mech):
 		return
 	_update_layout()
+	_update_bomb_sight()
 	if _panels.visible:
 		_info_label.text = "%s  |  %s  |  %s view" % [
 			_mech.def["name"],
@@ -122,6 +129,28 @@ func _process(_delta: float) -> void:
 			_mech.team,
 			_debug_extra,
 		]
+
+
+## An orange marker on the ground where the bomb would land, with its distance.
+func _update_bomb_sight() -> void:
+	_bomb_sight.visible = false
+	if not _rules.crosshair or _mech.is_dead() or not _mech.is_flying():
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	for weapon in _mech.weapons:
+		if weapon.slot() != "bomb" or not _mech.damage.mount_online(weapon.mount_id):
+			continue
+		var spot: Variant = _mech.predict_drop(weapon)
+		if spot == null or camera.is_position_behind(spot):
+			return
+		var screen := camera.unproject_position(spot)
+		_bomb_sight.text = "(+)  %d m" % roundi(_mech.global_position.distance_to(spot))
+		_bomb_sight.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_bomb_sight.position = screen - Vector2(40.0, 14.0)
+		_bomb_sight.visible = true
+		return
 
 
 ## In the cockpit view the damage and weapon readouts sit on the console at the bottom of the
@@ -204,6 +233,9 @@ func _weapons_text() -> String:
 			var notches := roundi(weapon.charge_ratio() * 8.0)
 			cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
 		lines.append("%s  %s%s%s" % [weapon.def["name"], ammo_text, cocked, "" if online else "  OFFLINE"])
+	if _mech.is_flying():
+		var warning := "   STALL" if _mech.stalled else ""
+		lines.append("Airspeed %d   Altitude %d m%s" % [roundi(maxf(_mech.air_speed, 0.0)), roundi(_mech.global_position.y), warning])
 	if _mech.is_flying() and _rules.sprinting:
 		var notches := roundi(_mech.boost_ratio() * 10.0)
 		var bar := "[%s%s]" % ["=".repeat(notches), " ".repeat(10 - notches)]

@@ -37,6 +37,7 @@ static func _defaults() -> Dictionary:
 		"center_aim": [_key(KEY_Z), _button(JOY_BUTTON_RIGHT_STICK)],
 		"fire_primary": [_mouse(MOUSE_BUTTON_LEFT), _axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)],
 		"fire_secondary": [_mouse(MOUSE_BUTTON_RIGHT), _axis(JOY_AXIS_TRIGGER_LEFT, 1.0)],
+		"fire_bomb": [_key(KEY_B), _button(JOY_BUTTON_DPAD_DOWN)],
 		"fire_melee": [_key(KEY_F), _button(JOY_BUTTON_X)],
 		"toggle_view": [_key(KEY_C), _button(JOY_BUTTON_Y)],
 	}

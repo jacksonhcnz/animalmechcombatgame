@@ -44,7 +44,11 @@ static func fire(weapon_def: Dictionary, muzzle: Vector3, aim_point: Vector3, sh
 	p.model = str(cfg.get("model", "bullet"))
 	p.gravity = float(cfg.get("gravity", 0.0))
 	var speed := float(cfg["speed"])
-	p.velocity = launch_velocity(muzzle, aim_point, speed, p.gravity, float(cfg.get("min_arc_deg", 0.0)))
+	if bool(cfg.get("drop", false)):
+		# A bomb is dropped, not aimed: it leaves with the mech's own velocity and then falls on an arc.
+		p.velocity = shooter_mech.velocity + Vector3.DOWN * speed
+	else:
+		p.velocity = launch_velocity(muzzle, aim_point, speed, p.gravity, float(cfg.get("min_arc_deg", 0.0)))
 	var reach := float(weapon_def["range"])
 	p.life = reach / speed + 0.3 if p.gravity <= 0.0 else 9.0
 	p.color = Color.html(str(weapon_def.get("tracer_color", "#ffffff")))
@@ -223,6 +227,8 @@ func _build_model() -> void:
 			_build_rocket()
 		"grenade":
 			_build_grenade()
+		"bomb":
+			_build_bomb()
 		"pellet":
 			_add_mesh(_sphere(0.34), Vector3.ZERO, Vector3.ZERO, color, true)
 		_:
@@ -276,6 +282,16 @@ func _build_grenade() -> void:
 	_add_mesh(_cylinder(0.86, 0.86, 0.14), Vector3.ZERO, Vector3(90, 0, 0), Color("#d3d6da"), false)
 	_add_mesh(_cylinder(0.3, 0.3, 0.22), Vector3(0, 0, -0.42), Vector3(90, 0, 0), Color("#d3d6da"), false)
 	_add_mesh(_box(Vector3(0.1, 0.1, 0.34)), Vector3(0, 0.42, 0.1), Vector3.ZERO, Color("#c0392b"), false)
+
+
+func _build_bomb() -> void:
+	# A fat dark teardrop with a ring of fins on its tail, nose pointing along the flight.
+	_add_mesh(_sphere(1.3), Vector3(0, 0, -0.2), Vector3.ZERO, Color("#3f4a3c"), false)
+	_add_mesh(_cylinder(1.3, 0.9, 1.6), Vector3(0, 0, 0.9), Vector3(90, 0, 0), Color("#3f4a3c"), false)
+	_add_mesh(_cylinder(1.34, 1.34, 0.16), Vector3(0, 0, -0.55), Vector3(90, 0, 0), Color("#d3d6da"), false)
+	_add_mesh(_box(Vector3(1.5, 0.06, 0.7)), Vector3(0, 0, 1.6), Vector3.ZERO, Color("#f2a33a"), false)
+	_add_mesh(_box(Vector3(0.06, 1.5, 0.7)), Vector3(0, 0, 1.6), Vector3.ZERO, Color("#f2a33a"), false)
+	_add_mesh(_cylinder(0.0, 0.5, 0.5), Vector3(0, 0, -1.05), Vector3(-90, 0, 0), Color("#c0392b"), false)
 
 
 func _add_mesh(mesh: Mesh, pos: Vector3, rot_deg: Vector3, tint: Color, unshaded: bool) -> void:

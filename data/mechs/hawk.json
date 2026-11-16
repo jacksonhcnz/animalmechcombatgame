@@ -88,6 +88,7 @@
 	"mounts": [
 		{"id": "gun_l", "part": "pod_l", "weapon": "autocannon"},
 		{"id": "gun_r", "part": "pod_r", "weapon": "rocket_pod"},
+		{"id": "bomb_bay", "part": "keel", "weapon": "air_bomb", "gun_offset": [0.0, -0.75, 0.0]},
 		{"id": "talon", "part": "talons", "weapon": "talon_strike"}
 	]
 }
