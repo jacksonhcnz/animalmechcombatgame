@@ -171,11 +171,16 @@ static func _validate_mech(id: String) -> Array[String]:
 	if not _is_vec3(m.get("cockpit")):
 		p.append("%s: cockpit must be [x, y, z]" % tag)
 	var frame: Dictionary = m.get("cockpit_frame", {})
-	var window: Variant = frame.get("window")
-	if not (window is Array and window.size() == 2 and float(window[0]) > 0.0 and float(window[1]) > 0.0):
-		p.append("%s: cockpit_frame.window must be [half width, half height] greater than 0" % tag)
+	var top: Variant = frame.get("top")
+	var bottom: Variant = frame.get("bottom")
+	if not (top is Array and top.size() == 2 and float(top[0]) > 0.0 and float(top[1]) > 0.0 and float(top[0]) <= 1.0 and float(top[1]) <= 1.0):
+		p.append("%s: cockpit_frame.top must be [half width, height] as fractions of the screen, above 0 and at most 1" % tag)
+	if not (bottom is Array and bottom.size() == 2 and float(bottom[0]) > 0.0 and float(bottom[0]) <= 1.0 and float(bottom[1]) < 0.0 and float(bottom[1]) >= -0.9):
+		p.append("%s: cockpit_frame.bottom must be [half width above 0, height below the centre from -0.9 to just under 0]" % tag)
 	if float(frame.get("distance", 0.0)) < 0.4:
 		p.append("%s: cockpit_frame.distance must be at least 0.4 (the camera's near plane is 0.2)" % tag)
+	if float(frame.get("beam", 0.0)) <= 0.0:
+		p.append("%s: cockpit_frame.beam (structure thickness) must be greater than 0" % tag)
 	if float(m.get("third_person", {}).get("distance", 0.0)) <= 0.0:
 		p.append("%s: third_person.distance must be greater than 0" % tag)
 

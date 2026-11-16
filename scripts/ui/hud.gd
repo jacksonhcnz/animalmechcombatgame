@@ -21,6 +21,8 @@ var _message_label: Label
 var _debug_label: Label
 var _timer_value: float = -1.0
 var _debug_extra: String = ""
+## Which layout the parts and weapons readouts are in: "" (not yet), "corners" or "console".
+var _layout: String = ""
 
 
 func _ready() -> void:
@@ -103,6 +105,7 @@ func toggle_debug() -> void:
 func _process(_delta: float) -> void:
 	if _mech == null or not is_instance_valid(_mech):
 		return
+	_update_layout()
 	if _panels.visible:
 		_info_label.text = "%s  |  %s  |  %s view" % [
 			_mech.def["name"],
@@ -119,6 +122,47 @@ func _process(_delta: float) -> void:
 			_mech.team,
 			_debug_extra,
 		]
+
+
+## In the cockpit view the damage and weapon readouts sit on the console at the bottom of the
+## screen, in its two bays. In third-person view they go back to the screen corners.
+func _update_layout() -> void:
+	var wanted := "corners" if _mech.view_third_person else "console"
+	var height := get_viewport().get_visible_rect().size.y
+	var key := "%s %d" % [wanted, int(height)]
+	if key == _layout:
+		return
+	_layout = key
+	if wanted == "corners":
+		for label in [_parts_label, _weapons_label]:
+			label.clip_text = false
+			label.remove_theme_font_size_override("font_size")
+		_parts_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT, Control.PRESET_MODE_MINSIZE, 16)
+		_parts_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		_weapons_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 16)
+		_weapons_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		_weapons_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		return
+	var top := CockpitInterior.console_top(_mech.def["cockpit_frame"])
+	var size := clampi(roundi(height * 0.0155), 10, 20)
+	for label in [_parts_label, _weapons_label]:
+		label.add_theme_font_size_override("font_size", size)
+		label.clip_text = true
+		label.grow_horizontal = Control.GROW_DIRECTION_END
+		label.grow_vertical = Control.GROW_DIRECTION_END
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		label.anchor_top = top + 0.03
+		label.anchor_bottom = 0.96
+		label.offset_top = 0.0
+		label.offset_bottom = 0.0
+	_parts_label.anchor_left = 0.2
+	_parts_label.anchor_right = 0.5
+	_weapons_label.anchor_left = 0.54
+	_weapons_label.anchor_right = 0.8
+	for label in [_parts_label, _weapons_label]:
+		label.offset_left = 0.0
+		label.offset_right = 0.0
 
 
 func _apply_rules() -> void:
@@ -138,6 +182,13 @@ func _parts_text() -> String:
 			var status := "OFFLINE" if _mech.damage.is_part_disabled(id) else "%d%%" % roundi(_mech.damage.part_ratio(id) * 100.0)
 			var crippled := " (crippled)" if _mech.damage.is_crippled(id) and not _mech.damage.is_part_disabled(id) else ""
 			lines.append("%s  %s%s" % [part["name"], status, crippled])
+	if _layout.begins_with("console"):
+		# Two columns, so the whole list fits in the console's bay.
+		var rows: Array[String] = [lines[0]]
+		for i in range(1, lines.size(), 2):
+			var left: String = lines[i]
+			rows.append(left if i + 1 >= lines.size() else "%s   %s" % [left, lines[i + 1]])
+		return "\n".join(rows)
 	return "\n".join(lines)
 
 
