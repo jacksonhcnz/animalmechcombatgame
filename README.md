@@ -30,15 +30,15 @@ Open the project in Godot 4.7 and press Play. Click the window to capture the mo
 | Move forward / back | W / S | Left stick up / down |
 | Turn the legs | A / D | Left stick left / right |
 | Strafe | Q / E | Shoulder buttons |
-| Sprint (hold, moving forward); flying mechs boost for 10 s, then recharge | Shift | Left stick click |
-| Flying mech: throttle / bank / pitch nose / rudder | W S / A D / Space Ctrl / Q E | Left stick, A and B |
+| Sprint (hold, moving forward); ground mechs only | Shift | Left stick click |
+| Flying mech: speed up / slow down / boost | Shift / Ctrl / Space | Left stick click / B / A |
+| Flying mech: nose down / up, bank, rudder | W / S, A / D, Q / E | Left stick |
 | Drop the hawk's bomb | B | D-pad down |
 | Aim head and weapons | Mouse | Right stick |
 | Centre the aim | Z | Right stick click |
 | Fire primary / secondary | Left / right mouse button | Right / left trigger |
 | Melee | F | X |
 | Switch cockpit / third-person | C | Y |
-| Climb / descend (Hawk) | Space / Ctrl | A / B |
 | Jump (Lion, Velociraptor) | Space | A |
 
 Test range keys: `1` Lion, `2` Velociraptor, `3` Hawk. `F1` Practice, `F2` Standard, `F4` Hardcore, `F5` Arcade rules. `F3` developer overlay. `R` restart. `[` and `]` lower and raise the cockpit head bob (saved between sessions).
