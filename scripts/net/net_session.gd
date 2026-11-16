@@ -519,6 +519,8 @@ func _send_snapshots() -> void:
 		var ammo := {}
 		for weapon in slot.mech.weapons:
 			ammo[weapon.mount_id] = weapon.ammo
+		ammo["boost"] = slot.mech.boost_ratio()
+		ammo["boost_locked"] = slot.mech.boost_locked
 		s_self.rpc_id(slot.peer, ammo)
 
 
@@ -806,6 +808,7 @@ func s_self(ammo: Dictionary) -> void:
 	for weapon in local_mech.weapons:
 		if ammo.has(weapon.mount_id):
 			weapon.ammo = int(ammo[weapon.mount_id])
+	local_mech.set_boost(float(ammo.get("boost", 1.0)), bool(ammo.get("boost_locked", false)))
 
 
 # ---------------------------------------------------------------- shared

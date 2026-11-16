@@ -38,6 +38,10 @@ var team: int = 1
 ## Network mode: the mech is a display copy. It does no physics or shooting of its own;
 ## a client moves it from server snapshots and mirrors damage from server events.
 var remote_mode: bool = false
+## Flying mechs: seconds of boost left, whether it is locked while refilling, and whether it is on now.
+var boost_left: float = 10.0
+var boost_locked: bool = false
+var boosting: bool = false
 var remote_grounded: bool = true
 ## Whoever last damaged this mech, so a server can credit the kill.
 var last_attacker: Mech
@@ -281,8 +285,44 @@ func _apply_aim_pivots() -> void:
 	_third_pivot.rotation = Vector3(aim_pitch, aim_yaw, 0.0)
 
 
-## Speed multiplier while sprinting: Shift held, moving forward, ruleset allows it.
+## Seconds of boost in a full tank (flying mechs).
+func boost_capacity() -> float:
+	return Points.flight("boost_time")
+
+
+## 0 to 1: how much boost is left.
+func boost_ratio() -> float:
+	return clampf(boost_left / boost_capacity(), 0.0, 1.0)
+
+
+## Sets the boost from what the server reports (a display copy does not work it out itself).
+func set_boost(ratio: float, locked: bool) -> void:
+	boost_left = clampf(ratio, 0.0, 1.0) * boost_capacity()
+	boost_locked = locked
+
+
+## A flying mech holds Shift to boost: faster in every direction, for a tank of 10 seconds. When the
+## tank runs empty the boost is locked until it has refilled, which takes the cooldown.
+func _update_boost(delta: float) -> void:
+	var capacity := boost_capacity()
+	var moving := controls.throttle != 0.0 or controls.strafe != 0.0 or controls.vertical != 0.0
+	boosting = is_flying() and rules.sprinting and controls.sprint and moving and not boost_locked and boost_left > 0.0
+	if boosting:
+		boost_left = maxf(0.0, boost_left - delta)
+		if boost_left <= 0.0:
+			boost_locked = true
+			boosting = false
+	else:
+		boost_left = minf(capacity, boost_left + capacity / Points.flight("boost_cooldown") * delta)
+		if boost_locked and boost_left >= capacity:
+			boost_locked = false
+
+
+## Speed multiplier while sprinting on the ground: Shift held, moving forward, ruleset allows it.
+## Flying mechs boost instead (see _update_boost).
 func sprint_mult() -> float:
+	if is_flying():
+		return Points.flight("boost_speed_mult") if boosting else 1.0
 	if controls.sprint and rules.sprinting and controls.throttle > 0.0:
 		return float(Points.table().get("sprint", {}).get("speed_mult", 1.0))
 	return 1.0
@@ -299,11 +339,19 @@ func _move(delta: float) -> void:
 	var wish := forward * c.throttle + right * c.strafe
 	if wish.length() > 1.0:
 		wish = wish.normalized()
-	var target := wish * float(base["speed"]) * damage.speed_mult() * sprint_mult()
+	if is_flying():
+		_update_boost(delta)
+	# Diving is fast: going down, a flyer speeds up along the ground as well as dropping quicker.
+	var diving := is_flying() and c.vertical < 0.0
+	var target := wish * float(base["speed"]) * damage.speed_mult() * sprint_mult() * (Points.flight("dive_speed_mult") if diving else 1.0)
 
 	if is_flying():
 		var lift := damage.lift_mult()
 		var climb := c.vertical * float(base.get("climb_speed", 10.0)) * lift
+		if diving:
+			climb *= Points.flight("dive_descent_mult")
+		if boosting:
+			climb *= Points.flight("boost_speed_mult")
 		if is_zero_approx(c.vertical) and lift < 0.5:
 			climb = -SINK_SPEED * (1.0 - lift)
 		target.y = climb

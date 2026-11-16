@@ -204,6 +204,13 @@ func _weapons_text() -> String:
 			var notches := roundi(weapon.charge_ratio() * 8.0)
 			cocked = "  [%s%s] %dm" % ["=".repeat(notches), " ".repeat(8 - notches), roundi(weapon.burst_height(weapon.charge_time))]
 		lines.append("%s  %s%s%s" % [weapon.def["name"], ammo_text, cocked, "" if online else "  OFFLINE"])
+	if _mech.is_flying() and _rules.sprinting:
+		var notches := roundi(_mech.boost_ratio() * 10.0)
+		var bar := "[%s%s]" % ["=".repeat(notches), " ".repeat(10 - notches)]
+		if _mech.boost_locked:
+			lines.append("Boost recharging %s" % bar)
+		else:
+			lines.append("Boost %s %.1fs" % [bar, _mech.boost_left])
 	return "\n".join(lines)
 
 

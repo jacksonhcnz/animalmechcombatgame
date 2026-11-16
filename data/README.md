@@ -61,6 +61,10 @@ Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump
 
 Hold Shift (gamepad: left stick click) while moving forward to move faster. `points.json` `sprint.speed_mult` (1.5) sets the boost, which applies to ground speed only, not flight climb. A ruleset can switch it off with `"sprinting": false`. The server applies it, so it cannot be faked. Hardcore and Arcade keep it on.
 
+## Flight: diving and boost
+
+Flying mechs (the hawk) use the `flight` block in `points.json`. Going down (the descend control) is faster: the descent is `dive_descent_mult` times the normal climb speed (2.0) and ground speed is `dive_speed_mult` times faster (1.3). Shift is boost for a flyer instead of a sprint: `boost_speed_mult` (1.6) faster in every direction for `boost_time` seconds (10) per tank. When the tank is empty the boost is locked until it has refilled, which takes `boost_cooldown` seconds (8); letting go early refills it at the same rate. The HUD shows the tank on the weapons readout. The server works it out. A ruleset's `"sprinting": false` switches boost off too.
+
 ## Weapon models
 
 A ranged weapon can have a `visual` (the same pieces as a part, drawn with `-Z` as forward) and a `muzzle` distance. The gun is drawn on the part its mount sits on, so choosing a different weapon in the loadout changes what the mech carries. Colours come from the mech's palette (`metal` stays silver). A mount can set `gun_scale` and `gun_offset` (the velociraptor's small hands use 0.55). Shots start at the muzzle. The lion's and hawk's gun pods are now plain mounting brackets.
