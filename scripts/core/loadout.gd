@@ -14,7 +14,7 @@ static func default_loadout() -> Dictionary:
 
 
 ## Ids that can go in a slot, sorted.
-static func options(slot: String) -> Array[String]:
+static func options(slot: String, mech_id: String = "") -> Array[String]:
 	var result: Array[String] = []
 	match slot:
 		"primary", "secondary":
@@ -22,13 +22,19 @@ static func options(slot: String) -> Array[String]:
 			for id in GameData.ids("weapons"):
 				var weapon := GameData.get_entry("weapons", id)
 				# Melee weapons and the hawk's bomb (its own slot and button) are not for the loadout.
-				if weapon.get("kind", "ranged") != "melee" and ["primary", "secondary"].has(weapon.get("slot", "")):
+				if weapon.get("kind", "ranged") != "melee" and ["primary", "secondary"].has(weapon.get("slot", "")) \
+						and weapon_allowed(weapon, mech_id):
 					result.append(id)
 		"equipment":
 			result.assign(GameData.ids("equipment"))
 		"perk":
 			result.assign(GameData.ids("perks"))
 	return result
+
+
+## A weapon with a "mechs" list can only be carried by those mechs. With no mech given, all pass.
+static func weapon_allowed(weapon: Dictionary, mech_id: String) -> bool:
+	return mech_id == "" or not weapon.has("mechs") or (weapon["mechs"] as Array).has(mech_id)
 
 
 static func item(slot: String, id: String) -> Dictionary:
@@ -43,12 +49,12 @@ static func item(slot: String, id: String) -> Dictionary:
 
 
 ## Fills missing slots with the defaults and drops anything unknown or in the wrong slot.
-static func complete(choice: Variant) -> Dictionary:
+static func complete(choice: Variant, mech_id: String = "") -> Dictionary:
 	var result := default_loadout()
 	if choice is Dictionary:
 		for slot in SLOTS:
 			var id: Variant = choice.get(slot)
-			if id is String and options(slot).has(id):
+			if id is String and options(slot, mech_id).has(id):
 				result[slot] = id
 		# A two-slot weapon fills both weapon slots.
 		for slot in ["primary", "secondary"]:
@@ -86,7 +92,7 @@ static func fits(mech_def: Dictionary, choice: Dictionary) -> bool:
 
 ## A usable loadout for a mech: completed, and the default if too heavy.
 static func sanitize(mech_def: Dictionary, choice: Variant) -> Dictionary:
-	var result := complete(choice)
+	var result := complete(choice, str(mech_def.get("id", "")))
 	if not fits(mech_def, result):
 		return default_loadout()
 	return result
@@ -103,6 +109,10 @@ static func apply(mech_def: Dictionary, choice: Variant) -> Dictionary:
 		if slot == "primary" or slot == "secondary":
 			mount["weapon"] = load[slot]
 			mount["slot"] = slot
+			# A weapon can be carried somewhere else on the mech (the raptor's sniper sits on its tail).
+			var placed: Dictionary = GameData.get_entry("weapons", load[slot]).get("mount", {})
+			for key in placed:
+				mount[key] = placed[key]
 	if is_two_slot(load["primary"]):
 		# The one big weapon sits on the primary mount, and the secondary mount is left empty.
 		for i in range(mounts.size() - 1, -1, -1):

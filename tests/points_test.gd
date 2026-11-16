@@ -45,14 +45,14 @@ func _init() -> void:
 
 
 func _loadouts(lion: Dictionary, hawk: Dictionary) -> void:
-	var heavy := {"primary": "sniper_cannon", "secondary": "rocket_pod", "equipment": "armor_plating", "perk": "none"}
+	var heavy := {"primary": "ion_cannon", "secondary": "ion_cannon", "equipment": "armor_plating", "perk": "none"}
 	check(Loadout.fits(lion, heavy), "lion carries the heavy loadout")
 	check(not Loadout.fits(hawk, heavy), "hawk is too weak to carry it")
 	check(Loadout.sanitize(hawk, heavy) == Loadout.default_loadout(), "a too heavy loadout falls back to the default")
 	check(Loadout.complete({"primary": "jaw_bite", "perk": "nonsense", "equipment": 5}) == Loadout.default_loadout(), "melee weapons and unknown items are ignored")
 	check(Loadout.options("primary") == Loadout.options("secondary"), "both weapon slots offer every ranged weapon")
-	var twins := Mech.create("lion", Ruleset.new(), {"primary": "sniper_cannon", "secondary": "sniper_cannon"})
-	check(twins.weapons[0].def["id"] == "sniper_cannon" and twins.weapons[1].def["id"] == "sniper_cannon", "two snipers can be mounted")
+	var twins := Mech.create("lion", Ruleset.new(), {"primary": "machine_gun", "secondary": "machine_gun"})
+	check(twins.weapons[0].def["id"] == "machine_gun" and twins.weapons[1].def["id"] == "machine_gun", "two of the same weapon can be mounted")
 	check(twins.weapons[0].slot() == "primary" and twins.weapons[1].slot() == "secondary", "each follows its own fire button")
 	twins.free()
 	var flipped := Mech.create("lion", Ruleset.new(), {"primary": "rocket_pod", "secondary": "machine_gun"})
@@ -80,14 +80,14 @@ func _store_and_menus() -> void:
 	LoadoutStore.reset()
 	check(LoadoutStore.slots("lion").size() == 4, "four boxes per mech")
 	check(LoadoutStore.active_name("lion") == "Loadout 1", "default box name")
-	LoadoutStore.save_slot("lion", 2, "  Sniper nest  ", {"primary": "sniper_cannon", "perk": "hardened"})
+	LoadoutStore.save_slot("lion", 2, "  Sniper nest  ", {"primary": "grenade_launcher", "perk": "hardened"})
 	LoadoutStore.set_active("lion", 2)
 	LoadoutStore.reset()
 	check(LoadoutStore.active_index("lion") == 2, "active box is remembered")
 	check(LoadoutStore.active_name("lion") == "Sniper nest", "box name is saved and trimmed")
-	check(LoadoutStore.active_loadout("lion")["primary"] == "sniper_cannon", "active loadout is the saved one")
+	check(LoadoutStore.active_loadout("lion")["primary"] == "grenade_launcher", "active loadout is the saved one")
 	check(LoadoutStore.active_loadout("hawk")["primary"] == "autocannon", "other mechs are untouched")
-	LoadoutStore.save_slot("hawk", 0, "", {"primary": "sniper_cannon", "equipment": "armor_plating"})
+	LoadoutStore.save_slot("hawk", 0, "", {"primary": "ion_cannon", "equipment": "armor_plating"})
 	check(LoadoutStore.active_loadout("hawk") == Loadout.default_loadout(), "a loadout too heavy for the mech is not used")
 	DirAccess.remove_absolute(LoadoutStore.path)
 	LoadoutStore.reset()

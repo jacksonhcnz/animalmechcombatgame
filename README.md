@@ -34,6 +34,7 @@ Open the project in Godot 4.7 and press Play. Click the window to capture the mo
 | Flying mech: speed up / slow down / boost | Shift / Ctrl / Space | Left stick click / B / A |
 | Flying mech: nose down / up, bank, rudder | W / S, A / D, Q / E | Left stick |
 | Drop the hawk's bomb | B | D-pad down |
+| Raptor sniper: click to scope (mech turns tail first), click to fire, wheel to zoom, move to leave | Fire button, mouse wheel, W A S D | Trigger |
 | Aim head and weapons | Mouse | Right stick |
 | Centre the aim | Z | Right stick click |
 | Fire primary / secondary | Left / right mouse button | Right / left trigger |

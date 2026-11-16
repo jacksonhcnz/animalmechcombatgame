@@ -17,8 +17,13 @@ var _mouse_pitch: float = 0.0
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		# Moving the mouse right looks right (a negative yaw); moving it up looks up.
-		_mouse_yaw -= event.relative.x * mouse_sensitivity
-		_mouse_pitch -= event.relative.y * mouse_sensitivity
+		# A zoomed scope slows the aim in step, so it stays steady on a far target.
+		var steady := 1.0 / maxf(mech.scope_zoom, 1.0) if mech != null else 1.0
+		_mouse_yaw -= event.relative.x * mouse_sensitivity * steady
+		_mouse_pitch -= event.relative.y * mouse_sensitivity * steady
+	elif event is InputEventMouseButton and event.pressed and mech != null and enabled and mech.sniping \
+			and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		mech.zoom_scope(1.0 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1.0)
 	elif event.is_action_pressed("toggle_view") and mech != null and enabled:
 		mech.toggle_view()
 

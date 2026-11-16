@@ -114,9 +114,6 @@ func _build_editor(parent: Control) -> void:
 	_name_edit.max_length = LoadoutStore.NAME_LENGTH
 	for slot in Loadout.SLOTS:
 		var pick := _labelled(slot.capitalize(), OptionButton.new()) as OptionButton
-		for id in Loadout.options(slot):
-			pick.add_item(str(Loadout.item(slot, id).get("name", id)))
-			pick.set_item_metadata(pick.item_count - 1, id)
 		pick.item_selected.connect(func(_i: int) -> void:
 			_sync_two_slot(slot)
 			_update_weight())
@@ -147,13 +144,24 @@ func _labelled(text: String, control: Control) -> Control:
 	return control
 
 
+## Fills a picker with what this mech may carry (some weapons are for one mech only).
+func _fill_picker(slot: String) -> void:
+	var pick: OptionButton = _pickers[slot]
+	pick.clear()
+	for id in Loadout.options(slot, _mech_id()):
+		pick.add_item(str(Loadout.item(slot, id).get("name", id)))
+		pick.set_item_metadata(pick.item_count - 1, id)
+
+
 func _open_editor(index: int) -> void:
 	_editing = index
+	for s in Loadout.SLOTS:
+		_fill_picker(s)
 	var slot: Dictionary = LoadoutStore.slots(_mech_id())[index]
 	_name_edit.text = str(slot["name"])
 	for s in Loadout.SLOTS:
 		var pick: OptionButton = _pickers[s]
-		pick.select(maxi(0, Loadout.options(s).find(slot["loadout"][s])))
+		pick.select(maxi(0, Loadout.options(s, _mech_id()).find(slot["loadout"][s])))
 	_editor.visible = true
 	_update_weight()
 
@@ -168,9 +176,9 @@ func _sync_two_slot(changed: String) -> void:
 	var other_pick: OptionButton = _pickers[other]
 	var other_id: String = other_pick.get_item_metadata(other_pick.selected)
 	if Loadout.is_two_slot(chosen):
-		other_pick.select(maxi(0, Loadout.options(other).find(chosen)))
+		other_pick.select(maxi(0, Loadout.options(other, _mech_id()).find(chosen)))
 	elif Loadout.is_two_slot(other_id):
-		other_pick.select(maxi(0, Loadout.options(other).find(Loadout.DEFAULT[other])))
+		other_pick.select(maxi(0, Loadout.options(other, _mech_id()).find(Loadout.DEFAULT[other])))
 
 
 func _close_editor() -> void:
