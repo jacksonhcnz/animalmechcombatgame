@@ -78,6 +78,26 @@ func apply_damage(part_id: String, amount: float) -> Dictionary:
 	return result
 
 
+## Destroys the mech outright (an ion cannon hit): every fatal part goes out at once.
+func kill() -> Dictionary:
+	var result := {"part": "", "applied": 0.0, "disabled": false, "destroyed": false}
+	if _destroyed:
+		return result
+	for part_id in health:
+		if _parts[part_id].get("fatal", false) and health[part_id] > 0.0:
+			result["applied"] = float(result["applied"]) + float(health[part_id])
+			health[part_id] = 0.0
+			_disabled[part_id] = true
+			if result["part"] == "":
+				result["part"] = part_id
+			part_disabled.emit(part_id)
+	_pool = 0.0
+	_destroy()
+	result["disabled"] = true
+	result["destroyed"] = true
+	return result
+
+
 ## How much damage it takes to put a part out in one hit (the sniper's "knockout" shot), or
 ## a negative number when a knockout does not apply and the shot should do its normal damage.
 ## A head is a knockout: the pilot is out. Torso and hindquarters are fatal parts too, but

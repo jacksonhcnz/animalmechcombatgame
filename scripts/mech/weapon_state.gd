@@ -26,6 +26,16 @@ func slot() -> String:
 	return mount_slot if mount_slot != "" else def.get("slot", "primary")
 
 
+## True for a weapon that takes both weapon slots (the ion cannon); either fire button works it.
+func is_two_slot() -> bool:
+	return bool(def.get("two_slot", false))
+
+
+## True for a weapon that only fires after a full charge; letting go early cancels the shot.
+func needs_full_charge() -> bool:
+	return bool(def.get("charge", {}).get("full_only", false))
+
+
 func is_melee() -> bool:
 	return def.get("kind", "ranged") == "melee"
 

@@ -117,7 +117,9 @@ func _build_editor(parent: Control) -> void:
 		for id in Loadout.options(slot):
 			pick.add_item(str(Loadout.item(slot, id).get("name", id)))
 			pick.set_item_metadata(pick.item_count - 1, id)
-		pick.item_selected.connect(func(_i: int) -> void: _update_weight())
+		pick.item_selected.connect(func(_i: int) -> void:
+			_sync_two_slot(slot)
+			_update_weight())
 		_pickers[slot] = pick
 	_weight_label = Label.new()
 	_editor.add_child(_weight_label)
@@ -154,6 +156,21 @@ func _open_editor(index: int) -> void:
 		pick.select(maxi(0, Loadout.options(s).find(slot["loadout"][s])))
 	_editor.visible = true
 	_update_weight()
+
+
+## A two-slot weapon (the ion cannon) takes both weapon slots: picking it in one fills the other,
+## and picking something else in one slot lets the other go back to its default.
+func _sync_two_slot(changed: String) -> void:
+	if changed != "primary" and changed != "secondary":
+		return
+	var other := "secondary" if changed == "primary" else "primary"
+	var chosen: String = _pickers[changed].get_item_metadata(_pickers[changed].selected)
+	var other_pick: OptionButton = _pickers[other]
+	var other_id: String = other_pick.get_item_metadata(other_pick.selected)
+	if Loadout.is_two_slot(chosen):
+		other_pick.select(maxi(0, Loadout.options(other).find(chosen)))
+	elif Loadout.is_two_slot(other_id):
+		other_pick.select(maxi(0, Loadout.options(other).find(Loadout.DEFAULT[other])))
 
 
 func _close_editor() -> void:

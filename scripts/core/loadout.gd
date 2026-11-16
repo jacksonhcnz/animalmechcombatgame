@@ -50,13 +50,24 @@ static func complete(choice: Variant) -> Dictionary:
 			var id: Variant = choice.get(slot)
 			if id is String and options(slot).has(id):
 				result[slot] = id
+		# A two-slot weapon fills both weapon slots.
+		for slot in ["primary", "secondary"]:
+			if is_two_slot(result[slot]):
+				result["primary"] = result[slot]
+				result["secondary"] = result[slot]
 	return result
+
+
+static func is_two_slot(weapon_id: String) -> bool:
+	return bool(GameData.get_entry("weapons", weapon_id).get("two_slot", false))
 
 
 ## Weight of everything the loadout adds up to, ammo not counted.
 static func weight(mech_def: Dictionary, choice: Dictionary) -> float:
 	var sum := 0.0
 	for slot in SLOTS:
+		if slot == "secondary" and choice["secondary"] == choice["primary"] and is_two_slot(choice["primary"]):
+			continue  # one two-slot weapon, counted once
 		sum += float(item(slot, choice[slot]).get("weight", 0.0))
 	return sum
 
@@ -92,6 +103,11 @@ static func apply(mech_def: Dictionary, choice: Variant) -> Dictionary:
 		if slot == "primary" or slot == "secondary":
 			mount["weapon"] = load[slot]
 			mount["slot"] = slot
+	if is_two_slot(load["primary"]):
+		# The one big weapon sits on the primary mount, and the secondary mount is left empty.
+		for i in range(mounts.size() - 1, -1, -1):
+			if mounts[i].get("slot", "") == "secondary":
+				mounts.remove_at(i)
 	var gear := 0.0
 	for slot in ["equipment", "perk"]:
 		gear += float(item(slot, load[slot]).get("weight", 0.0))

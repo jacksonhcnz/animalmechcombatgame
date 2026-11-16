@@ -40,6 +40,7 @@ func _run() -> void:
 	await _test_flak_airburst()
 	await _test_flak_hold_and_release()
 	await _test_bomb()
+	await _test_ion_cannon()
 	_test_info_round_trip()
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
@@ -230,6 +231,54 @@ func _test_bomb() -> void:
 	await _frames(200)
 	_check(target.damage.total_ratio() < before, "the bomb lands where the sight showed and its blast hurts the mech there")
 	_check(bomb.ammo == int(bomb.def["ammo"]) - 1 or bomb.ammo < int(bomb.def["ammo"]), "the bomb uses up ammunition")
+
+
+func _test_ion_cannon() -> void:
+	var picked := Loadout.complete({"primary": "autocannon", "secondary": "ion_cannon"})
+	_check(picked["primary"] == "ion_cannon" and picked["secondary"] == "ion_cannon", "an ion cannon takes both weapon slots")
+	var lion := GameData.get_entry("mechs", "lion")
+	var built := Loadout.apply(lion, picked)
+	var secondary_mounts := 0
+	var ion_mounts := 0
+	for mount in built["mounts"]:
+		if mount.get("slot", "") == "secondary":
+			secondary_mounts += 1
+		if mount["weapon"] == "ion_cannon":
+			ion_mounts += 1
+	_check(secondary_mounts == 0 and ion_mounts == 1, "the ion cannon is one weapon on one mount")
+	_check(Loadout.fits(lion, picked), "the lion can carry an ion cannon")
+	var hawk := GameData.get_entry("mechs", "hawk")
+	_check(Loadout.weight(hawk, picked) == float(GameData.get_entry("weapons", "ion_cannon")["weight"]) + Loadout.weight(hawk, Loadout.default_loadout()) - 35.0, "its weight is counted once")
+	_range.start("lion", "standard")
+	await _frames(10)
+	var target: Mech = _range.targets[0]
+	var player := await _stand_back(target)
+	var weapon: WeaponState
+	for w in player.weapons:
+		if w.slot() == "primary":
+			weapon = w
+	weapon.def = GameData.get_entry("weapons", "ion_cannon")
+	weapon.ammo = 6
+	for w in player.weapons:
+		if w != weapon:
+			w.ammo = 0  # the real loadout has no other weapon mounts
+	var seen: Array[Dictionary] = []
+	player.projectile_launched.connect(func(info: Dictionary) -> void: seen.append(info))
+	_check(weapon.is_two_slot() and weapon.needs_full_charge(), "the ion cannon is a two slot weapon that needs a full charge")
+	player.controls.fire_secondary = true
+	await _frames(60)
+	player.controls.fire_secondary = false
+	await _frames(3)
+	_check(seen.is_empty() and weapon.ammo == 6, "letting go before 3 seconds loses the shot and costs no ammo")
+	player.controls.fire_primary = true
+	await _frames(int(3.3 * Engine.physics_ticks_per_second))
+	_check(seen.is_empty(), "it does not fire while it is still held")
+	_check(weapon.charge_ratio() >= 1.0, "the charge is full after 3 seconds")
+	player.controls.fire_primary = false
+	await _frames(3)
+	_check(seen.size() == 1 and weapon.ammo == 5, "letting go with a full charge fires one ion bolt")
+	target.take_kill(player)
+	_check(target.damage.is_destroyed(), "an ion hit destroys a mech outright")
 
 
 func _test_info_round_trip() -> void:
