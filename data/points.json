@@ -12,6 +12,7 @@
 		"armor": {"base": 0.5, "per_point": 0.1}
 	},
 	"sprint": {"speed_mult": 1.5},
+	"flight": {"dive_speed_mult": 1.3, "dive_descent_mult": 2.0, "boost_speed_mult": 1.6, "boost_time": 10.0, "boost_cooldown": 8.0},
 	"carry": {
 		"capacity": {"base": 30.0, "per_point": 6.0}
 	}

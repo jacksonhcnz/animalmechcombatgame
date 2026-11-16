@@ -78,11 +78,23 @@ static func _full_ammo(mech_def: Dictionary, weapon: Dictionary) -> float:
 	return float(weapon.get("ammo", 0)) * float(mech_def.get("ammo_mult", 1.0))
 
 
+## One of the flight numbers in points.json (dive and boost tuning).
+static func flight(key: String) -> float:
+	return float(table().get("flight", {}).get(key, 1.0))
+
+
 static func validate() -> Array[String]:
 	var p: Array[String] = []
 	var t := table()
 	if float(t.get("sprint", {}).get("speed_mult", 0.0)) < 1.0:
 		p.append("points.json: sprint.speed_mult must be 1 or more")
+	var flight: Dictionary = t.get("flight", {})
+	for key in ["dive_speed_mult", "dive_descent_mult", "boost_speed_mult"]:
+		if float(flight.get(key, 0.0)) < 1.0:
+			p.append("points.json: flight.%s must be 1 or more" % key)
+	for key in ["boost_time", "boost_cooldown"]:
+		if float(flight.get(key, 0.0)) <= 0.0:
+			p.append("points.json: flight.%s must be above 0 (seconds)" % key)
 	if int(t.get("budget", 0)) <= 0:
 		p.append("points.json: budget must be a positive integer")
 	for group in ["speed", "armor", "carry"]:
