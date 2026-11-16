@@ -65,7 +65,7 @@ func _build() -> void:
 	_ruleset_pick = _row(box, "Ruleset (hosting)", OptionButton.new()) as OptionButton
 	for id in GameData.ids("rulesets"):
 		_ruleset_pick.add_item(id)
-	_ruleset_pick.select(maxi(0, GameData.ids("rulesets").find("standard")))
+	_ruleset_pick.select(maxi(0, GameData.ids("rulesets").find("standard_match")))
 	_address_edit = _row(box, "Server address", LineEdit.new()) as LineEdit
 	_address_edit.text = "127.0.0.1"
 	_address_edit.placeholder_text = "address or address:port"

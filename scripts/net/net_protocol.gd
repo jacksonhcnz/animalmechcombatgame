@@ -5,7 +5,7 @@ extends RefCounted
 ## The protocol version changes whenever the messages change. The balance version
 ## (data/balance.json) must match too, so every server plays by the same numbers.
 
-const VERSION := 1
+const VERSION := 2
 const DEFAULT_PORT := 7777
 const DISCOVERY_PORT := 7778
 const MAX_PLAYERS := 8
@@ -18,6 +18,8 @@ const INTERP_DELAY := 0.1
 const COUNTDOWN_TIME := 3.0
 const RESPAWN_TIME := 4.0
 const RESULT_TIME := 12.0
+## How long the result of a round stays up before the next round counts down.
+const ROUND_OVER_TIME := 5.0
 ## Used when the ruleset has no match time of its own.
 const DEFAULT_MATCH_TIME := 300.0
 

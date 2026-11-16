@@ -68,6 +68,8 @@ static func validate_all() -> Array[String]:
 		problems.append_array(_validate_weapon(id))
 	for id in ids("rulesets"):
 		problems.append_array(_validate_ruleset(id))
+	for id in ids("maps"):
+		problems.append_array(Canyon.validate(id))
 	for id in ids("mechs"):
 		problems.append_array(_validate_mech(id))
 	return problems
@@ -131,6 +133,14 @@ static func _validate_ruleset(id: String) -> Array[String]:
 		var numbers := (expected is float or expected is int) and (actual is float or actual is int)
 		if not numbers and typeof(expected) != typeof(actual):
 			p.append("%s: '%s' has the wrong type" % [tag, key])
+	var map_id := str(r.get("map", "field"))
+	if map_id != "field" and get_entry("maps", map_id).is_empty():
+		p.append("%s: map '%s' does not exist (use field or a file in data/maps)" % [tag, map_id])
+	var best_of := int(r.get("best_of", 0))
+	if best_of < 0 or (best_of > 0 and best_of % 2 == 0):
+		p.append("%s: best_of must be 0 (no rounds) or an odd number such as 7" % tag)
+	if best_of > 0 and float(r.get("match_time", 0.0)) <= 0.0:
+		p.append("%s: a round match needs match_time (the length of a round) above 0" % tag)
 	return p
 
 
