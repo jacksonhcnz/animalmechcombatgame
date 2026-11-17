@@ -27,7 +27,16 @@ var _debug_extra: String = ""
 var _layout: String = ""
 
 
+## Scales the whole HUD about the middle of the screen (the HUD size option).
+func _apply_scale() -> void:
+	var factor := Settings.hud_scale()
+	var centre := Vector2(get_viewport().get_visible_rect().size) * 0.5
+	transform = Transform2D(Vector2(factor, 0.0), Vector2(0.0, factor), centre * (1.0 - factor))
+
+
 func _ready() -> void:
+	get_viewport().size_changed.connect(_apply_scale)
+	_apply_scale()
 	_panels = Control.new()
 	_panels.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_panels.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -284,3 +284,74 @@ class FitLabel:
 			fitted -= 2
 		if get_theme_font_size("font_size") != fitted:
 			add_theme_font_size_override("font_size", fitted)
+
+
+## An on/off switch: a pill with a knob, and "On" / "Off" beside it.
+class Toggle:
+	extends HBoxContainer
+
+	signal toggled(on: bool)
+	var on: bool = false
+	var _caption: Label
+	var _pill: Control
+
+
+	func _init(start_on: bool = false) -> void:
+		on = start_on
+		add_theme_constant_override("separation", 12)
+		_caption = UiKit.mono("", UiKit.DIM, 11)
+		_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		add_child(_caption)
+		_pill = Control.new()
+		_pill.custom_minimum_size = Vector2(48, 26)
+		_pill.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		_pill.draw.connect(_draw_pill)
+		_pill.gui_input.connect(func(event: InputEvent) -> void:
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+				set_on(not on, true))
+		add_child(_pill)
+		_refresh()
+
+
+	func set_on(value: bool, emit: bool = false) -> void:
+		on = value
+		_refresh()
+		if emit:
+			toggled.emit(on)
+
+
+	func _refresh() -> void:
+		_caption.text = "ON" if on else "OFF"
+		_pill.queue_redraw()
+
+
+	func _draw_pill() -> void:
+		var h := _pill.size.y
+		var track := StyleBoxFlat.new()
+		track.bg_color = UiKit.LIME if on else Color("39454a")
+		track.set_corner_radius_all(int(h / 2.0))
+		_pill.draw_style_box(track, Rect2(Vector2.ZERO, _pill.size))
+		var radius := (h - 6.0) / 2.0
+		var centre_x := _pill.size.x - h / 2.0 if on else h / 2.0
+		_pill.draw_circle(Vector2(centre_x, h / 2.0), radius, Color("10150a") if on else Color("c9d1d3"))
+
+
+## A slider with the lime fill from the left and a small bar for a handle, plus a value label.
+static func slider(value: float, low: float, high: float, step: float) -> HSlider:
+	var s := HSlider.new()
+	s.min_value = low
+	s.max_value = high
+	s.step = step
+	s.value = value
+	s.custom_minimum_size = Vector2(240, 24)
+	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	s.add_theme_stylebox_override("slider", box(Color("2b3639"), Color("2b3639"), 0, 2, 0))
+	s.add_theme_stylebox_override("grabber_area", box(LIME, LIME, 0, 2, 0))
+	s.add_theme_stylebox_override("grabber_area_highlight", box(LIME, LIME, 0, 2, 0))
+	var image := Image.create(8, 20, false, Image.FORMAT_RGBA8)
+	image.fill(LIME)
+	var texture := ImageTexture.create_from_image(image)
+	s.add_theme_icon_override("grabber", texture)
+	s.add_theme_icon_override("grabber_highlight", texture)
+	s.add_theme_icon_override("grabber_disabled", texture)
+	return s

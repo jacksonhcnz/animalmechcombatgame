@@ -16,6 +16,7 @@ var _scanner: LanDiscovery.Scanner
 
 
 func _ready() -> void:
+	Settings.apply_all()
 	if LaunchConfig.from_args(OS.get_cmdline_user_args()):
 		_start_match.call_deferred()
 		return
@@ -57,6 +58,10 @@ func _build() -> void:
 	var active := UiKit.mono("Active: %s / %s" % [UiKit.mech_name(mech_id), LoadoutStore.active_name(mech_id)], UiKit.DIM, 10)
 	active.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	footer.add_child(active)
+	footer.add_child(UiKit.link_button("Options", UiKit.LIME, func() -> void: get_tree().change_scene_to_file("res://scenes/options_menu.tscn")))
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(24, 0)
+	footer.add_child(gap)
 	footer.add_child(UiKit.link_button("Quit game", UiKit.DIM, func() -> void: get_tree().quit()))
 
 

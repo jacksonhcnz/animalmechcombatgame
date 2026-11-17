@@ -12,6 +12,7 @@ var mech: Mech
 
 var _mouse_yaw: float = 0.0
 var _mouse_pitch: float = 0.0
+var _sprint_latched: bool = false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -19,8 +20,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Moving the mouse right looks right (a negative yaw); moving it up looks up.
 		# A zoomed scope slows the aim in step, so it stays steady on a far target.
 		var steady := 1.0 / maxf(mech.scope_zoom, 1.0) if mech != null else 1.0
-		_mouse_yaw -= event.relative.x * mouse_sensitivity * steady
-		_mouse_pitch -= event.relative.y * mouse_sensitivity * steady
+		var sensitivity := mouse_sensitivity * Settings.mouse_sens() * steady
+		_mouse_yaw -= event.relative.x * sensitivity
+		_mouse_pitch -= event.relative.y * sensitivity * (-1.0 if Settings.get_value("invert_y") else 1.0)
 	elif event is InputEventMouseButton and event.pressed and mech != null and enabled and mech.sniping \
 			and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 		mech.zoom_scope(1.0 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1.0)
@@ -43,6 +45,10 @@ func _physics_process(delta: float) -> void:
 	c.vertical = Input.get_axis("descend", "ascend")
 	c.jump = Input.is_action_pressed("jump")
 	c.sprint = Input.is_action_pressed("sprint")
+	if Settings.get_value("sprint_mode") == "toggle":
+		if Input.is_action_just_pressed("sprint"):
+			_sprint_latched = not _sprint_latched
+		c.sprint = _sprint_latched
 	if mech.is_flying():
 		# Flying: W pushes the nose down and S pulls it up, Shift and Ctrl set the speed and
 		# Space is the boost.

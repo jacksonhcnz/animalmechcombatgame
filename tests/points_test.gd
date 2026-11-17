@@ -91,7 +91,7 @@ func _store_and_menus() -> void:
 	check(LoadoutStore.active_loadout("hawk") == Loadout.default_loadout(), "a loadout too heavy for the mech is not used")
 	DirAccess.remove_absolute(LoadoutStore.path)
 	LoadoutStore.reset()
-	for scene in ["res://scenes/main_menu.tscn", "res://scenes/loadout_menu.tscn"]:
+	for scene in ["res://scenes/main_menu.tscn", "res://scenes/loadout_menu.tscn", "res://scenes/options_menu.tscn"]:
 		var menu: Node = load(scene).instantiate()
 		root.add_child(menu)
 		await process_frame
