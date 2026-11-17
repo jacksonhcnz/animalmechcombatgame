@@ -89,3 +89,7 @@ Copyright (C) 2026 jacksonhcnz and contributors.
 See [CONTRIBUTING.md](CONTRIBUTING.md) before sending changes.
 
 This project is an original work. It is not affiliated with or based on any existing game, show or toy franchise.
+
+## Menus
+
+The main menu and loadout screen share one look (`scripts/ui/ui_kit.gd`): a dark console with lime accents, condensed upper-case headings and small monospaced captions. Fonts are looked up on the player's system (Barlow Condensed if installed, otherwise Bahnschrift, Arial Narrow or the default), so no font files ship with the game and headings shrink to fit when the fallback font is wider.

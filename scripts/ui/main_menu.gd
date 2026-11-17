@@ -9,8 +9,6 @@ static var pending_message: String = ""
 
 var _name_edit: LineEdit
 var _address_edit: LineEdit
-var _mech_pick: OptionButton
-var _load_label: Label
 var _ruleset_pick: OptionButton
 var _status: Label
 var _list: VBoxContainer
@@ -23,99 +21,163 @@ func _ready() -> void:
 		return
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_build()
-	_status.text = pending_message
+	_set_status(pending_message)
 	pending_message = ""
 
 
+func _set_status(text: String) -> void:
+	_status.text = "System status   /   %s" % (text.to_upper() if text != "" else "Standby")
+
+
 func _build() -> void:
-	var back := ColorRect.new()
-	back.color = Color(0.1, 0.12, 0.14)
-	back.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(back)
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
-	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(460, 0)
-	box.add_theme_constant_override("separation", 8)
-	center.add_child(box)
+	var column := UiKit.page(self)
+	_name_edit = UiKit.header(column)
 
-	var title := Label.new()
-	title.text = "ANIMAL MECH COMBAT"
-	title.add_theme_font_size_override("font_size", 32)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(title)
-
-	_name_edit = _row(box, "Pilot name", LineEdit.new()) as LineEdit
-	_name_edit.text = LaunchConfig.player_name
-	_name_edit.max_length = 20
-	_mech_pick = _row(box, "Mech", OptionButton.new()) as OptionButton
-	for id in GameData.ids("mechs"):
-		_mech_pick.add_item(id)
-	_mech_pick.select(maxi(0, GameData.ids("mechs").find(LaunchConfig.mech_id)))
-	_mech_pick.item_selected.connect(func(_i: int) -> void: _update_load())
-	_load_label = Label.new()
-	_load_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(_load_label)
-	_button(box, "Loadouts", func() -> void:
-		LaunchConfig.player_name = _name_edit.text.strip_edges() if _name_edit.text.strip_edges() != "" else "Pilot"
-		LaunchConfig.mech_id = _mech_pick.get_item_text(_mech_pick.selected)
-		get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn"))
-	_update_load()
-	_ruleset_pick = _row(box, "Ruleset (hosting)", OptionButton.new()) as OptionButton
-	for id in GameData.ids("rulesets"):
-		_ruleset_pick.add_item(id)
-	_ruleset_pick.select(maxi(0, GameData.ids("rulesets").find("standard_match")))
-	_address_edit = _row(box, "Server address", LineEdit.new()) as LineEdit
-	_address_edit.text = "127.0.0.1"
-	_address_edit.placeholder_text = "address or address:port"
-
-	_button(box, "Test range (offline)", _on_test_range)
-	_button(box, "Host a match", _on_host)
-	_button(box, "Join by address", _on_join)
-	_button(box, "Scan local network", _on_scan)
-	_list = VBoxContainer.new()
-	box.add_child(_list)
-	_status = Label.new()
+	column.add_child(UiKit.mono("Operations / Main menu"))
+	var title_row := UiKit.hbox(column, 0)
+	var titles := UiKit.vbox(title_row, 6)
+	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titles.add_child(UiKit.heading("Ready for deployment?", 52))
+	titles.add_child(UiKit.label("Configure your mech. Test your build. Enter the fight.", 15, UiKit.DIM))
+	_status = UiKit.mono("", UiKit.DIM, 11)
+	_status.size_flags_vertical = Control.SIZE_SHRINK_END
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(_status)
-	_button(box, "Quit", func() -> void: get_tree().quit())
+	_status.custom_minimum_size = Vector2(220, 0)
+	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	title_row.add_child(_status)
+
+	var cards := UiKit.hbox(column, 22)
+	cards.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_build_loadout_card(cards)
+	_build_range_card(cards)
+	_build_multiplayer_card(cards)
+
+	var footer := UiKit.hbox(column, 0)
+	var mech_id := LaunchConfig.mech_id
+	var active := UiKit.mono("Active: %s / %s" % [UiKit.mech_name(mech_id), LoadoutStore.active_name(mech_id)], UiKit.DIM, 10)
+	active.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(active)
+	footer.add_child(UiKit.link_button("Quit game", UiKit.DIM, func() -> void: get_tree().quit()))
 
 
-## Shows the loadout in use for the chosen mech and how heavy it is.
-func _update_load() -> void:
-	var mech_id := _mech_pick.get_item_text(_mech_pick.selected)
+func _card(parent: Control, stretch: float, step: String, title: String, subtitle: String) -> VBoxContainer:
+	var panel := UiKit.panel(UiKit.PANEL, UiKit.BORDER, 20)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = stretch
+	parent.add_child(panel)
+	var box := UiKit.vbox(panel, 10)
+	box.add_child(UiKit.mono(step))
+	box.add_child(UiKit.heading(title, 38))
+	box.add_child(UiKit.label(subtitle, 14, UiKit.DIM))
+	return box
+
+
+func _build_loadout_card(parent: Control) -> void:
+	var box := _card(parent, 1.25, "01 / Prepare", "Loadout", "Your mech. Your playstyle.")
+	var mech_id := LaunchConfig.mech_id
 	var mech_def := GameData.get_entry("mechs", mech_id)
 	var choice := LoadoutStore.active_loadout(mech_id)
-	_load_label.text = "Loadout: %s (%s)\nCarrying %.0f of %.0f" % [LoadoutStore.active_name(mech_id), LoadoutStore.summary(choice), Loadout.weight(mech_def, choice), Points.carry_capacity(mech_def)]
+	var inner := UiKit.panel(UiKit.INNER, UiKit.BORDER, 16)
+	box.add_child(inner)
+	var details := UiKit.vbox(inner, 6)
+	details.add_child(UiKit.mono("Active mech", UiKit.DIM, 10))
+	details.add_child(UiKit.heading(UiKit.mech_name(mech_id), 40))
+	details.add_child(UiKit.label(LoadoutStore.active_name(mech_id), 15, UiKit.LIME))
+	var weapons := UiKit.label("%s  /  %s" % [Loadout.item("primary", choice["primary"]).get("name", ""), Loadout.item("secondary", choice["secondary"]).get("name", "")], 13, UiKit.DIM)
+	weapons.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	details.add_child(weapons)
+	UiKit.spacer(details, 8)
+	var used := Loadout.weight(mech_def, choice)
+	var capacity := Points.carry_capacity(mech_def)
+	var carry := UiKit.hbox(details, 0)
+	var carrying := UiKit.mono("Carrying", UiKit.DIM, 10)
+	carrying.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	carry.add_child(carrying)
+	carry.add_child(UiKit.mono("%.0f / %.0f" % [used, capacity], UiKit.TEXT, 12))
+	details.add_child(UiKit.progress(used, capacity))
+	UiKit.spacer(box)
+	box.add_child(UiKit.primary_button("Manage loadouts", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn")))
+	box.add_child(UiKit.mono("Select mech  →  choose 1 of %d loadouts" % LoadoutStore.SLOT_COUNT, UiKit.DIM, 9))
 
 
-func _row(parent: Control, label_text: String, control: Control) -> Control:
-	var row := HBoxContainer.new()
-	var label := Label.new()
-	label.text = label_text
-	label.custom_minimum_size = Vector2(150, 0)
-	control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(label)
-	row.add_child(control)
-	parent.add_child(row)
-	return control
+func _build_range_card(parent: Control) -> void:
+	var box := _card(parent, 1.0, "02 / Practice", "Test range", "Fine-tune before the fight.")
+	var picture := UiKit.panel(UiKit.INNER, UiKit.BORDER, 0)
+	box.add_child(picture)
+	var target := TargetGraphic.new()
+	target.custom_minimum_size = Vector2(0, 150)
+	picture.add_child(target)
+	box.add_child(UiKit.mono("Offline / No match required"))
+	var note := UiKit.label("Take your active loadout into a safe testing environment.", 14, UiKit.DIM)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(note)
+	UiKit.spacer(box)
+	box.add_child(UiKit.outline_button("Enter test range", _on_test_range))
 
 
-func _button(parent: Control, text: String, action: Callable) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.pressed.connect(action)
-	parent.add_child(button)
-	return button
+func _build_multiplayer_card(parent: Control) -> void:
+	var box := _card(parent, 1.8, "03 / Engage", "Multiplayer", "Create a match or find your next opponent.")
+	UiKit.rule(box)
+	box.add_child(UiKit.label("Host a match", 18))
+	box.add_child(UiKit.mono("Ruleset", UiKit.DIM, 10))
+	var host_row := UiKit.hbox(box, 10)
+	_ruleset_pick = OptionButton.new()
+	_ruleset_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for id in GameData.ids("rulesets"):
+		_ruleset_pick.add_item(str(GameData.get_entry("rulesets", id).get("display_name", id.capitalize())))
+		_ruleset_pick.set_item_metadata(_ruleset_pick.item_count - 1, id)
+	_ruleset_pick.select(maxi(0, GameData.ids("rulesets").find("standard_match")))
+	UiKit.style_input(_ruleset_pick)
+	host_row.add_child(_ruleset_pick)
+	var host := UiKit.primary_button("Host", _on_host)
+	host.custom_minimum_size = Vector2(150, 44)
+	host_row.add_child(host)
+	UiKit.rule(box)
+	box.add_child(UiKit.label("Join by address", 18))
+	var join_row := UiKit.hbox(box, 10)
+	_address_edit = LineEdit.new()
+	_address_edit.text = "127.0.0.1"
+	_address_edit.placeholder_text = "address or address:port"
+	_address_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_address_edit.add_theme_font_override("font", UiKit.mono_font())
+	UiKit.style_input(_address_edit)
+	join_row.add_child(_address_edit)
+	var join := UiKit.outline_button("Join", _on_join)
+	join.custom_minimum_size = Vector2(150, 44)
+	join_row.add_child(join)
+	UiKit.rule(box)
+	var lan_row := UiKit.hbox(box, 10)
+	var lan_text := UiKit.vbox(lan_row, 2)
+	lan_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lan_text.add_child(UiKit.label("Local network", 16))
+	lan_text.add_child(UiKit.label("Find nearby matches on your LAN.", 13, UiKit.DIM))
+	var scan := UiKit.outline_button("Scan", _on_scan)
+	scan.custom_minimum_size = Vector2(150, 44)
+	lan_row.add_child(scan)
+	_list = VBoxContainer.new()
+	_list.add_theme_constant_override("separation", 6)
+	box.add_child(_list)
+
+
+class TargetGraphic:
+	extends Control
+	## The bull's-eye picture on the test range card.
+
+	func _draw() -> void:
+		var centre := size * 0.5
+		var ring := Color(0.55, 0.6, 0.62, 0.55)
+		draw_line(Vector2(centre.x - 110, centre.y), Vector2(centre.x + 110, centre.y), ring, 1.0)
+		draw_line(Vector2(centre.x, 8), Vector2(centre.x, size.y - 8), ring, 1.0)
+		for radius in [64.0, 38.0]:
+			draw_arc(centre, minf(radius, size.y * 0.5 - 6.0), 0.0, TAU, 64, ring, 1.0, true)
+		draw_arc(centre, 12.0, 0.0, TAU, 32, UiKit.LIME, 2.0, true)
 
 
 func _read_choices() -> void:
 	var cleaned := _name_edit.text.strip_edges()
 	LaunchConfig.player_name = cleaned if cleaned != "" else "Pilot"
-	LaunchConfig.mech_id = _mech_pick.get_item_text(_mech_pick.selected)
 	LaunchConfig.loadout = LoadoutStore.active_loadout(LaunchConfig.mech_id)
-	LaunchConfig.ruleset_id = _ruleset_pick.get_item_text(_ruleset_pick.selected)
+	LaunchConfig.ruleset_id = _ruleset_pick.get_item_metadata(_ruleset_pick.selected)
 	LaunchConfig.server_name = "%s's match" % LaunchConfig.player_name
 
 
@@ -150,20 +212,20 @@ func _on_scan() -> void:
 		child.queue_free()
 	_scanner.results.clear()
 	_scanner.scan()
-	_status.text = "Scanning..."
+	_set_status("Scanning...")
 	await get_tree().create_timer(1.5).timeout
 	if is_instance_valid(_status) and _scanner.results.is_empty():
-		_status.text = "No servers found on this network."
+		_set_status("No servers found on this network")
 
 
 func _on_found(info: Dictionary) -> void:
-	_status.text = ""
+	_set_status("")
 	var text := "%s  (%s, %d/%d)" % [info.get("name", "?"), info.get("mode", "?"), int(info.get("players", 0)), int(info.get("max_players", 0))]
 	var address := str(info["address"])
 	var port := int(info.get("port", NetProtocol.DEFAULT_PORT))
-	_button(_list, text, func() -> void:
+	_list.add_child(UiKit.outline_button(text, func() -> void:
 		_address_edit.text = "%s:%d" % [address, port]
-		_on_join())
+		_on_join()))
 
 
 func _start_match() -> void:
