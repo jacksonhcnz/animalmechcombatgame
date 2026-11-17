@@ -30,6 +30,8 @@ const AIR_CONTROL := 1.5
 const DEAD_COLOR := Color("#2b2b2b")
 ## The colour of the tone "metal" in a part's visual pieces (silver bolts, nuts and joints).
 const METAL_COLOR := Color("#d3d6da")
+## Fixed colours for visual pieces that are not part of a mech's palette.
+const FIXED_TONES := {"metal": Color("#d3d6da"), "black": Color("#25282b"), "eye": Color("#f08a1c")}
 
 var def: Dictionary
 var rules: Ruleset
@@ -958,7 +960,7 @@ func _build_visual(part_id: String, holder: Node3D, pieces: Array, palette: Dict
 		var size := _vec3(piece["size"]) if piece.has("size") else Vector3.ONE
 		match piece.get("shape", "box"):
 			"plate":
-				mesh_piece.mesh = _plate_mesh(piece["points"], float(piece["thickness"]), float(piece.get("round", 0.0)))
+				mesh_piece.mesh = _plate_mesh(piece["points"], float(piece["thickness"]), float(piece.get("round", 0.0)), piece.get("holes", []))
 			"sphere":
 				var sphere := SphereMesh.new()
 				sphere.radius = size.x * 0.5
@@ -979,7 +981,7 @@ func _build_visual(part_id: String, holder: Node3D, pieces: Array, palette: Dict
 				box.size = size
 				mesh_piece.mesh = box
 		var tone: String = piece["tone"]
-		var color := METAL_COLOR if tone == "metal" else Color.html(palette[tone])
+		var color: Color = FIXED_TONES[tone] if FIXED_TONES.has(tone) else Color.html(palette[tone])
 		var material := StandardMaterial3D.new()
 		material.albedo_color = color
 		material.roughness = 1.0
@@ -993,7 +995,8 @@ func _build_visual(part_id: String, holder: Node3D, pieces: Array, palette: Dict
 
 ## A flat plate: the outline `points` ([x, y] pairs, drawn in the piece's own XY plane) pushed out
 ## to `thickness` along Z, with corners rounded by `round_radius`. Like a stamped metal plate.
-static func _plate_mesh(points: Array, thickness: float, round_radius: float) -> ArrayMesh:
+## `holes` cuts openings through it: [x, y, radius] circles, or lists of [x, y] points.
+static func _plate_mesh(points: Array, thickness: float, round_radius: float, holes: Array = []) -> ArrayMesh:
 	var outline := PackedVector2Array()
 	for point in points:
 		outline.append(Vector2(float(point[0]), float(point[1])))
@@ -1001,31 +1004,101 @@ static func _plate_mesh(points: Array, thickness: float, round_radius: float) ->
 		outline = _round_outline(outline, round_radius)
 	if Geometry2D.is_polygon_clockwise(outline):
 		outline.reverse()
+	var hole_loops: Array[PackedVector2Array] = []
+	for hole in holes:
+		var loop := PackedVector2Array()
+		if hole.size() == 3 and not hole[0] is Array:
+			for k in 8:
+				var a := TAU * float(k) / 8.0
+				loop.append(Vector2(float(hole[0]) + cos(a) * float(hole[2]), float(hole[1]) + sin(a) * float(hole[2])))
+		else:
+			for point in hole:
+				loop.append(Vector2(float(point[0]), float(point[1])))
+		if not Geometry2D.is_polygon_clockwise(loop):
+			loop.reverse()
+		hole_loops.append(loop)
+	var merged := _join_holes(outline, hole_loops)
 	var half := thickness * 0.5
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var cap := Geometry2D.triangulate_polygon(outline)
+	var cap := Geometry2D.triangulate_polygon(merged)
 	for face in [1.0, -1.0]:
 		var normal := Vector3(0.0, 0.0, face)
 		for k in range(0, cap.size(), 3):
 			_add_triangle(tool, normal,
-				Vector3(outline[cap[k]].x, outline[cap[k]].y, half * face),
-				Vector3(outline[cap[k + 1]].x, outline[cap[k + 1]].y, half * face),
-				Vector3(outline[cap[k + 2]].x, outline[cap[k + 2]].y, half * face))
-	for i in outline.size():
-		var a := outline[i]
-		var b := outline[(i + 1) % outline.size()]
-		if a.is_equal_approx(b):
-			continue
-		var edge := b - a
-		var side := Vector3(edge.y, -edge.x, 0.0).normalized()
-		var a_top := Vector3(a.x, a.y, half)
-		var b_top := Vector3(b.x, b.y, half)
-		var a_bottom := Vector3(a.x, a.y, -half)
-		var b_bottom := Vector3(b.x, b.y, -half)
-		_add_triangle(tool, side, a_top, b_top, b_bottom)
-		_add_triangle(tool, side, a_top, b_bottom, a_bottom)
+				Vector3(merged[cap[k]].x, merged[cap[k]].y, half * face),
+				Vector3(merged[cap[k + 1]].x, merged[cap[k + 1]].y, half * face),
+				Vector3(merged[cap[k + 2]].x, merged[cap[k + 2]].y, half * face))
+	var loops: Array[PackedVector2Array] = [outline]
+	loops.append_array(hole_loops)
+	for loop in loops:
+		for i in loop.size():
+			var a := loop[i]
+			var b := loop[(i + 1) % loop.size()]
+			if a.is_equal_approx(b):
+				continue
+			var edge := b - a
+			var side := Vector3(edge.y, -edge.x, 0.0).normalized()
+			var a_top := Vector3(a.x, a.y, half)
+			var b_top := Vector3(b.x, b.y, half)
+			var a_bottom := Vector3(a.x, a.y, -half)
+			var b_bottom := Vector3(b.x, b.y, -half)
+			_add_triangle(tool, side, a_top, b_top, b_bottom)
+			_add_triangle(tool, side, a_top, b_bottom, a_bottom)
 	return tool.commit()
+
+
+## Joins each hole to the outline with a zero-width bridge, giving one polygon that can be triangulated.
+static func _join_holes(outline: PackedVector2Array, hole_loops: Array[PackedVector2Array]) -> PackedVector2Array:
+	var merged := outline
+	var order: Array = hole_loops.duplicate()
+	order.sort_custom(func(a: PackedVector2Array, b: PackedVector2Array) -> bool: return _max_x(a) > _max_x(b))
+	for hole: PackedVector2Array in order:
+		var m := 0
+		for i in hole.size():
+			if hole[i].x > hole[m].x:
+				m = i
+		var best := -1
+		var best_distance := INF
+		for i in merged.size():
+			var distance := merged[i].distance_squared_to(hole[m])
+			if distance < best_distance and _bridge_is_clear(merged, i, hole[m], order, hole):
+				best = i
+				best_distance = distance
+		if best == -1:
+			continue
+		var joined := PackedVector2Array()
+		for i in best + 1:
+			joined.append(merged[i])
+		for k in hole.size() + 1:
+			joined.append(hole[(m + k) % hole.size()])
+		for i in range(best, merged.size()):
+			joined.append(merged[i])
+		merged = joined
+	return merged
+
+
+static func _max_x(loop: PackedVector2Array) -> float:
+	var result := -INF
+	for point in loop:
+		result = maxf(result, point.x)
+	return result
+
+
+## True if the bridge from merged[index] to a hole's corner crosses no outline or hole edge.
+static func _bridge_is_clear(merged: PackedVector2Array, index: int, target: Vector2, holes: Array, own_hole: PackedVector2Array) -> bool:
+	var from := merged[index]
+	var loops: Array = [merged]
+	loops.append_array(holes)
+	for loop: PackedVector2Array in loops:
+		for i in loop.size():
+			var a := loop[i]
+			var b := loop[(i + 1) % loop.size()]
+			if a.is_equal_approx(from) or b.is_equal_approx(from) or a.is_equal_approx(target) or b.is_equal_approx(target):
+				continue
+			if Geometry2D.segment_intersects_segment(from, target, a, b) != null:
+				return false
+	return true
 
 
 ## Adds one triangle, ordered so that it faces along `normal` (Godot treats clockwise as the front).
