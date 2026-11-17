@@ -63,6 +63,7 @@ func _init(mech: Mech) -> void:
 				"aim": anim.get("aim", ""),
 				"stabilize": float(anim.get("stabilize", 0.0)),
 				"look": anim.get("look", {}),
+				"last": Vector3(INF, INF, INF),
 			})
 			_look_yaw[id] = 0.0
 			_look_pitch[id] = 0.0
@@ -210,18 +211,25 @@ func _apply_parts(delta: float) -> void:
 			"pitch":
 				rotation.x += _mech.aim_pitch * factor
 
-		entry["pivot"].rotation = rotation
+		# Setting a transform wakes up the hitboxes riding on it, so only touch parts that moved.
+		if rotation != entry["last"]:
+			entry["last"] = rotation
+			entry["pivot"].rotation = rotation
 
 
 func _apply_rig() -> void:
 	var collapse := _death * _death * (3.0 - 2.0 * _death)
 	bob_y *= 1.0 - collapse
-	_mech.rig.position.y = bob_y - _crouch * (1.0 - collapse) - float(_cfg.get("collapse_m", 0.0)) * collapse
-	_mech.rig.rotation = Vector3(
+	var rig_y := bob_y - _crouch * (1.0 - collapse) - float(_cfg.get("collapse_m", 0.0)) * collapse
+	var rig_rotation := Vector3(
 		_pitch + deg_to_rad(float(_cfg.get("death_pitch_deg", 0.0))) * collapse,
 		_yaw * (1.0 - collapse),
 		_roll + deg_to_rad(float(_cfg.get("death_roll_deg", 0.0))) * collapse
 	)
+	if rig_y != _mech.rig.position.y:
+		_mech.rig.position.y = rig_y
+	if rig_rotation != _mech.rig.rotation:
+		_mech.rig.rotation = rig_rotation
 
 
 ## Angle in radians of one motion at a point in the cycle.
