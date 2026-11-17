@@ -293,7 +293,9 @@ func _animate(delta: float) -> void:
 		cockpit_camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(80.0) * 0.5) * narrow))
 		third_person_camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(70.0) * 0.5) * narrow))
 	# The cockpit camera follows only a share of the body bob, set by the player's head bob setting.
-	_aim_pivot.position.y = _aim_base_y + animator.bob_y * GameSettings.head_bob
+	var pivot_y := _aim_base_y + animator.bob_y * GameSettings.head_bob
+	if pivot_y != _aim_pivot.position.y:
+		_aim_pivot.position.y = pivot_y
 
 
 func _update_aim() -> void:

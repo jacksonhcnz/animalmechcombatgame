@@ -16,6 +16,8 @@ var max_health: Dictionary = {}
 var _parts: Dictionary = {}
 var _mounts: Dictionary = {}
 var _disabled: Dictionary = {}
+## is_crippled answers, remembered until a part is disabled (it is asked about every tick).
+var _crippled_cache: Dictionary = {}
 var _rules: Ruleset
 var _armor: float = 1.0
 var _pool: float = 0.0
@@ -70,6 +72,7 @@ func apply_damage(part_id: String, amount: float) -> Dictionary:
 	result["applied"] = before - health[target]
 	if before > 0.0 and health[target] <= 0.0:
 		_disabled[target] = true
+		_crippled_cache.clear()
 		result["disabled"] = true
 		part_disabled.emit(target)
 		if _parts[target].get("fatal", false):
@@ -88,6 +91,7 @@ func kill() -> Dictionary:
 			result["applied"] = float(result["applied"]) + float(health[part_id])
 			health[part_id] = 0.0
 			_disabled[part_id] = true
+			_crippled_cache.clear()
 			if result["part"] == "":
 				result["part"] = part_id
 			part_disabled.emit(part_id)
@@ -135,6 +139,7 @@ func import_state(state: Dictionary) -> void:
 		if health.has(part_id):
 			health[part_id] = float(state["health"][part_id])
 	_disabled.clear()
+	_crippled_cache.clear()
 	for part_id in state.get("disabled", []):
 		_disabled[part_id] = true
 	_destroyed = bool(state.get("destroyed", false))
@@ -154,6 +159,14 @@ func is_part_disabled(part_id: String) -> bool:
 ## use anything mounted on it.
 func is_crippled(part_id: String) -> bool:
 	part_id = resolve(part_id)
+	if _crippled_cache.has(part_id):
+		return _crippled_cache[part_id]
+	var answer := _work_out_crippled(part_id)
+	_crippled_cache[part_id] = answer
+	return answer
+
+
+func _work_out_crippled(part_id: String) -> bool:
 	if _disabled.has(part_id):
 		return true
 	# A part hanging from a destroyed part (guns on a gimbal bar on a mast) goes down with it.
