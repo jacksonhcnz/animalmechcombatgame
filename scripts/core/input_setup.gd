@@ -16,6 +16,31 @@ static func ensure_actions() -> void:
 		InputMap.add_action(action, DEADZONE)
 		for event in _defaults()[action]:
 			InputMap.action_add_event(action, event)
+	Settings.apply_bindings()
+
+
+static func action_names() -> Array:
+	return _defaults().keys()
+
+
+static func has_default(action: String) -> bool:
+	return _defaults().has(action)
+
+
+## The default keyboard or mouse binding of an action as {kind, code}, or {} (stick-only actions).
+static func default_binding(action: String) -> Dictionary:
+	for event in _defaults().get(action, []):
+		if event is InputEventKey:
+			return {"kind": "key", "code": int(event.physical_keycode)}
+		if event is InputEventMouseButton:
+			return {"kind": "mouse", "code": int(event.button_index)}
+	return {}
+
+
+static func event_for(binding: Dictionary) -> InputEvent:
+	if binding["kind"] == "key":
+		return _key(int(binding["code"]) as Key)
+	return _mouse(int(binding["code"]) as MouseButton)
 
 
 static func _defaults() -> Dictionary:

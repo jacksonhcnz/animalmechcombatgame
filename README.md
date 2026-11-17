@@ -93,3 +93,7 @@ This project is an original work. It is not affiliated with or based on any exis
 ## Menus
 
 The main menu and loadout screen share one look (`scripts/ui/ui_kit.gd`): a dark console with lime accents, condensed upper-case headings and small monospaced captions. Fonts are looked up on the player's system (Barlow Condensed if installed, otherwise Bahnschrift, Arial Narrow or the default), so no font files ship with the game and headings shrink to fit when the fallback font is wider.
+
+### Options
+
+**Options** on the main menu opens Visuals, Controls, Audio and Gameplay tabs (`scripts/ui/options_menu.gd`). Changes wait in a draft until **Apply settings** (Cancel throws them away, **Reset tab to defaults** restores one tab). Display changes ask you to keep them and go back on their own after 10 seconds. Settings are saved to `settings.json` in the game's user folder (`scripts/core/settings.gd`). Working today: display mode, resolution, V-sync, frame rate limit, graphics quality, mouse sensitivity, invert Y, key and mouse rebinding, volume buses, output device, mute when unfocused, HUD scale and sprint hold/toggle. Saved but not used yet: motion blur, subtitles, camera shake, damage numbers and colour vision.
