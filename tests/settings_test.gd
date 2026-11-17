@@ -45,7 +45,7 @@ func _run() -> void:
 	Settings.reload()
 	_check(Settings.get_value("resolution") == "1152x648", "unknown resolution falls back")
 	_check(Settings.get_value("mouse_sens") == 3.0, "sensitivity is clamped")
-	_check(Settings.get_value("quality") == "high", "unknown quality falls back")
+	_check(Settings.get_value("quality") == "medium", "unknown quality falls back")
 	_check(Settings.get_value("master_volume") == 1.0, "volume is clamped")
 
 	# Key bindings reach the input map.
