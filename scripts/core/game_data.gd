@@ -279,8 +279,13 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 		if float(cfg.get(key, 0.0)) <= 0.0:
 			p.append("%s: animation.%s must be greater than 0" % [tag, key])
 	for key in cfg:
-		if not (cfg[key] is float or cfg[key] is int):
+		if key == "stand_pivot":
+			if not _is_vec3(cfg[key]):
+				p.append("%s: animation.stand_pivot must be [x, y, z]" % tag)
+		elif not (cfg[key] is float or cfg[key] is int):
 			p.append("%s: animation.%s must be a number" % [tag, key])
+	if cfg.has("stand_pivot") != cfg.has("stand_pitch_deg"):
+		p.append("%s: animation needs both stand_pivot and stand_pitch_deg, or neither" % tag)
 
 	for part in parts:
 		var ptag := "%s part '%s'" % [tag, part.get("id", "?")]

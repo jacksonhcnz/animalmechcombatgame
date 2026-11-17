@@ -74,6 +74,8 @@ var third_person_camera: Camera3D
 var cockpit_interior: Node3D
 ## Holds every visible part and hitbox, so the animator can bob and tilt the whole body.
 var rig: Node3D
+## Everything but the legs, when the mech can stand upright: it tips about the hips while the legs stay put.
+var body_rig: Node3D
 ## One pivot node per part. A part hangs from its parent part's pivot, so joints follow limbs.
 var pivots: Dictionary = {}
 var animator: MechAnimator
@@ -823,6 +825,13 @@ func _build_body() -> void:
 	var parts: Array = def["parts"]
 	for part in parts:
 		_part_defs[part["id"]] = part
+	var hip_world := Vector3.ZERO
+	if def.get("animation", {}).has("stand_pivot"):
+		hip_world = _vec3(def["animation"]["stand_pivot"])
+		body_rig = Node3D.new()
+		body_rig.name = "BodyRig"
+		body_rig.position = hip_world
+		rig.add_child(body_rig)
 
 	# Pivots first, parents before children, so each part can hang from its parent's pivot.
 	var pivot_world: Dictionary = {}
@@ -837,9 +846,10 @@ func _build_body() -> void:
 			var world := _vec3(part.get("anim", {}).get("pivot", part["pos"]))
 			var pivot := Node3D.new()
 			pivot.name = "Pivot_" + part_id
-			var parent_world: Vector3 = pivot_world[parent_id] if parent_id != "" else Vector3.ZERO
+			var upper_body: bool = parent_id == "" and body_rig != null and part.get("kind", "") != "leg"
+			var parent_world: Vector3 = pivot_world[parent_id] if parent_id != "" else (hip_world if upper_body else Vector3.ZERO)
 			pivot.position = world - parent_world
-			(pivots[parent_id] if parent_id != "" else rig).add_child(pivot)
+			(pivots[parent_id] if parent_id != "" else (body_rig if upper_body else rig)).add_child(pivot)
 			pivots[part_id] = pivot
 			pivot_world[part_id] = world
 			pending.erase(part)
