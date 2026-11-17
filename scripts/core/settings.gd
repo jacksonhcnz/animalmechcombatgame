@@ -17,7 +17,7 @@ const SPRINT_MODES: Array[String] = ["hold", "toggle"]
 const AUDIO_BUSES := {"master_volume": "Master", "music_volume": "Music", "effects_volume": "Effects", "voice_volume": "Voice"}
 
 const DEFAULTS := {
-	"display_mode": "windowed", "resolution": "1152x648", "quality": "high", "fps_limit": 144,
+	"display_mode": "windowed", "resolution": "1152x648", "quality": "medium", "fps_limit": 144,
 	"vsync": false, "motion_blur": false,
 	"mouse_sens": 1.0, "invert_y": false, "bindings": {},
 	"master_volume": 0.8, "music_volume": 0.4, "effects_volume": 0.9, "voice_volume": 0.75,
@@ -210,10 +210,10 @@ static func apply_quality() -> void:
 			root.msaa_3d = Viewport.MSAA_DISABLED
 			root.scaling_3d_scale = 0.75
 		"medium":
-			root.msaa_3d = Viewport.MSAA_2X
+			root.msaa_3d = Viewport.MSAA_DISABLED
 			root.scaling_3d_scale = 1.0
 		_:
-			root.msaa_3d = Viewport.MSAA_4X
+			root.msaa_3d = Viewport.MSAA_2X
 			root.scaling_3d_scale = 1.0
 
 
