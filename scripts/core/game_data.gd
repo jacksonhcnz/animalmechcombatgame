@@ -344,6 +344,15 @@ static func _validate_visual(ptag: String, pieces: Variant) -> Array[String]:
 				p.append("%s: every plate point must be [x, y]" % ptag)
 			if float(piece.get("thickness", 0.0)) <= 0.0:
 				p.append("%s: a plate piece needs a thickness above 0" % ptag)
+			if piece.has("holes"):
+				if not piece["holes"] is Array:
+					p.append("%s: plate holes must be a list" % ptag)
+				else:
+					for hole in piece["holes"]:
+						var circle: bool = hole is Array and (hole as Array).size() == 3 and not hole[0] is Array
+						var polygon: bool = hole is Array and (hole as Array).size() >= 3 and hole[0] is Array
+						if not (circle or polygon):
+							p.append("%s: a plate hole is [x, y, radius] or a list of [x, y] points" % ptag)
 		elif not _is_vec3(piece.get("size")):
 			p.append("%s: visual piece needs a size [x, y, z]" % ptag)
 		if piece.has("pos") and not _is_vec3(piece["pos"]):
@@ -352,8 +361,8 @@ static func _validate_visual(ptag: String, pieces: Variant) -> Array[String]:
 			p.append("%s: visual piece rot_deg must be [x, y, z]" % ptag)
 		if not VISUAL_SHAPES.has(piece.get("shape", "box")):
 			p.append("%s: visual piece shape must be one of %s" % [ptag, VISUAL_SHAPES])
-		if not TONES.has(piece.get("tone", "")) and piece.get("tone", "") != "metal":
-			p.append("%s: visual piece tone must be one of %s or metal" % [ptag, TONES])
+		if not TONES.has(piece.get("tone", "")) and not ["metal", "black", "eye"].has(piece.get("tone", "")):
+			p.append("%s: visual piece tone must be one of %s, metal, black or eye" % [ptag, TONES])
 	return p
 
 
