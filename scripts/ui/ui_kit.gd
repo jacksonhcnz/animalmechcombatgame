@@ -210,15 +210,29 @@ static func background(parent: Control) -> void:
 
 ## Full-screen page: dark background and a scrolling column with the shared margins. Returns the
 ## column to add content to.
+const PAGE_SIZE := Vector2(1280, 820)
+
+
 static func page(parent: Control) -> VBoxContainer:
 	background(parent)
+	var holder := Control.new()
+	holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.clip_contents = true
+	parent.add_child(holder)
 	var margin := MarginContainer.new()
-	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right"]:
 		margin.add_theme_constant_override("margin_" + side, 72)
 	margin.add_theme_constant_override("margin_top", 18)
 	margin.add_theme_constant_override("margin_bottom", 16)
-	parent.add_child(margin)
+	holder.add_child(margin)
+	# The layout is drawn for a window of at least PAGE_SIZE: smaller windows shrink it to fit.
+	var fit := func() -> void:
+		var factor := minf(1.0, minf(holder.size.x / PAGE_SIZE.x, holder.size.y / PAGE_SIZE.y))
+		factor = maxf(factor, 0.1)
+		margin.scale = Vector2(factor, factor)
+		margin.size = holder.size / factor
+	holder.resized.connect(fit)
+	fit.call_deferred()
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	margin.add_child(scroll)
