@@ -1,0 +1,9 @@
+{
+	"id": "sniper_rifle",
+	"name": "Sniper Rifle",
+	"weight": 0.0,
+	"mechs": [
+		"velociraptor"
+	],
+	"weapon": "sniper_cannon"
+}

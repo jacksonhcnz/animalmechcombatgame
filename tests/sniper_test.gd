@@ -27,11 +27,14 @@ func _frames(count: int) -> void:
 
 
 func _run() -> void:
-	_check(not Loadout.options("primary", "lion").has("sniper_cannon"), "the lion cannot carry the sniper")
-	_check(not Loadout.options("secondary", "hawk").has("sniper_cannon"), "the hawk cannot carry the sniper")
-	_check(Loadout.options("primary", "velociraptor").has("sniper_cannon"), "the raptor can carry the sniper")
-	var wrong := Loadout.complete({"primary": "sniper_cannon"}, "lion")
-	_check(wrong["primary"] == Loadout.DEFAULT["primary"], "a sniper picked for the lion falls back to the default weapon")
+	_check(not Loadout.options("equipment", "lion").has("sniper_rifle"), "the lion cannot carry the sniper rifle")
+	_check(not Loadout.options("equipment", "hawk").has("sniper_rifle"), "the hawk cannot carry the sniper rifle")
+	_check(Loadout.options("equipment", "velociraptor").has("sniper_rifle"), "the raptor can carry the sniper rifle")
+	_check(not Loadout.options("primary", "velociraptor").has("sniper_cannon") and not Loadout.options("secondary", "velociraptor").has("sniper_cannon"), "the sniper is equipment, not a weapon slot choice")
+	var wrong := Loadout.complete({"equipment": "sniper_rifle"}, "lion")
+	_check(wrong["equipment"] == "none", "a sniper rifle picked for the lion falls back to no equipment")
+	var raptor_def := GameData.get_entry("mechs", "velociraptor")
+	_check(Loadout.fits(raptor_def, {"primary": "autocannon", "secondary": "rocket_pod", "equipment": "sniper_rifle", "perk": "none"}), "the raptor can carry the sniper rifle with its normal weapons")
 
 	var world := Node3D.new()
 	root.add_child(world)
@@ -46,7 +49,7 @@ func _run() -> void:
 	world.add_child(floor_body)
 
 	var rules := Ruleset.load_id("standard")
-	var raptor := Mech.create("velociraptor", rules, {"primary": "sniper_cannon", "secondary": "autocannon", "equipment": "none", "perk": "none"})
+	var raptor := Mech.create("velociraptor", rules, {"primary": "autocannon", "secondary": "rocket_pod", "equipment": "sniper_rifle", "perk": "none"})
 	world.add_child(raptor)
 	raptor.global_position = Vector3(0.0, 0.2, 0.0)
 	await _frames(20)
@@ -69,18 +72,18 @@ func _run() -> void:
 	raptor.aim_yaw = 0.4
 	var world_aim := raptor.rotation.y + raptor.aim_yaw
 	var ammo := sniper.ammo
-	raptor.controls.fire_primary = true
+	raptor.controls.use_equipment = true
 	await _frames(2)
-	raptor.controls.fire_primary = false
-	_check(raptor.sniping, "the first click engages the scope")
-	_check(sniper.ammo == ammo and seen.is_empty(), "the first click does not fire")
+	raptor.controls.use_equipment = false
+	_check(raptor.sniping, "F engages the scope")
+	_check(sniper.ammo == ammo and seen.is_empty(), "engaging the scope does not fire")
 	_check(raptor.scope_zoom == float(sniper.def["scope"]["start_zoom"]), "the scope starts at its start zoom")
 	var start_position := raptor.global_position
 	raptor.controls.fire_primary = true
 	await _frames(3)
 	raptor.controls.fire_primary = false
 	await _frames(3)
-	_check(seen.is_empty(), "it will not fire until the tail points at the aim")
+	_check(seen.is_empty(), "it will not fire until the tail points at the aim, and the hand guns are put away")
 	await _frames(300)
 	_check(raptor.sniper_aligned(), "the mech turns until its tail points at the aim")
 	_check(raptor.global_position.distance_to(start_position) < 0.5, "it stands still while it turns")
@@ -100,6 +103,15 @@ func _run() -> void:
 	raptor.zoom_scope(-100.0)
 	_check(is_equal_approx(raptor.scope_zoom, float(sniper.def["scope"]["min_zoom"])), "zoom stops at the minimum")
 
+	raptor.controls.use_equipment = true
+	await _frames(2)
+	raptor.controls.use_equipment = false
+	_check(not raptor.sniping, "F again puts the scope away")
+	await _frames(2)
+	raptor.controls.use_equipment = true
+	await _frames(2)
+	raptor.controls.use_equipment = false
+	_check(raptor.sniping, "F brings it back")
 	raptor.controls.throttle = 1.0
 	await _frames(2)
 	raptor.controls.throttle = 0.0

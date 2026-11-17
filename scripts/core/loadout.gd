@@ -26,7 +26,9 @@ static func options(slot: String, mech_id: String = "") -> Array[String]:
 						and weapon_allowed(weapon, mech_id):
 					result.append(id)
 		"equipment":
-			result.assign(GameData.ids("equipment"))
+			for id in GameData.ids("equipment"):
+				if weapon_allowed(GameData.get_entry("equipment", id), mech_id):
+					result.append(id)
 		"perk":
 			result.assign(GameData.ids("perks"))
 	return result
@@ -35,6 +37,12 @@ static func options(slot: String, mech_id: String = "") -> Array[String]:
 ## A weapon with a "mechs" list can only be carried by those mechs. With no mech given, all pass.
 static func weapon_allowed(weapon: Dictionary, mech_id: String) -> bool:
 	return mech_id == "" or not weapon.has("mechs") or (weapon["mechs"] as Array).has(mech_id)
+
+
+## Equipment can name a weapon it carries (the raptor's sniper rifle): that weapon is added to the
+## mech on its own mount, and its weight counts instead of the equipment's own.
+static func equipment_weapon(equipment_id: String) -> String:
+	return str(GameData.get_entry("equipment", equipment_id).get("weapon", ""))
 
 
 static func item(slot: String, id: String) -> Dictionary:
@@ -75,6 +83,9 @@ static func weight(mech_def: Dictionary, choice: Dictionary) -> float:
 		if slot == "secondary" and choice["secondary"] == choice["primary"] and is_two_slot(choice["primary"]):
 			continue  # one two-slot weapon, counted once
 		sum += float(item(slot, choice[slot]).get("weight", 0.0))
+	var carried := equipment_weapon(choice["equipment"])
+	if carried != "":
+		sum += float(GameData.get_entry("weapons", carried).get("weight", 0.0))
 	return sum
 
 
@@ -113,6 +124,14 @@ static func apply(mech_def: Dictionary, choice: Variant) -> Dictionary:
 			var placed: Dictionary = GameData.get_entry("weapons", load[slot]).get("mount", {})
 			for key in placed:
 				mount[key] = placed[key]
+	var carried := equipment_weapon(load["equipment"])
+	if carried != "":
+		var extra := {"id": "equipment_gun", "weapon": carried, "slot": "equipment", "part": "torso"}
+		var spot: Dictionary = GameData.get_entry("weapons", carried).get("mount", {})
+		for key in spot:
+			extra[key] = spot[key]
+		mounts.append(extra)
+		result["mounts"] = mounts
 	if is_two_slot(load["primary"]):
 		# The one big weapon sits on the primary mount, and the secondary mount is left empty.
 		for i in range(mounts.size() - 1, -1, -1):
@@ -154,6 +173,8 @@ static func validate() -> Array[String]:
 				p.append("%s: name is required" % tag)
 			if float(e.get("weight", -1.0)) < 0.0:
 				p.append("%s: weight must be 0 or more" % tag)
+			if e.has("weapon") and GameData.get_entry("weapons", str(e["weapon"])).get("slot", "") != "equipment":
+				p.append("%s: weapon must name a weapon whose slot is equipment" % tag)
 			for key in e.get("mods", {}):
 				if not MOD_KEYS.has(key) or float(e["mods"][key]) <= 0.0:
 					p.append("%s: mods.%s is not a known modifier above 0" % [tag, key])

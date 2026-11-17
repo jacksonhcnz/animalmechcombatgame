@@ -54,6 +54,7 @@ var _sink: float = 0.0
 ## Sniper mode (the raptor's tail sniper): the mech has stopped and turned tail first to the aim,
 ## and the scope is up. `realigning` is the turn back round afterwards.
 var sniping: bool = false
+var _equip_was_down: bool = false
 var realigning: bool = false
 ## How far the scope is zoomed in (1 is the plain view). Only the local pilot's copy uses it.
 var scope_zoom: float = 1.0
@@ -561,7 +562,14 @@ func _fall(delta: float) -> void:
 
 
 func _handle_fire(delta: float) -> void:
+	# F switches the sniper scope on and off.
+	var equip_pressed := controls.use_equipment and not _equip_was_down
+	_equip_was_down = controls.use_equipment
+	if equip_pressed and _sniper_online():
+		set_sniping(not sniping)
 	for weapon in weapons:
+		if sniping and not weapon.is_scoped():
+			continue  # the guns are put away while the mech is lined up for the sniper
 		var wanted := false
 		if weapon.is_two_slot():
 			wanted = controls.fire_primary or controls.fire_secondary
@@ -577,23 +585,21 @@ func _handle_fire(delta: float) -> void:
 					wanted = controls.fire_bomb
 		var usable := weapon.ready_to_fire() and weapon.has_ammo(rules) and damage.mount_online(weapon.mount_id)
 		if weapon.is_scoped():
+			# With the scope up, a press of either fire button takes aim and letting go fires
+			# (if the tail is on the aim).
+			wanted = controls.fire_primary or controls.fire_secondary
 			var fresh_press := wanted and not weapon.button_was_down
 			var released := weapon.button_was_down and not wanted
 			weapon.button_was_down = wanted
 			if not sniping:
-				# The first press engages the scope; the mech stops and turns tail first.
 				weapon.sniper_armed = false
-				if fresh_press and damage.mount_online(weapon.mount_id):
-					set_sniping(true)
-			else:
-				# Once scoped, a press takes aim and letting go fires (if the tail is on the aim).
-				if fresh_press:
-					weapon.sniper_armed = true
-				elif released and weapon.sniper_armed:
-					weapon.sniper_armed = false
-					if usable and sniper_aligned():
-						weapon.consume(rules)
-						_fire(weapon)
+			elif fresh_press:
+				weapon.sniper_armed = true
+			elif released and weapon.sniper_armed:
+				weapon.sniper_armed = false
+				if usable and sniper_aligned():
+					weapon.consume(rules)
+					_fire(weapon)
 			continue
 		if weapon.is_charged():
 			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
