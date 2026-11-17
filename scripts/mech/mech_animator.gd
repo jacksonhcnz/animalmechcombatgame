@@ -11,6 +11,7 @@ extends RefCounted
 ## and a destroyed mech collapses.
 
 const DEATH_TIME := 0.9
+const STAND_TIME := 1.2
 const CRIPPLED_FACTOR := 0.35
 const FACTOR_RATE := 4.0
 const DROOP_RATE := 2.5
@@ -33,6 +34,8 @@ var _flap_amp: float = 0.45
 var _flap_hz: float = 0.0
 var _bank: float = 0.0
 var _pitch: float = 0.0
+## How far the body has risen into its standing posture, 0 (walking) to 1 (standing still).
+var _stand: float = 0.0
 var _roll: float = 0.0
 var _yaw: float = 0.0
 var _crouch: float = 0.0
@@ -82,6 +85,7 @@ func update(delta: float) -> void:
 		_update_flight(delta)
 	else:
 		_update_walk(delta)
+	_update_stand(delta)
 	_apply_parts(delta)
 	_apply_rig()
 
@@ -202,7 +206,7 @@ func _apply_parts(delta: float) -> void:
 		# A stabilised part (a bird's neck) turns against the body's pitch, so the head stays level.
 		# The neck keeps the head level against the body pitching, whether that is the rig or a plane's whole body.
 		var body_pitch := _mech.flight_pitch if _mech.is_flying() else 0.0
-		rotation.x -= (_pitch + body_pitch) * float(entry["stabilize"]) * alive
+		rotation.x -= (_pitch + body_pitch + stand_pitch()) * float(entry["stabilize"]) * alive
 
 		# Gimbal parts follow where the pilot is aiming, and freeze when destroyed.
 		match entry["aim"]:
@@ -215,6 +219,21 @@ func _apply_parts(delta: float) -> void:
 		if rotation != entry["last"]:
 			entry["last"] = rotation
 			entry["pivot"].rotation = rotation
+
+
+## Upright mechs straighten up when they stop and lean forward again to move.
+func _update_stand(delta: float) -> void:
+	var standing := not _mech.is_dead() and not _mech.is_flying() and _mech.grounded() \
+		and Vector2(_mech.velocity.x, _mech.velocity.z).length() < 0.5
+	_stand = move_toward(_stand, 1.0 if standing else 0.0, delta / STAND_TIME)
+	if _mech.body_rig != null:
+		_mech.body_rig.rotation.x = stand_pitch()
+
+
+## The body's nose-up tilt, in radians, from the standing posture.
+func stand_pitch() -> float:
+	var eased := _stand * _stand * (3.0 - 2.0 * _stand)
+	return deg_to_rad(float(_cfg.get("stand_pitch_deg", 0.0))) * eased
 
 
 func _apply_rig() -> void:
