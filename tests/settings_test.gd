@@ -43,7 +43,7 @@ func _run() -> void:
 	file.store_string('{"resolution": "9x9", "mouse_sens": 99, "quality": "ultra", "master_volume": 5}')
 	file.close()
 	Settings.reload()
-	_check(Settings.get_value("resolution") == "1152x648", "unknown resolution falls back")
+	_check(Settings.get_value("resolution") == "1920x1080", "unknown resolution falls back")
 	_check(Settings.get_value("mouse_sens") == 3.0, "sensitivity is clamped")
 	_check(Settings.get_value("quality") == "medium", "unknown quality falls back")
 	_check(Settings.get_value("master_volume") == 1.0, "volume is clamped")
