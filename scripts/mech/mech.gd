@@ -91,6 +91,7 @@ var _guns: Dictionary = {}
 var _own_rids: Array[RID] = []
 var _aim_pivot: Node3D
 var _aim_base_y: float = 0.0
+var _aim_base: Vector3 = Vector3.ZERO
 var _third_pivot: Node3D
 var _dead: bool = false
 var _jump_cooldown: float = 0.0
@@ -239,6 +240,15 @@ func mount_position(mount_id: String) -> Vector3:
 	return global_position
 
 
+## Where the scope's eye sits: just behind the breech of the sniper rifle. Vector3.INF if there is none.
+func scope_eye() -> Vector3:
+	for weapon in weapons:
+		if weapon.is_scoped() and _guns.has(weapon.mount_id):
+			var gun: Node3D = _guns[weapon.mount_id]
+			return gun.global_transform * Vector3(0.0, 0.4, 0.3)
+	return Vector3.INF
+
+
 func aim_origin() -> Vector3:
 	return _aim_pivot.global_position
 
@@ -297,9 +307,14 @@ func _animate(delta: float) -> void:
 		cockpit_camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(80.0) * 0.5) * narrow))
 		third_person_camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(70.0) * 0.5) * narrow))
 	# The cockpit camera follows only a share of the body bob, set by the player's head bob setting.
-	var pivot_y := _aim_base_y + animator.bob_y * GameSettings.head_bob
-	if pivot_y != _aim_pivot.position.y:
-		_aim_pivot.position.y = pivot_y
+	var eye := scope_eye()
+	if sniping and eye != Vector3.INF:
+		# Scoped, the pilot looks along the rifle from the tail, so the view and the shot start there.
+		_aim_pivot.global_position = eye
+	else:
+		var rest := Vector3(_aim_base.x, _aim_base_y + animator.bob_y * GameSettings.head_bob, _aim_base.z)
+		if rest != _aim_pivot.position:
+			_aim_pivot.position = rest
 
 
 func _update_aim() -> void:
@@ -912,6 +927,7 @@ func _build_body() -> void:
 	_aim_pivot.name = "AimPivot"
 	_aim_pivot.position = cockpit_pos
 	_aim_base_y = cockpit_pos.y
+	_aim_base = cockpit_pos
 	add_child(_aim_pivot)
 	_third_pivot = Node3D.new()
 	_third_pivot.name = "ThirdPersonPivot"
