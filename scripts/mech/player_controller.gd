@@ -59,4 +59,5 @@ func _physics_process(delta: float) -> void:
 	c.fire_primary = Input.is_action_pressed("fire_primary")
 	c.fire_secondary = Input.is_action_pressed("fire_secondary")
 	c.fire_melee = Input.is_action_pressed("fire_melee")
+	c.use_equipment = Input.is_action_pressed("use_equipment")
 	c.fire_bomb = Input.is_action_pressed("fire_bomb")

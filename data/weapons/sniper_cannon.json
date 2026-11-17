@@ -2,7 +2,7 @@
 	"id": "sniper_cannon",
 	"name": "Sniper Cannon",
 	"kind": "ranged",
-	"slot": "primary",
+	"slot": "equipment",
 	"damage": 38.0,
 	"knockout": true,
 	"range": 600.0,

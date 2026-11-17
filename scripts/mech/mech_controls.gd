@@ -20,6 +20,8 @@ var fire_primary: bool = false
 var fire_secondary: bool = false
 var fire_melee: bool = false
 var fire_bomb: bool = false
+## The "use equipment" key (F): switches the raptor's sniper scope on and off.
+var use_equipment: bool = false
 ## The aim sent with the controls is a world heading, not one relative to the body (set while the
 ## pilot is turning round for the sniper, so the aim stays put while the body swings).
 var aim_world: bool = false
@@ -44,4 +46,5 @@ func clear() -> void:
 	fire_secondary = false
 	fire_melee = false
 	fire_bomb = false
+	use_equipment = false
 	aim_world = false
