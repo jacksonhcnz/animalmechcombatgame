@@ -59,6 +59,20 @@ func _run() -> void:
 	Settings.apply_bindings({"jump": InputSetup.default_binding("jump")})
 	_check(InputMap.action_get_events("jump").any(func(e: InputEvent) -> bool: return e is InputEventKey and e.physical_keycode == KEY_SPACE), "jump goes back to Space")
 
+	# Shadows follow the graphics quality, and the FPS counter is off by default.
+	_check(Settings.get_value("show_fps") == false, "FPS counter off by default")
+	var sun := DirectionalLight3D.new()
+	Settings.values["quality"] = "low"
+	Settings.apply_light(sun)
+	_check(not sun.shadow_enabled, "Low turns shadows off")
+	Settings.values["quality"] = "medium"
+	Settings.apply_light(sun)
+	_check(sun.shadow_enabled and sun.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS, "Medium uses two shadow cascades")
+	Settings.values["quality"] = "high"
+	Settings.apply_light(sun)
+	_check(sun.directional_shadow_mode == DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS, "High uses four shadow cascades")
+	sun.free()
+
 	# Audio buses.
 	Settings.values["music_volume"] = 0.5
 	Settings.apply_audio()

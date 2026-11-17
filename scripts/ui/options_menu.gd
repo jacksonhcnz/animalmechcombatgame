@@ -6,7 +6,7 @@ extends Control
 
 const TABS: Array[String] = ["Visuals", "Controls", "Audio", "Gameplay"]
 const TAB_KEYS := {
-	"Visuals": ["display_mode", "resolution", "quality", "fps_limit", "vsync", "motion_blur"],
+	"Visuals": ["display_mode", "resolution", "quality", "fps_limit", "vsync", "motion_blur", "show_fps"],
 	"Controls": ["mouse_sens", "invert_y", "bindings"],
 	"Audio": ["master_volume", "music_volume", "effects_volume", "voice_volume", "output_device", "mute_unfocused"],
 	"Gameplay": ["hud_scale", "subtitles", "camera_shake", "damage_numbers", "color_vision", "sprint_mode"],
@@ -385,13 +385,14 @@ func _build_visuals(box: Control) -> void:
 	for r in Settings.RESOLUTIONS:
 		res_labels.append(r.replace("x", " × "))
 	_row(box, "Resolution", "Window size when playing windowed.", _dropdown("resolution", res_labels, Settings.RESOLUTIONS))
-	_row(box, "Graphics quality", "Balance detail and performance.", _dropdown("quality", ["Low", "Medium", "High"], Settings.QUALITIES))
+	_row(box, "Graphics quality", "Low: no shadows. Medium: lighter shadows. High: full.", _dropdown("quality", ["Low", "Medium", "High"], Settings.QUALITIES))
 	var fps_labels := []
 	for f in Settings.FPS_LIMITS:
 		fps_labels.append("Unlimited" if f == 0 else "%d FPS" % f)
 	_row(box, "Frame rate limit", "Set the maximum number of frames per second.", _dropdown("fps_limit", fps_labels, Settings.FPS_LIMITS))
 	_row(box, "V-sync", "Reduce screen tearing.", _switch("vsync"))
 	_row(box, "Motion blur", "Blur the view during movement.", _switch("motion_blur"))
+	_row(box, "FPS counter", "Show frames per second in the corner.", _switch("show_fps"))
 
 
 func _build_controls(box: Control) -> void:

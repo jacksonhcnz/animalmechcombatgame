@@ -18,7 +18,7 @@ const AUDIO_BUSES := {"master_volume": "Master", "music_volume": "Music", "effec
 
 const DEFAULTS := {
 	"display_mode": "windowed", "resolution": "1920x1080", "quality": "medium", "fps_limit": 144,
-	"vsync": false, "motion_blur": false,
+	"vsync": false, "motion_blur": false, "show_fps": false,
 	"mouse_sens": 1.0, "invert_y": false, "bindings": {},
 	"master_volume": 0.8, "music_volume": 0.4, "effects_volume": 0.9, "voice_volume": 0.75,
 	"output_device": "Default", "mute_unfocused": true,
@@ -173,6 +173,38 @@ static func apply_all() -> void:
 	apply_quality()
 	apply_audio()
 	apply_bindings()
+	apply_fps_counter()
+
+
+## Shows or hides the FPS counter (one node on the tree root, made the first time it is needed).
+static func apply_fps_counter() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or _headless():
+		return
+	var on := bool(get_value("show_fps"))
+	var existing := tree.root.get_node_or_null("FpsCounter")
+	if existing == null and on:
+		existing = FpsCounter.new()
+		existing.name = "FpsCounter"
+		tree.root.add_child.call_deferred(existing)
+	if existing != null:
+		existing.visible = on
+		existing.set_process(on)
+
+
+## Shadow detail from the graphics quality: off on Low, two cascades on Medium, four on High.
+static func apply_light(sun: DirectionalLight3D) -> void:
+	match str(get_value("quality")):
+		"low":
+			sun.shadow_enabled = false
+		"medium":
+			sun.shadow_enabled = true
+			sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+			sun.directional_shadow_max_distance = 80.0
+		_:
+			sun.shadow_enabled = true
+			sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+			sun.directional_shadow_max_distance = 100.0
 
 
 static func apply_display() -> void:

@@ -36,7 +36,7 @@ static func add_environment(parent: Node3D) -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-50.0, -35.0, 0.0)
 	sun.light_energy = 0.7
-	sun.shadow_enabled = true
+	Settings.apply_light(sun)
 	parent.add_child(sun)
 
 
