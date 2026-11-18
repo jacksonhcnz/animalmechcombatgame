@@ -1,0 +1,9 @@
+{
+	"id": "silent_stride",
+	"name": "Silent Stride",
+	"weight": 0.0,
+	"mods": {
+		"noise_mult": 0.3,
+		"speed_mult": 0.95
+	}
+}

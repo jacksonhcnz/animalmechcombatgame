@@ -18,7 +18,7 @@ signal projectile_launched(info: Dictionary)
 ## A projectile ended (hit something or ran out of life) at a position.
 signal projectile_ended(id: int, pos: Vector3, exploded: bool)
 ## A weapon sound was played at `pos`; the server tells network clients so they hear it too.
-signal sound_cue(clip: String, pos: Vector3)
+signal sound_cue(clip: String, pos: Vector3, team: int)
 
 const LAYER_WORLD := 1
 const LAYER_HITBOX := 2
@@ -407,7 +407,7 @@ func set_sniping(on: bool) -> void:
 		scope_zoom = float(sniper_scope().get("start_zoom", 4.0))
 		for weapon in weapons:
 			if weapon.is_scoped():
-				Sfx.play_at(get_parent(), str(weapon.def.get("sound_aim", "")), global_position + Vector3.UP * 3.0)
+				Sfx.play_at(get_parent(), str(weapon.def.get("sound_aim", "")), global_position + Vector3.UP * 3.0, 0.0, 1.0, team)
 	else:
 		scope_zoom = 1.0
 		var twist := deg_to_rad(float(def["base"]["twist_limit_deg"]))
@@ -704,8 +704,8 @@ func _weapon_sound(weapon: WeaponState) -> void:
 	if clip.is_empty():
 		return
 	var at := mount_position(weapon.mount_id)
-	Sfx.play_at(get_parent(), clip, at, float(weapon.def.get("sound_db", 0.0)))
-	sound_cue.emit(clip, at)
+	Sfx.play_at(get_parent(), clip, at, float(weapon.def.get("sound_db", 0.0)), 1.0, team)
+	sound_cue.emit(clip, at, team)
 
 
 ## A sound that follows this mech (the ion cannon charging); stopped by `_stop_charge_sound`.
@@ -775,8 +775,8 @@ func _launch(weapon: WeaponState, burst_height: float = 0.0) -> void:
 	var burst_clip := str(weapon.def.get("sound_burst", ""))
 	shot.finished.connect(func(id: int, pos: Vector3, exploded: bool) -> void:
 		if exploded and not burst_clip.is_empty():
-			Sfx.play_at(parent, burst_clip, pos, float(weapon.def.get("sound_burst_db", 0.0)))
-			sound_cue.emit(burst_clip, pos)
+			Sfx.play_at(parent, burst_clip, pos, float(weapon.def.get("sound_burst_db", 0.0)), 1.0, team)
+			sound_cue.emit(burst_clip, pos, team)
 		projectile_ended.emit(id, pos, exploded))
 	projectile_launched.emit(shot.to_info())
 
@@ -1232,7 +1232,7 @@ func _on_destroyed() -> void:
 	_dead = true
 	controls.clear()
 	_refresh_colors()
-	Sfx.play_at(get_parent(), str(def.get("sounds", {}).get("destroyed", "mech_destroyed")), global_position + Vector3.UP * 3.0)
+	Sfx.play_at(get_parent(), str(def.get("sounds", {}).get("destroyed", "mech_destroyed")), global_position + Vector3.UP * 3.0, 0.0, 1.0, team)
 	destroyed.emit(self)
 
 

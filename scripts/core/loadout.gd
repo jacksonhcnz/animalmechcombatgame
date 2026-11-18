@@ -5,7 +5,7 @@ extends RefCounted
 ## is not accepted and the mech's default loadout is used instead.
 
 const SLOTS: Array[String] = ["primary", "secondary", "equipment", "perk"]
-const MOD_KEYS: Array[String] = ["armor_mult", "speed_mult", "turn_mult", "damage_mult", "ammo_mult"]
+const MOD_KEYS: Array[String] = ["armor_mult", "speed_mult", "turn_mult", "damage_mult", "ammo_mult", "noise_mult"]
 const DEFAULT := {"primary": "autocannon", "secondary": "rocket_pod", "equipment": "none", "perk": "none"}
 
 
@@ -154,6 +154,7 @@ static func apply(mech_def: Dictionary, choice: Variant) -> Dictionary:
 		if base.has(key):
 			base[key] = float(base[key]) * mods["speed_mult"]
 	result["damage_mult"] = mods["damage_mult"]
+	result["noise_mult"] = mods["noise_mult"]
 	result["loadout"] = load
 	return result
 

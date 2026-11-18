@@ -6,7 +6,7 @@ extends Control
 
 const TABS: Array[String] = ["Visuals", "Controls", "Audio", "Gameplay"]
 const TAB_KEYS := {
-	"Visuals": ["display_mode", "resolution", "quality", "fps_limit", "vsync", "motion_blur", "show_fps"],
+	"Visuals": ["display_mode", "resolution", "quality", "fps_limit", "vsync", "motion_blur", "show_fps", "show_minimap"],
 	"Controls": ["mouse_sens", "invert_y", "bindings"],
 	"Audio": ["master_volume", "music_volume", "effects_volume", "voice_volume", "output_device", "mute_unfocused"],
 	"Gameplay": ["hud_scale", "subtitles", "camera_shake", "damage_numbers", "color_vision", "sprint_mode"],
@@ -393,6 +393,7 @@ func _build_visuals(box: Control) -> void:
 	_row(box, "V-sync", "Reduce screen tearing.", _switch("vsync"))
 	_row(box, "Motion blur", "Blur the view during movement.", _switch("motion_blur"))
 	_row(box, "FPS counter", "Show frames per second in the corner.", _switch("show_fps"))
+	_row(box, "Sound minimap", "Show a radar of the sounds around you in the top-right corner.", _switch("show_minimap"))
 
 
 func _build_controls(box: Control) -> void:

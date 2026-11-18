@@ -429,9 +429,9 @@ func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	mech.projectile_launched.connect(func(info: Dictionary) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_projectile.rpc(info))
-	mech.sound_cue.connect(func(clip: String, pos: Vector3) -> void:
+	mech.sound_cue.connect(func(clip: String, pos: Vector3, team: int) -> void:
 		if not multiplayer.get_peers().is_empty():
-			s_sound.rpc(clip, pos))
+			s_sound.rpc(clip, pos, team))
 	mech.projectile_ended.connect(func(id: int, pos: Vector3, exploded: bool) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_projectile_end.rpc(id, pos, exploded))
@@ -467,6 +467,7 @@ func _spawn_info(slot: Slot) -> Dictionary:
 		"pos": mech.global_position,
 		"yaw": mech.rotation.y,
 		"state": mech.damage.export_state(),
+		"noise": float(mech.def.get("noise_mult", 1.0)),
 	}
 
 
@@ -703,6 +704,7 @@ func _client_spawn(info: Dictionary) -> void:
 	_client_despawn(peer)
 	var mech := Mech.create_remote(str(info["mech_id"]), rules)
 	mech.team = int(info["team"])
+	mech.def["noise_mult"] = clampf(float(info.get("noise", 1.0)), 0.1, 1.0)
 	mechs_root.add_child(mech)
 	mech.global_transform = Transform3D(Basis(Vector3.UP, float(info["yaw"])), info["pos"])
 	mech.mirror_state(info["state"])
@@ -780,8 +782,8 @@ func s_beam(from: Vector3, to: Vector3, color_html: String, width: float, fade: 
 
 ## A weapon went off somewhere: play its sound for this client too.
 @rpc("authority", "call_remote", "unreliable")
-func s_sound(clip: String, pos: Vector3) -> void:
-	Sfx.play_at(mechs_root, clip, pos)
+func s_sound(clip: String, pos: Vector3, team: int) -> void:
+	Sfx.play_at(mechs_root, clip, pos, 0.0, 1.0, team)
 
 
 @rpc("authority", "call_remote", "unreliable")
