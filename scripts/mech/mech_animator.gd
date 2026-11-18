@@ -23,6 +23,7 @@ var stride_phase: float = 0.0
 var flap_phase: float = 0.0
 
 var _step_index: int = -1
+var _last_stride: float = -1.0
 var _flap_index: int = -1
 
 var _mech: Mech
@@ -98,12 +99,16 @@ func _footstep_sound() -> void:
 	var sounds: Dictionary = _mech.def.get("sounds", {})
 	if not sounds.has("step") or _mech.get_parent() == null:
 		return
-	var index := int(stride_phase * float(sounds.get("steps_per_stride", 1)))
-	if index == _step_index:
-		return
-	var first := _step_index < 0
+	var count := maxi(1, int(sounds.get("steps_per_stride", 1)))
+	var index := int(stride_phase * float(count))
+	# The phase wraps from 1 back to 0 (or the other way when walking backwards), which counts as a
+	# step point too: with one step a stride the index never changes by itself.
+	var wrapped := absf(stride_phase - _last_stride) > 0.5
+	var first := _last_stride < 0.0
+	var stepped := index != _step_index or wrapped
 	_step_index = index
-	if first or _walk_amp < 0.2 or _mech.is_dead():
+	_last_stride = stride_phase
+	if first or not stepped or _walk_amp < 0.2 or _mech.is_dead():
 		return
 	var pitch := 0.96 + 0.08 * float((index + 1) % 2)
 	Sfx.play_at(_mech.get_parent(), str(sounds["step"]), _mech.global_position, float(sounds.get("step_db", 0.0)) - 6.0 + 6.0 * _walk_amp, pitch)
