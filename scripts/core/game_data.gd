@@ -87,7 +87,7 @@ static func _validate_weapon(id: String) -> Array[String]:
 	var p: Array[String] = []
 	var w := get_entry("weapons", id)
 	var tag := "weapons/%s" % id
-	for key in ["sound", "sound_charge", "sound_aim"]:
+	for key in ["sound", "sound_charge", "sound_aim", "sound_burst"]:
 		if w.has(key):
 			p.append_array(_validate_clip(tag, key, w[key]))
 	if w.get("id", "") != id:
@@ -282,7 +282,7 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 	var flying: bool = mech.get("movement", "") == "flying"
 	var sounds: Dictionary = mech.get("sounds", {})
 	for key in sounds:
-		if key in ["step", "flap"]:
+		if key in ["step", "flap", "destroyed"]:
 			p.append_array(_validate_clip(tag, "sounds." + key, sounds[key]))
 		elif key != "steps_per_stride" and key != "step_db":
 			p.append("%s: unknown sounds.%s" % [tag, key])

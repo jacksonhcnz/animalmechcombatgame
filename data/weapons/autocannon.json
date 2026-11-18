@@ -1,5 +1,6 @@
 {
 	"id": "autocannon",
+	"sound": "autocannon_shot",
 	"name": "Autocannon",
 	"kind": "ranged",
 	"slot": "primary",

@@ -1,5 +1,7 @@
 {
 	"id": "rocket_pod",
+	"sound": "rocket_launch",
+	"sound_burst": "rocket_burst",
 	"name": "Rocket Pod",
 	"kind": "ranged",
 	"slot": "secondary",

@@ -772,7 +772,12 @@ func _launch(weapon: WeaponState, burst_height: float = 0.0) -> void:
 		return
 	parent.add_child(shot)
 	shot.global_position = muzzle
-	shot.finished.connect(func(id: int, pos: Vector3, exploded: bool) -> void: projectile_ended.emit(id, pos, exploded))
+	var burst_clip := str(weapon.def.get("sound_burst", ""))
+	shot.finished.connect(func(id: int, pos: Vector3, exploded: bool) -> void:
+		if exploded and not burst_clip.is_empty():
+			Sfx.play_at(parent, burst_clip, pos, float(weapon.def.get("sound_burst_db", 0.0)))
+			sound_cue.emit(burst_clip, pos)
+		projectile_ended.emit(id, pos, exploded))
 	projectile_launched.emit(shot.to_info())
 
 
@@ -1227,6 +1232,7 @@ func _on_destroyed() -> void:
 	_dead = true
 	controls.clear()
 	_refresh_colors()
+	Sfx.play_at(get_parent(), str(def.get("sounds", {}).get("destroyed", "mech_destroyed")), global_position + Vector3.UP * 3.0)
 	destroyed.emit(self)
 
 
