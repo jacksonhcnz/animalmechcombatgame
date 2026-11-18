@@ -26,8 +26,13 @@ func _frames(count: int) -> void:
 		await physics_frame
 
 
-func _players() -> int:
-	return _range.find_children("*", "AudioStreamPlayer3D", true, false).size()
+## How many sounds are playing, or only those of one clip.
+func _players(clip: String = "") -> int:
+	var count := 0
+	for player in _range.find_children("*", "AudioStreamPlayer3D", true, false):
+		if clip.is_empty() or player.stream == Sfx.stream(clip):
+			count += 1
+	return count
 
 
 func _start(mech_id: String) -> Mech:
@@ -47,14 +52,28 @@ func _run() -> void:
 
 	for id in ["lion", "velociraptor"]:
 		var walker := await _start(id)
-		var quiet := _players()
+		var step_clip: String = str(walker.def["sounds"]["step"])
+		var quiet := _players(step_clip)
 		walker.controls.throttle = 1.0
 		var seen := 0
 		for i in 240:
 			await physics_frame
-			seen = maxi(seen, _players() - quiet)
+			seen = maxi(seen, _players(step_clip) - quiet)
 		walker.controls.throttle = 0.0
 		_check(seen > 0, "%s walking makes footsteps" % id)
+		# Count the footsteps themselves: they must keep coming for as long as it walks.
+		walker = await _start(id)
+		var steps := 0
+		var last_players := _players(step_clip)
+		walker.controls.throttle = 1.0
+		for i in 360:
+			await physics_frame
+			var now := _players(step_clip)
+			if now > last_players:
+				steps += now - last_players
+			last_players = now
+		walker.controls.throttle = 0.0
+		_check(steps >= 3, "%s keeps making footsteps while it walks (%d in 6 s)" % [id, steps])
 
 	var idle := await _start("lion")
 	await _frames(200)
