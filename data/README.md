@@ -85,6 +85,9 @@ Clips are `assets/audio/<name>.ogg` and play on the Effects bus. A weapon names 
 ## Sound minimap
 Every clip played also records a sound event (`Sfx.events`) with a position, the team that made it and how far it carries (`Sfx.NOISE`, in metres). The minimap in the top-right corner (`scripts/ui/minimap.gd`, switch in Options > Visuals) pulses a blip for each event the player can hear: blue for their team, red for others, pinned to the rim when beyond 150 m. The player's own nearby sounds are not drawn. A mech's `noise_mult` scales its footsteps' volume and range, so a quiet mech is hard to hear on the map.
 
+## Practice matches (computer pilots)
+Main menu > Test range card > 1v1 / 2v2 / 3v3 starts an offline match with the `practice_match` ruleset (best of 5 rounds on the open field, unlimited ammo): you and `size - 1` computer pilots against `size` of them, each bot flying a random mech with the default loadout. `NetSession.start_offline` fills the slots and `AiPilot` (`scripts/mech/ai_pilot.gd`) fills in each bot's `MechControls` every frame, the same inputs a player sends, so the usual match rules, scoring and sounds apply. How sharp the bots are comes from `data/ai.json` (levels easy, normal, hard: aim speed, aim wobble, how well they lead a target, firing range, reaction time and how often they dodge). Command line: `--practice=1|2|3 --bot-level=easy|normal|hard`.
+
 ## Weapon models
 
 A ranged weapon can have a `visual` (the same pieces as a part, drawn with `-Z` as forward) and a `muzzle` distance. The gun is drawn on the part its mount sits on, so choosing a different weapon in the loadout changes what the mech carries. Colours come from the mech's palette (`metal` stays silver). A mount can set `gun_scale` and `gun_offset` (the velociraptor's small hands use 0.55). Shots start at the muzzle. The lion's and hawk's gun pods are now plain mounting brackets.

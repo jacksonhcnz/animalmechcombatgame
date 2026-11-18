@@ -53,6 +53,11 @@ func _ready() -> void:
 				_leave("Could not start the server (error %d). Is the port in use?" % error)
 			else:
 				print("Server '%s' running on port %d, ruleset %s" % [LaunchConfig.server_name, LaunchConfig.port, LaunchConfig.ruleset_id])
+		LaunchConfig.PRACTICE:
+			var local := {"name": LaunchConfig.player_name, "mech": LaunchConfig.mech_id, "loadout": LaunchConfig.loadout}
+			var error := session.start_offline(LaunchConfig.ruleset_id, local, LaunchConfig.team_size, LaunchConfig.bot_level)
+			if error != OK:
+				_leave("Could not start the practice match (error %d)" % error)
 		LaunchConfig.CLIENT:
 			var error := session.start_client(LaunchConfig.address, LaunchConfig.port, LaunchConfig.player_name, LaunchConfig.mech_id, LaunchConfig.loadout)
 			if error != OK:

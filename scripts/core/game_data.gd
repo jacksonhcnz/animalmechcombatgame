@@ -22,6 +22,27 @@ static func balance_version() -> int:
 	return int(read_json(DATA_DIR + "/balance.json").get("version", 0))
 
 
+## The computer pilots' skill levels (data/ai.json).
+static func ai_table() -> Dictionary:
+	return read_json(DATA_DIR + "/ai.json")
+
+
+static func _validate_ai() -> Array[String]:
+	var p: Array[String] = []
+	var table := ai_table()
+	var levels: Dictionary = table.get("levels", {})
+	if levels.is_empty():
+		p.append("ai.json: levels is required")
+		return p
+	if not levels.has(str(table.get("default_level", ""))):
+		p.append("ai.json: default_level must name one of the levels")
+	for name in levels:
+		for key in ["aim_rate_deg", "aim_error_deg", "lead", "fire_range", "reaction", "dodge"]:
+			if not levels[name].has(key) or not (levels[name][key] is float or levels[name][key] is int):
+				p.append("ai.json: levels.%s.%s must be a number" % [name, key])
+	return p
+
+
 ## IDs of every data file of a kind ("mechs", "weapons", "rulesets"), sorted.
 static func ids(kind: String) -> Array[String]:
 	var result: Array[String] = []
@@ -61,6 +82,7 @@ static func validate_all() -> Array[String]:
 		problems.append("balance.json: version must be a positive integer")
 	problems.append_array(Points.validate())
 	problems.append_array(Loadout.validate())
+	problems.append_array(_validate_ai())
 	for kind in ["mechs", "weapons", "rulesets"]:
 		if ids(kind).is_empty():
 			problems.append("%s: no data files found" % kind)

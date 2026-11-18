@@ -37,6 +37,8 @@ class Slot extends RefCounted:
 	var deaths: int = 0
 	var respawn_left: float = -1.0
 	var is_local: bool = false
+	## A computer pilot; null for a person.
+	var pilot: AiPilot
 
 var is_server: bool = false
 var rules: Ruleset
@@ -117,6 +119,41 @@ func start_server(port: int, ruleset_id: String, name_text: String, players: int
 	return OK
 
 
+## Starts an offline match against computer pilots: no network, just this machine. `team_size` is
+## how many fly on each side (the player is on team 1), `level` how sharp the computer pilots are.
+func start_offline(ruleset_id: String, local_player: Dictionary, team_size: int, level: String = "") -> int:
+	is_server = true
+	server_name = "Practice"
+	team_size = clampi(team_size, 1, 3)
+	max_players = team_size * 2
+	if GameData.get_entry("rulesets", ruleset_id).is_empty():
+		push_error("Unknown ruleset '%s'" % ruleset_id)
+		return ERR_DOES_NOT_EXIST
+	rules = Ruleset.load_id(ruleset_id)
+	my_id = 1
+	var me := _add_slot(1, str(local_player["name"]), str(local_player["mech"]))
+	me.loadout = Loadout.sanitize(GameData.get_entry("mechs", me.mech_id), local_player.get("loadout", {}))
+	me.is_local = true
+	var names := ["Ash", "Briar", "Cinder", "Dusk", "Ember"]
+	var mechs := GameData.ids("mechs")
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	for i in max_players - 1:
+		var mech_id := mechs[rng.randi() % mechs.size()]
+		var slot := _add_slot(-(i + 1), "Bot %s" % names[i], mech_id)
+		slot.loadout = Loadout.default_loadout()
+		slot.pilot = AiPilot.new(level)
+	# Each side starts together, on opposite sides of the ring.
+	var next := {1: 0, 2: 0}
+	var places := {1: [0, 1, 7], 2: [4, 5, 3]}
+	for slot: Slot in _slots.values():
+		slot.spawn_index = places[slot.team][next[slot.team]]
+		next[slot.team] += 1
+	connected = true
+	_set_phase(Phase.WAITING)
+	return OK
+
+
 ## Starts a client and connects. The result arrives as the `joined`, `rejected` or
 ## `disconnected` signal. Returns an Error code for an immediate failure.
 func start_client(address: String, port: int, pilot_name: String, mech_id: String, loadout: Dictionary = {}) -> int:
@@ -180,6 +217,8 @@ func _controls_open() -> bool:
 
 func _server_tick(delta: float) -> void:
 	_clock += delta
+	if phase == Phase.ACTIVE:
+		_run_pilots(delta)
 	match phase:
 		Phase.WAITING:
 			if _can_play():
@@ -222,6 +261,18 @@ func _server_tick(delta: float) -> void:
 		_snapshot_timer = 0.0
 		if not multiplayer.get_peers().is_empty():
 			_send_snapshots()
+
+
+## Lets every computer pilot decide what its mech does this frame.
+func _run_pilots(delta: float) -> void:
+	for slot: Slot in _slots.values():
+		if slot.pilot == null or slot.mech == null or not is_instance_valid(slot.mech):
+			continue
+		var enemies: Array[Mech] = []
+		for other: Slot in _slots.values():
+			if other.team != slot.team and other.mech != null and is_instance_valid(other.mech) and not other.mech.is_dead():
+				enemies.append(other.mech)
+		slot.pilot.think(slot.mech, enemies, delta)
 
 
 func _set_phase(new_phase: Phase) -> void:

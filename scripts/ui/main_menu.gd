@@ -10,6 +10,7 @@ static var pending_message: String = ""
 var _name_edit: LineEdit
 var _address_edit: LineEdit
 var _ruleset_pick: OptionButton
+var _level_pick: OptionButton
 var _status: Label
 var _list: VBoxContainer
 var _scanner: LanDiscovery.Scanner
@@ -110,14 +111,31 @@ func _build_range_card(parent: Control) -> void:
 	var picture := UiKit.panel(UiKit.INNER, UiKit.BORDER, 0)
 	box.add_child(picture)
 	var target := TargetGraphic.new()
-	target.custom_minimum_size = Vector2(0, 150)
+	target.custom_minimum_size = Vector2(0, 90)
 	picture.add_child(target)
 	box.add_child(UiKit.mono("Offline / No match required"))
-	var note := UiKit.label("Take your active loadout into a safe testing environment.", 14, UiKit.DIM)
+	var note := UiKit.label("Try your loadout on targets, or fight computer pilots.", 14, UiKit.DIM)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(note)
 	UiKit.spacer(box)
 	box.add_child(UiKit.outline_button("Enter test range", _on_test_range))
+	UiKit.rule(box)
+	box.add_child(UiKit.mono("Versus computer / Offline", UiKit.DIM, 10))
+	_level_pick = OptionButton.new()
+	var levels: Dictionary = GameData.ai_table()["levels"]
+	var default_level := str(GameData.ai_table()["default_level"])
+	for level in levels:
+		_level_pick.add_item(str(level).capitalize())
+		_level_pick.set_item_metadata(_level_pick.item_count - 1, level)
+		if level == default_level:
+			_level_pick.select(_level_pick.item_count - 1)
+	UiKit.style_input(_level_pick)
+	box.add_child(_level_pick)
+	var sizes := UiKit.hbox(box, 8)
+	for size in [1, 2, 3]:
+		var button := UiKit.primary_button("%dv%d" % [size, size], _on_practice.bind(size))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sizes.add_child(button)
 
 
 func _build_multiplayer_card(parent: Control) -> void:
@@ -188,6 +206,16 @@ func _read_choices() -> void:
 
 func _on_test_range() -> void:
 	get_tree().change_scene_to_file("res://scenes/test_range.tscn")
+
+
+## A practice match against computer pilots: you and `size - 1` of them against `size` of them.
+func _on_practice(size: int) -> void:
+	_read_choices()
+	LaunchConfig.mode = LaunchConfig.PRACTICE
+	LaunchConfig.ruleset_id = "practice_match"
+	LaunchConfig.team_size = size
+	LaunchConfig.bot_level = str(_level_pick.get_item_metadata(_level_pick.selected))
+	_start_match()
 
 
 func _on_host() -> void:
