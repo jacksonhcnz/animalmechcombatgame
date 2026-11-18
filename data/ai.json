@@ -1,0 +1,9 @@
+{
+	"notes": "Computer pilots for practice matches. Each level sets how well a bot aims and how fast it reacts. aim_rate_deg is how fast it can swing its aim, aim_error_deg a random wobble on it, lead how well it aims ahead of a moving target (0 to 1), fire_range is the fraction of a weapon's range it will shoot at, reaction is the pause in seconds before it opens fire on a new target, and dodge is how often (0 to 1) it changes strafe direction.",
+	"default_level": "normal",
+	"levels": {
+		"easy": {"aim_rate_deg": 60.0, "aim_error_deg": 4.0, "lead": 0.3, "fire_range": 0.7, "reaction": 0.9, "dodge": 0.3},
+		"normal": {"aim_rate_deg": 110.0, "aim_error_deg": 2.0, "lead": 0.7, "fire_range": 0.85, "reaction": 0.45, "dodge": 0.6},
+		"hard": {"aim_rate_deg": 200.0, "aim_error_deg": 0.8, "lead": 1.0, "fire_range": 0.95, "reaction": 0.2, "dodge": 1.0}
+	}
+}
