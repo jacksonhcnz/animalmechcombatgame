@@ -1,5 +1,7 @@
 {
 	"id": "flak_burst",
+	"sound": "flak_shot",
+	"sound_burst": "flak_pop",
 	"name": "Flak Burst",
 	"kind": "ranged",
 	"slot": "secondary",

@@ -1,5 +1,7 @@
 {
 	"id": "grenade_launcher",
+	"sound": "grenade_launch",
+	"sound_burst": "grenade_burst",
 	"name": "Grenade Launcher",
 	"kind": "ranged",
 	"slot": "secondary",

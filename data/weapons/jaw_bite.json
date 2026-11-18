@@ -1,5 +1,6 @@
 {
 	"id": "jaw_bite",
+	"sound": "jaw_bite",
 	"name": "Jaw Bite",
 	"kind": "melee",
 	"slot": "melee",

@@ -42,7 +42,7 @@ func _run() -> void:
 	root.add_child(_range)
 	await _frames(40)
 
-	for id in ["lion_step", "raptor_step", "elephant_step", "wing_flap", "machine_gun_shot", "ion_charge", "ion_blast", "sniper_breath", "sniper_shot"]:
+	for id in ["lion_step", "raptor_step", "elephant_step", "wing_flap", "machine_gun_shot", "ion_charge", "ion_blast", "sniper_breath", "sniper_shot", "autocannon_shot", "rocket_launch", "rocket_burst", "grenade_launch", "grenade_burst", "flak_shot", "flak_pop", "air_bomb_drop", "air_bomb_burst", "claw_strike", "talon_strike", "jaw_bite", "mech_destroyed"]:
 		_check(Sfx.stream(id) != null, "clip %s loads" % id)
 
 	for id in ["lion", "velociraptor"]:
@@ -79,6 +79,13 @@ func _run() -> void:
 	await _frames(40)
 	gunner.controls.fire_primary = false
 	_check(not cues.is_empty(), "firing the machine gun cues a sound for network clients")
+
+	# Every weapon now has a sound, and explosive ones a burst sound.
+	for id in GameData.ids("weapons"):
+		var w := GameData.get_entry("weapons", id)
+		_check(w.has("sound"), "weapon %s has a sound" % id)
+		if w.get("projectile", {}).has("splash_radius"):
+			_check(w.has("sound_burst"), "explosive weapon %s has a burst sound" % id)
 
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)

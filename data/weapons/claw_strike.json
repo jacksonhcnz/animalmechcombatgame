@@ -1,5 +1,6 @@
 {
 	"id": "claw_strike",
+	"sound": "claw_strike",
 	"name": "Claw Strike",
 	"kind": "melee",
 	"slot": "melee",

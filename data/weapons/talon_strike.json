@@ -1,5 +1,6 @@
 {
 	"id": "talon_strike",
+	"sound": "talon_strike",
 	"name": "Talon Strike",
 	"kind": "melee",
 	"slot": "melee",

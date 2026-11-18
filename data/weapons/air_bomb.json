@@ -1,5 +1,7 @@
 {
 	"id": "air_bomb",
+	"sound": "air_bomb_drop",
+	"sound_burst": "air_bomb_burst",
 	"name": "Air Bomb",
 	"kind": "ranged",
 	"slot": "bomb",
