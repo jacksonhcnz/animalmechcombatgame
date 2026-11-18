@@ -429,6 +429,9 @@ func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	mech.projectile_launched.connect(func(info: Dictionary) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_projectile.rpc(info))
+	mech.sound_cue.connect(func(clip: String, pos: Vector3) -> void:
+		if not multiplayer.get_peers().is_empty():
+			s_sound.rpc(clip, pos))
 	mech.projectile_ended.connect(func(id: int, pos: Vector3, exploded: bool) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_projectile_end.rpc(id, pos, exploded))
@@ -773,6 +776,12 @@ func s_match(state: Dictionary) -> void:
 @rpc("authority", "call_remote", "reliable")
 func s_beam(from: Vector3, to: Vector3, color_html: String, width: float, fade: float) -> void:
 	Mech.spawn_beam(mechs_root, from, to, Color.html(color_html), width, fade)
+
+
+## A weapon went off somewhere: play its sound for this client too.
+@rpc("authority", "call_remote", "unreliable")
+func s_sound(clip: String, pos: Vector3) -> void:
+	Sfx.play_at(mechs_root, clip, pos)
 
 
 @rpc("authority", "call_remote", "unreliable")

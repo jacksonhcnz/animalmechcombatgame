@@ -75,10 +75,21 @@ static func validate_all() -> Array[String]:
 	return problems
 
 
+## A sound entry names a clip in assets/audio (without the .ogg).
+static func _validate_clip(tag: String, key: String, value: Variant) -> Array[String]:
+	var p: Array[String] = []
+	if not (value is String) or not ResourceLoader.exists("res://assets/audio/%s.ogg" % value):
+		p.append("%s: %s must name a clip in assets/audio" % [tag, key])
+	return p
+
+
 static func _validate_weapon(id: String) -> Array[String]:
 	var p: Array[String] = []
 	var w := get_entry("weapons", id)
 	var tag := "weapons/%s" % id
+	for key in ["sound", "sound_charge", "sound_aim"]:
+		if w.has(key):
+			p.append_array(_validate_clip(tag, key, w[key]))
 	if w.get("id", "") != id:
 		p.append("%s: id must equal the file name" % tag)
 	if not str(w.get("name", "")).length() > 0:
@@ -269,6 +280,12 @@ static func _validate_mech(id: String) -> Array[String]:
 static func _validate_animation(tag: String, mech: Dictionary, parts: Array, part_ids: Dictionary) -> Array[String]:
 	var p: Array[String] = []
 	var flying: bool = mech.get("movement", "") == "flying"
+	var sounds: Dictionary = mech.get("sounds", {})
+	for key in sounds:
+		if key in ["step", "flap"]:
+			p.append_array(_validate_clip(tag, "sounds." + key, sounds[key]))
+		elif key != "steps_per_stride" and key != "step_db":
+			p.append("%s: unknown sounds.%s" % [tag, key])
 	var cfg: Dictionary = mech.get("animation", {})
 	if cfg.is_empty():
 		p.append("%s: needs an animation block" % tag)

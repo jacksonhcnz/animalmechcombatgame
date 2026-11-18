@@ -1,5 +1,7 @@
 {
 	"id": "sniper_cannon",
+	"sound": "sniper_shot",
+	"sound_aim": "sniper_breath",
 	"name": "Sniper Cannon",
 	"kind": "ranged",
 	"slot": "equipment",
