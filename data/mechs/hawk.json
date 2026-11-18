@@ -1,5 +1,6 @@
 {
 	"id": "hawk",
+	"sounds": {"flap": "wing_flap"},
 	"name": "Hawk",
 	"movement": "flying",
 	"palette": {

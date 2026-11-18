@@ -1,5 +1,6 @@
 {
 	"id": "lion",
+	"sounds": {"step": "lion_step", "steps_per_stride": 1},
 	"name": "Lion",
 	"movement": "ground",
 	"palette": {

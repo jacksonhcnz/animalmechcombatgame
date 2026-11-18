@@ -1,5 +1,6 @@
 {
 	"id": "velociraptor",
+	"sounds": {"step": "raptor_step", "steps_per_stride": 2},
 	"name": "Velociraptor",
 	"movement": "ground",
 	"palette": {

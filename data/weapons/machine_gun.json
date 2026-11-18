@@ -1,5 +1,7 @@
 {
 	"id": "machine_gun",
+	"sound": "machine_gun_shot",
+	"sound_db": -4.0,
 	"name": "Machine Gun",
 	"kind": "ranged",
 	"slot": "primary",

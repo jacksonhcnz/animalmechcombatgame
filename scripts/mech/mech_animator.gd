@@ -22,6 +22,9 @@ var bob_y: float = 0.0
 var stride_phase: float = 0.0
 var flap_phase: float = 0.0
 
+var _step_index: int = -1
+var _flap_index: int = -1
+
 var _mech: Mech
 var _cfg: Dictionary
 var _entries: Array[Dictionary] = []
@@ -90,6 +93,22 @@ func update(delta: float) -> void:
 	_apply_rig()
 
 
+## One footfall clip each time the gait passes a step point (`steps_per_stride` of them a stride).
+func _footstep_sound() -> void:
+	var sounds: Dictionary = _mech.def.get("sounds", {})
+	if not sounds.has("step") or _mech.get_parent() == null:
+		return
+	var index := int(stride_phase * float(sounds.get("steps_per_stride", 1)))
+	if index == _step_index:
+		return
+	var first := _step_index < 0
+	_step_index = index
+	if first or _walk_amp < 0.2 or _mech.is_dead():
+		return
+	var pitch := 0.96 + 0.08 * float((index + 1) % 2)
+	Sfx.play_at(_mech.get_parent(), str(sounds["step"]), _mech.global_position, float(sounds.get("step_db", 0.0)) - 6.0 + 6.0 * _walk_amp, pitch)
+
+
 ## How strongly each limb moves, from 0 (disabled) to 1 (healthy), eased over time.
 func _update_factors(delta: float) -> void:
 	var limp_total := 0.0
@@ -127,6 +146,7 @@ func _update_walk(delta: float) -> void:
 	var forward := -_mech.global_transform.basis.z
 	var direction := -1.0 if velocity.dot(forward) < -0.25 * flat else 1.0
 	stride_phase = fposmod(stride_phase + direction * flat / float(_cfg["stride_length"]) * delta, 1.0)
+	_footstep_sound()
 
 	# The body rises and falls with each footfall (twice per full stride).
 	bob_y = float(_cfg.get("bob_m", 0.0)) * _walk_amp * sin(stride_phase * TAU * 2.0)
@@ -158,6 +178,9 @@ func _update_flight(delta: float) -> void:
 	var hz_target := lerpf(float(_cfg["flap_hz"]), float(_cfg["flap_hz_climb"]), climbing)
 	_flap_hz = move_toward(_flap_hz, hz_target, 3.0 * delta)
 	flap_phase = fposmod(flap_phase + _flap_hz * delta, 1.0)
+	var wrapped := _flap_hz > 0.0 and flap_phase < _flap_hz * delta
+	if wrapped and _mech.get_parent() != null:
+		Sfx.play_at(_mech.get_parent(), str(_mech.def.get("sounds", {}).get("flap", "")), _mech.global_position, -4.0 + 4.0 * _flap_amp)
 	# Flap hard to climb, ease off to glide down.
 	var amp_target := lerpf(0.45, 1.0, climbing) - 0.25 * descending
 	_flap_amp = move_toward(_flap_amp, amp_target, 3.0 * delta)

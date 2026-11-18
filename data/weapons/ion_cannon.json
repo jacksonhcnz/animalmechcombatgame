@@ -1,5 +1,7 @@
 {
 	"id": "ion_cannon",
+	"sound": "ion_blast",
+	"sound_charge": "ion_charge",
 	"name": "Ion Cannon",
 	"kind": "ranged",
 	"slot": "primary",

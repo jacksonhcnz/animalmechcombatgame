@@ -17,6 +17,8 @@ signal beam_fired(from: Vector3, to: Vector3, color: Color, width: float, fade: 
 signal projectile_launched(info: Dictionary)
 ## A projectile ended (hit something or ran out of life) at a position.
 signal projectile_ended(id: int, pos: Vector3, exploded: bool)
+## A weapon sound was played at `pos`; the server tells network clients so they hear it too.
+signal sound_cue(clip: String, pos: Vector3)
 
 const LAYER_WORLD := 1
 const LAYER_HITBOX := 2
@@ -88,6 +90,7 @@ var _base_colors: Dictionary = {}
 var _piece_materials: Dictionary = {}
 ## The visible gun model of each ranged mount, by mount id.
 var _guns: Dictionary = {}
+var _charge_player: AudioStreamPlayer3D
 var _own_rids: Array[RID] = []
 var _aim_pivot: Node3D
 var _aim_base_y: float = 0.0
@@ -402,6 +405,9 @@ func set_sniping(on: bool) -> void:
 	if on:
 		realigning = false
 		scope_zoom = float(sniper_scope().get("start_zoom", 4.0))
+		for weapon in weapons:
+			if weapon.is_scoped():
+				Sfx.play_at(get_parent(), str(weapon.def.get("sound_aim", "")), global_position + Vector3.UP * 3.0)
 	else:
 		scope_zoom = 1.0
 		var twist := deg_to_rad(float(def["base"]["twist_limit_deg"]))
@@ -625,12 +631,15 @@ func _handle_fire(delta: float) -> void:
 		if weapon.is_charged():
 			# Hold to cock it, let go to fire. The longer the hold, the higher the burst.
 			if wanted and usable:
+				if weapon.charge_time <= 0.0:
+					_start_charge_sound(weapon)
 				weapon.charge_time = minf(weapon.charge_time + delta, weapon.charge_max())
 				continue
 			if weapon.charge_time <= 0.0:
 				continue
 			var held := weapon.charge_time
 			weapon.charge_time = 0.0
+			_stop_charge_sound()
 			if not usable:
 				continue
 			if weapon.needs_full_charge() and held < weapon.charge_max() - 0.001:
@@ -651,6 +660,7 @@ func _fire(weapon: WeaponState) -> void:
 	if weapon.def.has("projectile"):
 		_launch(weapon)
 		return
+	_weapon_sound(weapon)
 	var origin := aim_origin()
 	var dir := aim_direction()
 	var spread := deg_to_rad(float(weapon.def.get("spread_deg", 0.0)))
@@ -688,6 +698,33 @@ func _fire(weapon: WeaponState) -> void:
 		spawn_tracer(get_parent(), muzzle, end, tracer_color)
 
 
+## Plays the weapon's "sound" clip at its muzzle and reports it for network clients.
+func _weapon_sound(weapon: WeaponState) -> void:
+	var clip := str(weapon.def.get("sound", ""))
+	if clip.is_empty():
+		return
+	var at := mount_position(weapon.mount_id)
+	Sfx.play_at(get_parent(), clip, at, float(weapon.def.get("sound_db", 0.0)))
+	sound_cue.emit(clip, at)
+
+
+## A sound that follows this mech (the ion cannon charging); stopped by `_stop_charge_sound`.
+func _start_charge_sound(weapon: WeaponState) -> void:
+	var clip := Sfx.stream(str(weapon.def.get("sound_charge", "")))
+	if clip == null or _charge_player != null:
+		return
+	_charge_player = Sfx.make_player(clip, float(weapon.def.get("sound_db", 0.0)))
+	add_child(_charge_player)
+	_charge_player.position = mount_position(weapon.mount_id)
+	_charge_player.play()
+
+
+func _stop_charge_sound() -> void:
+	if _charge_player != null:
+		_charge_player.queue_free()
+		_charge_player = null
+
+
 ## Where a bomb dropped now would land: its arc is followed step by step until it meets the world
 ## or a mech. Returns the point, or null if it would not land within a few seconds.
 func predict_drop(weapon: WeaponState) -> Variant:
@@ -712,6 +749,7 @@ func predict_drop(weapon: WeaponState) -> Variant:
 ## Fires a projectile from the muzzle at the point the crosshair is on. Grenades are lobbed
 ## on an arc to land there.
 func _launch(weapon: WeaponState, burst_height: float = 0.0) -> void:
+	_weapon_sound(weapon)
 	var origin := aim_origin()
 	var dir := aim_direction()
 	var spread := deg_to_rad(float(weapon.def.get("spread_deg", 0.0)))
