@@ -21,6 +21,7 @@ var _score_label: Label
 var _message_label: Label
 var _debug_label: Label
 var _bomb_sight: Label
+var _minimap: Minimap
 var _timer_value: float = -1.0
 var _debug_extra: String = ""
 ## Which layout the parts and weapons readouts are in: "" (not yet), "corners" or "console".
@@ -49,6 +50,14 @@ func _ready() -> void:
 	_score_label.offset_top = 56.0
 	_parts_label = _make_label(_panels, Control.PRESET_BOTTOM_LEFT, HORIZONTAL_ALIGNMENT_LEFT)
 	_weapons_label = _make_label(_panels, Control.PRESET_BOTTOM_RIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
+	_minimap = Minimap.new()
+	var map_size := Minimap.RADIUS * 2.0 + 8.0
+	_minimap.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_minimap.offset_left = -map_size - 16.0
+	_minimap.offset_right = -16.0
+	_minimap.offset_top = 16.0
+	_minimap.offset_bottom = 16.0 + map_size
+	_panels.add_child(_minimap)
 
 	_crosshair = Control.new()
 	_crosshair.set_anchors_preset(Control.PRESET_CENTER)
@@ -70,6 +79,7 @@ func _ready() -> void:
 	_message_label.add_theme_font_size_override("font_size", 32)
 
 	_debug_label = _make_label(self, Control.PRESET_TOP_RIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
+	_debug_label.offset_top = 200.0
 	_debug_label.visible = false
 	_apply_rules()
 
@@ -77,6 +87,7 @@ func _ready() -> void:
 ## Shows information for this mech under this ruleset.
 func bind(mech: Mech, rules: Ruleset) -> void:
 	_mech = mech
+	_minimap.mech = mech
 	_rules = rules
 	_timer_value = -1.0
 	_message_label.text = ""
@@ -133,6 +144,7 @@ func _process(_delta: float) -> void:
 			rounds = "%s rounds" % (str(weapon.ammo) if _rules.ammo_limits else "unlimited")
 	_scope.show_scope(scoped, _mech.scope_zoom, _mech.sniper_aligned(), rounds)
 	_panels.modulate.a = 0.0 if scoped else 1.0
+	_minimap.visible = bool(Settings.get_value("show_minimap"))
 	if _panels.visible:
 		_info_label.text = "%s  |  %s  |  %s view" % [
 			_mech.def["name"],

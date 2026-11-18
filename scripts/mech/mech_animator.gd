@@ -111,7 +111,11 @@ func _footstep_sound() -> void:
 	if first or not stepped or _walk_amp < 0.2 or _mech.is_dead():
 		return
 	var pitch := 0.96 + 0.08 * float((index + 1) % 2)
-	Sfx.play_at(_mech.get_parent(), str(sounds["step"]), _mech.global_position, float(sounds.get("step_db", 0.0)) - 6.0 + 6.0 * _walk_amp, pitch)
+	# A quiet perk (noise_mult below 1) lowers the footfall and the distance it carries.
+	var quiet := float(_mech.def.get("noise_mult", 1.0))
+	var loudness := lerpf(0.5, 1.0, _walk_amp) * quiet
+	Sfx.play_at(_mech.get_parent(), str(sounds["step"]), _mech.global_position,
+			float(sounds.get("step_db", 0.0)) - 6.0 + 6.0 * _walk_amp + linear_to_db(quiet), pitch, _mech.team, loudness)
 
 
 ## How strongly each limb moves, from 0 (disabled) to 1 (healthy), eased over time.
@@ -185,7 +189,7 @@ func _update_flight(delta: float) -> void:
 	flap_phase = fposmod(flap_phase + _flap_hz * delta, 1.0)
 	var wrapped := _flap_hz > 0.0 and flap_phase < _flap_hz * delta
 	if wrapped and _mech.get_parent() != null:
-		Sfx.play_at(_mech.get_parent(), str(_mech.def.get("sounds", {}).get("flap", "")), _mech.global_position, -4.0 + 4.0 * _flap_amp)
+		Sfx.play_at(_mech.get_parent(), str(_mech.def.get("sounds", {}).get("flap", "")), _mech.global_position, -4.0 + 4.0 * _flap_amp, 1.0, _mech.team)
 	# Flap hard to climb, ease off to glide down.
 	var amp_target := lerpf(0.45, 1.0, climbing) - 0.25 * descending
 	_flap_amp = move_toward(_flap_amp, amp_target, 3.0 * delta)

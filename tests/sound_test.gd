@@ -93,7 +93,7 @@ func _run() -> void:
 	var gunner := await _start("lion")
 	gunner.weapons[0] = WeaponState.new(gunner.weapons[0].mount_id, GameData.get_entry("weapons", "machine_gun"))
 	var cues: Array[String] = []
-	gunner.sound_cue.connect(func(clip: String, _pos: Vector3) -> void: cues.append(clip))
+	gunner.sound_cue.connect(func(clip: String, _pos: Vector3, _team: int) -> void: cues.append(clip))
 	gunner.controls.fire_primary = true
 	await _frames(40)
 	gunner.controls.fire_primary = false

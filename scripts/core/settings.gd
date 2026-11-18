@@ -18,7 +18,7 @@ const AUDIO_BUSES := {"master_volume": "Master", "music_volume": "Music", "effec
 
 const DEFAULTS := {
 	"display_mode": "windowed", "resolution": "1920x1080", "quality": "medium", "fps_limit": 144,
-	"vsync": false, "motion_blur": false, "show_fps": false,
+	"vsync": false, "motion_blur": false, "show_fps": false, "show_minimap": true,
 	"mouse_sens": 1.0, "invert_y": false, "bindings": {},
 	"master_volume": 0.8, "music_volume": 0.4, "effects_volume": 0.9, "voice_volume": 0.75,
 	"output_device": "Default", "mute_unfocused": true,

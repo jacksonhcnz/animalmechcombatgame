@@ -55,7 +55,7 @@ Do not put `speed`, `turn_rate`, `armor`, `jump_speed`, `jump_cooldown` or `clim
 
 A pilot picks four things in the main menu: `primary` and `secondary` weapons (either slot takes any ranged weapon, so two machine guns or two sniper cannons are fine; a weapon's own `slot` is only where it sits by default, and melee weapons are never offered), one `equipment` item (`data/equipment/`) and one `perk` (`data/perks/`). Each has a `weight`; weapons add `weight` plus `ammo_weight` per round. Weapons and gear must fit the mech's carry capacity, otherwise the server uses the default loadout (autocannon, rocket pod, no equipment, no perk). Melee weapons stay fixed per mech.
 
-Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump, climb), `turn_mult`, `damage_mult` and `ammo_mult`. Every folder needs a `none` entry. The server checks every loadout a client sends. Command-line options: `--primary=ID --secondary=ID --equipment=ID --perk=ID`.
+Equipment and perks can have `mods`: `armor_mult`, `speed_mult` (top speed, jump, climb), `turn_mult`, `damage_mult`, `ammo_mult` and `noise_mult` (how loud footsteps are and how far they carry; below 1 is quieter, as in the Silent Stride perk). Every folder needs a `none` entry. The server checks every loadout a client sends. Command-line options: `--primary=ID --secondary=ID --equipment=ID --perk=ID`.
 
 ## Sprint
 
@@ -81,6 +81,9 @@ The sniper is raptor-only **equipment**, not a primary or secondary weapon, so t
 
 ## Sounds
 Clips are `assets/audio/<name>.ogg` and play on the Effects bus. A weapon names them with `"sound"` (the shot, also sent to network clients), `"sound_charge"` (loops while a charged weapon is held) and `"sound_aim"` (when the sniper scope comes up); `"sound_burst"` (where a projectile explodes) and `"sound_db"` trims the volume. A mech has a top-level `"sounds"` block: `"step"` with `"steps_per_stride"` (footfalls per gait cycle; 2 for a biped) and `"step_db"`, or `"flap"` for wing beats; `"destroyed"` overrides the default `mech_destroyed` clip. `GameData.validate_all()` checks that each named clip exists. The MIDI scores for the clips made for the remaining weapons are in `assets/audio/source`. `elephant_step` is ready for a future elephant mech.
+
+## Sound minimap
+Every clip played also records a sound event (`Sfx.events`) with a position, the team that made it and how far it carries (`Sfx.NOISE`, in metres). The minimap in the top-right corner (`scripts/ui/minimap.gd`, switch in Options > Visuals) pulses a blip for each event the player can hear: blue for their team, red for others, pinned to the rim when beyond 150 m. The player's own nearby sounds are not drawn. A mech's `noise_mult` scales its footsteps' volume and range, so a quiet mech is hard to hear on the map.
 
 ## Weapon models
 
