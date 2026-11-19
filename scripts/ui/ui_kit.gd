@@ -244,6 +244,9 @@ static func page(parent: Control) -> VBoxContainer:
 	return column
 
 
+const FEEDBACK_URL := "https://forms.gle/j2zw3XkkHdHyG4zv8"
+
+
 ## The top bar: game name at the left, the pilot's name at the right. Returns the name field.
 static func header(column: VBoxContainer) -> LineEdit:
 	var top := hbox(column, 0)
@@ -251,6 +254,13 @@ static func header(column: VBoxContainer) -> LineEdit:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_child(mono("A M C   /   Combat Systems"))
 	title.add_child(heading("Animal Mech Combat", 22))
+	var feedback := outline_button("Feedback", func() -> void: OS.shell_open(FEEDBACK_URL))
+	feedback.custom_minimum_size = Vector2(150, 0)
+	feedback.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(feedback)
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(12, 0)
+	top.add_child(gap)
 	var pilot := panel(PANEL, BORDER, 12)
 	pilot.custom_minimum_size = Vector2(220, 0)
 	top.add_child(pilot)
