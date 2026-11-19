@@ -17,6 +17,7 @@ var _weight_label: Label
 var _weight_bar_holder: VBoxContainer
 var _save_button: Button
 var _save_note: Label
+var _paint_row: HFlowContainer
 
 
 func _ready() -> void:
@@ -80,6 +81,50 @@ func _build_side(parent: Control) -> void:
 	box.add_child(_mech_pick)
 	UiKit.rule(box)
 	_side = UiKit.vbox(box, 6)
+	UiKit.rule(box)
+	box.add_child(UiKit.mono("Individual colour", UiKit.DIM, 10))
+	var note := UiKit.label("Your colour outside team matches (team matches are red vs blue).", 13, UiKit.DIM)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(note)
+	_paint_row = HFlowContainer.new()
+	_paint_row.add_theme_constant_override("h_separation", 6)
+	_paint_row.add_theme_constant_override("v_separation", 6)
+	box.add_child(_paint_row)
+	_build_paint_row()
+
+
+func _build_paint_row() -> void:
+	for child in _paint_row.get_children():
+		child.queue_free()
+	var current := LoadoutStore.paint()
+	var choices: Array[String] = ["" ]
+	choices.append_array(LoadoutStore.PAINT_CHOICES)
+	for hex in choices:
+		var swatch := Button.new()
+		swatch.custom_minimum_size = Vector2(34, 34)
+		swatch.tooltip_text = "Mech's own colours" if hex == "" else hex
+		swatch.text = "A" if hex == "" else ""
+		var chosen := Color.html(hex).to_html(false) == Color.html(current).to_html(false) if hex != "" and current != "" else hex == current
+		var fill := Color.html(hex) if hex != "" else UiKit.INNER
+		for state in ["normal", "hover", "pressed", "focus"]:
+			var box := StyleBoxFlat.new()
+			box.bg_color = fill.lightened(0.12) if state == "hover" else fill
+			box.set_corner_radius_all(4)
+			box.set_border_width_all(3 if chosen else 1)
+			box.border_color = UiKit.LIME if chosen else UiKit.BORDER
+			swatch.add_theme_stylebox_override(state, box)
+		swatch.pressed.connect(func() -> void:
+			LoadoutStore.set_paint(hex)
+			_build_paint_row())
+		_paint_row.add_child(swatch)
+	var picker := ColorPickerButton.new()
+	picker.custom_minimum_size = Vector2(34, 34)
+	picker.edit_alpha = false
+	picker.color = Color.html(current) if current != "" else Color.WHITE
+	picker.tooltip_text = "Custom colour"
+	picker.color_changed.connect(func(c: Color) -> void: LoadoutStore.set_paint("#" + c.to_html(false)))
+	picker.popup_closed.connect(_build_paint_row)
+	_paint_row.add_child(picker)
 
 
 func _refresh() -> void:
@@ -97,9 +142,6 @@ func _refresh() -> void:
 	UiKit.rule(_side)
 	_side.add_child(UiKit.mono("Current configuration", UiKit.DIM, 10))
 	_side.add_child(UiKit.label(active_name, 20, UiKit.LIME))
-	var note := UiKit.label("Changes apply only to the selected mech.", 13, UiKit.DIM)
-	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_side.add_child(note)
 
 	for child in _cards.get_children():
 		child.queue_free()

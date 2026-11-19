@@ -7,15 +7,37 @@ extends RefCounted
 const SLOT_COUNT := 4
 const NAME_LENGTH := 20
 
+## Team matches paint the teams red and blue; in individual matches a pilot wears this colour.
+const TEAM_PAINT := {1: "#3a7be0", 2: "#d8443a"}
+const PAINT_CHOICES: Array[String] = ["#e8962a", "#3fae6a", "#8e5bd6", "#e0c43a", "#2ec4c4", "#e0749b", "#9aa3ad", "#f2f2ee"]
+
 static var path: String = "user://loadouts.json"
+static var paint_path: String = "user://paint.txt"
+static var _paint: String = ""
 static var _data: Dictionary = {}
 static var _loaded: bool = false
 
 
 ## Forgets what was read, so the next call reads the file again (used by tests).
 static func reset() -> void:
+	_paint = ""
 	_data = {}
 	_loaded = false
+
+
+## The colour worn in individual matches ("" until one is picked: the mech's own colours).
+static func paint() -> String:
+	if _paint == "" and FileAccess.file_exists(paint_path):
+		var stored := FileAccess.get_file_as_string(paint_path).strip_edges()
+		_paint = stored if Color.html_is_valid(stored) else ""
+	return _paint
+
+
+static func set_paint(hex: String) -> void:
+	_paint = hex if Color.html_is_valid(hex) else ""
+	var file := FileAccess.open(paint_path, FileAccess.WRITE)
+	if file != null:
+		file.store_string(_paint)
 
 
 static func _ensure() -> void:

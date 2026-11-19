@@ -67,7 +67,7 @@ func start(mech_id: String, new_ruleset_id: String) -> void:
 	_match_over = false
 	_time_left = rules.match_time
 
-	player = Mech.create(player_mech_id, rules, LoadoutStore.active_loadout(player_mech_id))
+	player = Mech.create(player_mech_id, rules, LoadoutStore.active_loadout(player_mech_id), LoadoutStore.paint())
 	player.team = 1
 	player.altitude_limit = ALTITUDE_LIMIT
 	_mechs_root.add_child(player)

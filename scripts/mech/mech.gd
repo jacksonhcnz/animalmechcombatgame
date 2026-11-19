@@ -101,22 +101,27 @@ var _jump_cooldown: float = 0.0
 var _rng := RandomNumberGenerator.new()
 
 
-static func create(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}) -> Mech:
+static func create(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}, paint: String = "") -> Mech:
 	var mech := Mech.new()
-	mech.setup(mech_id, ruleset, loadout)
+	mech.setup(mech_id, ruleset, loadout, paint)
 	return mech
 
 
 ## A display copy for a network client: it does no physics or shooting of its own.
-static func create_remote(mech_id: String, ruleset: Ruleset) -> Mech:
+static func create_remote(mech_id: String, ruleset: Ruleset, paint: String = "") -> Mech:
 	var mech := Mech.new()
 	mech.remote_mode = true
-	mech.setup(mech_id, ruleset)
+	mech.setup(mech_id, ruleset, {}, paint)
 	return mech
 
 
-func setup(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}) -> void:
+func setup(mech_id: String, ruleset: Ruleset, loadout: Dictionary = {}, paint: String = "") -> void:
 	def = Loadout.apply(GameData.get_entry("mechs", mech_id), loadout)
+	if Color.html_is_valid(paint):
+		# Repaint: the body colour becomes the paint, its shaded tone a darker shade of it.
+		var colour := Color.html(paint)
+		def["palette"]["primary"] = "#" + colour.to_html(false)
+		def["palette"]["dark"] = "#" + colour.darkened(0.35).to_html(false)
 	rules = ruleset
 	add_to_group("mechs")
 	name = def.get("name", mech_id)
