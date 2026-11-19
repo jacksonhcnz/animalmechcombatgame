@@ -24,7 +24,7 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var column := UiKit.page(self)
 	UiKit.header(column)
-	column.add_child(UiKit.link_button("←   Main menu", UiKit.DIM, func() -> void: get_tree().change_scene_to_file("res://scenes/main_menu.tscn"), true))
+	column.add_child(UiKit.link_button("Main menu", UiKit.DIM, func() -> void: get_tree().change_scene_to_file("res://scenes/main_menu.tscn"), true))
 	column.add_child(UiKit.mono("01 / Prepare"))
 	var title_row := UiKit.hbox(column, 0)
 	var title := UiKit.heading("Build your advantage.", 50)
@@ -192,7 +192,7 @@ func _card(mech_id: String, index: int, slot: Dictionary, equipped: bool) -> Con
 		go = func() -> void:
 			LoadoutStore.set_active(mech_id, index)
 			_refresh()
-	var link := UiKit.link_button(text + "   →", UiKit.LIME if equipped else UiKit.TEXT, go)
+	var link := UiKit.link_button(text, UiKit.LIME if equipped else UiKit.TEXT, go)
 	link.add_theme_font_size_override("font_size", 13)
 	box.add_child(link)
 	return panel
