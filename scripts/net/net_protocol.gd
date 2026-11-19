@@ -19,7 +19,7 @@ const COUNTDOWN_TIME := 3.0
 const RESPAWN_TIME := 4.0
 const RESULT_TIME := 12.0
 ## How long the result of a round stays up before the next round counts down.
-const ROUND_OVER_TIME := 5.0
+const ROUND_OVER_TIME := 15.0
 ## Used when the ruleset has no match time of its own.
 const DEFAULT_MATCH_TIME := 300.0
 
