@@ -125,32 +125,20 @@ static func _button_styles(b: Button, fill: Color, hover: Color, border: Color, 
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 
-static func _arrow(b: Button, color: Color) -> void:
-	var a := label("→", 18, color)
-	a.set_anchors_preset(Control.PRESET_FULL_RECT)
-	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	a.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	a.offset_right = -14
-	a.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.add_child(a)
-
-
-## The bright lime call to action, with an arrow at the right.
+## The bright lime call to action.
 static func primary_button(text: String, action: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	_button_styles(b, LIME, LIME.lightened(0.18), LIME, Color("10150a"))
-	_arrow(b, Color("10150a"))
 	b.pressed.connect(action)
 	return b
 
 
-## The quieter outlined button, with an arrow at the right.
+## The quieter outlined button.
 static func outline_button(text: String, action: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	_button_styles(b, INNER, PANEL.lightened(0.08), BORDER.lightened(0.25), TEXT)
-	_arrow(b, LIME)
 	b.pressed.connect(action)
 	return b
 

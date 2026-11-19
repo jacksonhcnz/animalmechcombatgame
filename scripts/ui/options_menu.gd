@@ -52,7 +52,7 @@ func _ready() -> void:
 	_draft = Settings.snapshot()
 	var column := UiKit.page(self)
 	UiKit.header(column)
-	column.add_child(UiKit.link_button("←   Main menu", UiKit.DIM, _cancel, true))
+	column.add_child(UiKit.link_button("Main menu", UiKit.DIM, _cancel, true))
 	column.add_child(UiKit.mono("System / Preferences"))
 	var title_row := UiKit.hbox(column, 0)
 	var title := UiKit.heading("Options", 56)
