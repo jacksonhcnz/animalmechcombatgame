@@ -177,24 +177,18 @@ func _card(mech_id: String, index: int, slot: Dictionary, equipped: bool) -> Con
 			detail.add_child(UiKit.label(str(Loadout.item(slot_id, slot["loadout"][slot_id]).get("name", "")), 13, UiKit.DIM))
 	else:
 		detail.add_child(UiKit.label("Not configured", 13, UiKit.DIM))
-	UiKit.rule(box)
-	var go: Callable
-	var text := "Selected"
-	if equipped:
-		go = func() -> void: pass
-	elif configured:
-		text = "Use this loadout"
-		go = func() -> void:
+	# The whole card is the button: picking it makes it the loadout in use and shows it below.
+	var pick := Button.new()
+	pick.flat = true
+	for state in ["normal", "hover", "pressed", "focus"]:
+		pick.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+	pick.focus_mode = Control.FOCUS_NONE
+	pick.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	pick.pressed.connect(func() -> void:
+		if not equipped:
 			LoadoutStore.set_active(mech_id, index)
-			_refresh()
-	else:
-		text = "Configure loadout"
-		go = func() -> void:
-			LoadoutStore.set_active(mech_id, index)
-			_refresh()
-	var link := UiKit.link_button(text, UiKit.LIME if equipped else UiKit.TEXT, go)
-	link.add_theme_font_size_override("font_size", 13)
-	box.add_child(link)
+			_refresh())
+	panel.add_child(pick)
 	return panel
 
 

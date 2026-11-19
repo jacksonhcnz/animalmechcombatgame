@@ -79,31 +79,15 @@ func _card(parent: Control, stretch: float, step: String, title: String, subtitl
 
 
 func _build_loadout_card(parent: Control) -> void:
-	var box := _card(parent, 1.25, "01 / Prepare", "Loadout", "Your mech. Your playstyle.")
-	var mech_id := LaunchConfig.mech_id
-	var mech_def := GameData.get_entry("mechs", mech_id)
-	var choice := LoadoutStore.active_loadout(mech_id)
-	var inner := UiKit.panel(UiKit.INNER, UiKit.BORDER, 16)
-	box.add_child(inner)
-	var details := UiKit.vbox(inner, 6)
-	details.add_child(UiKit.mono("Active mech", UiKit.DIM, 10))
-	details.add_child(UiKit.heading(UiKit.mech_name(mech_id), 40))
-	details.add_child(UiKit.label(LoadoutStore.active_name(mech_id), 15, UiKit.LIME))
-	var weapons := UiKit.label("%s  /  %s" % [Loadout.item("primary", choice["primary"]).get("name", ""), Loadout.item("secondary", choice["secondary"]).get("name", "")], 13, UiKit.DIM)
-	weapons.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	details.add_child(weapons)
-	UiKit.spacer(details, 8)
-	var used := Loadout.weight(mech_def, choice)
-	var capacity := Points.carry_capacity(mech_def)
-	var carry := UiKit.hbox(details, 0)
-	var carrying := UiKit.mono("Carrying", UiKit.DIM, 10)
-	carrying.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	carry.add_child(carrying)
-	carry.add_child(UiKit.mono("%.0f / %.0f" % [used, capacity], UiKit.TEXT, 12))
-	details.add_child(UiKit.progress(used, capacity))
-	UiKit.spacer(box)
-	box.add_child(UiKit.primary_button("Manage loadouts", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn")))
-	box.add_child(UiKit.mono("Select mech  →  choose 1 of %d loadouts" % LoadoutStore.SLOT_COUNT, UiKit.DIM, 9))
+	var panel := UiKit.panel(UiKit.PANEL, UiKit.BORDER, 20)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = 1.25
+	parent.add_child(panel)
+	var button := UiKit.primary_button("Manage mechs", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn"))
+	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.add_theme_font_size_override("font_size", 34)
+	panel.add_child(button)
 
 
 func _build_range_card(parent: Control) -> void:
