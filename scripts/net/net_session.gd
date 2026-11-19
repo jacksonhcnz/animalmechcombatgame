@@ -39,6 +39,8 @@ class Slot extends RefCounted:
 	var is_local: bool = false
 	## A computer pilot; null for a person.
 	var pilot: AiPilot
+	## Pressed Ready in the break between rounds.
+	var ready: bool = false
 
 var is_server: bool = false
 var rules: Ruleset
@@ -263,6 +265,62 @@ func _server_tick(delta: float) -> void:
 			_send_snapshots()
 
 
+## Whether a pilot may swap mech or loadout now: between rounds and matches, while waiting, or
+## (when there are no rounds) at any time, taking effect at their next spawn.
+func can_choose() -> bool:
+	return not _round_mode() or phase == Phase.WAITING or phase == Phase.ROUND_OVER or phase == Phase.FINISHED
+
+
+## Whether this machine has a pilot in the match (a dedicated server has none).
+func has_local_pilot() -> bool:
+	return _slots.has(my_id) if is_server else connected
+
+
+## The mech and loadout this machine's pilot will fly next.
+func chosen_mech() -> String:
+	var slot: Slot = _slots.get(my_id)
+	return slot.mech_id if is_server and slot != null else _mech_choice
+
+
+## Asks for a different mech and loadout for the next spawn. A server (or offline match) applies it
+## at once; a client asks the server, which checks it.
+func choose(mech_id: String, loadout: Dictionary) -> void:
+	if is_server:
+		_apply_choice(_slots.get(my_id), mech_id, loadout)
+	else:
+		_mech_choice = mech_id
+		_loadout_choice = loadout
+		c_choose.rpc_id(1, mech_id, loadout)
+
+
+## Says this pilot is ready; when every person is, the break between rounds ends early.
+func press_ready() -> void:
+	if is_server:
+		_mark_ready(_slots.get(my_id))
+	else:
+		c_ready.rpc_id(1)
+
+
+func _apply_choice(slot: Slot, mech_id: String, loadout: Variant) -> void:
+	if slot == null or not can_choose() or not GameData.ids("mechs").has(mech_id):
+		return
+	slot.mech_id = mech_id
+	slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", mech_id), loadout)
+	if phase == Phase.WAITING and slot.mech != null:
+		_spawn_mech(slot, slot.spawn_index)
+	_broadcast_match()
+
+
+func _mark_ready(slot: Slot) -> void:
+	if slot == null or not (phase == Phase.ROUND_OVER or phase == Phase.FINISHED):
+		return
+	slot.ready = true
+	for other: Slot in _slots.values():
+		if other.pilot == null and not other.ready:
+			return
+	_phase_left = minf(_phase_left, 1.0)
+
+
 ## Lets every computer pilot decide what its mech does this frame.
 func _run_pilots(delta: float) -> void:
 	for slot: Slot in _slots.values():
@@ -301,7 +359,11 @@ func _set_phase(new_phase: Phase) -> void:
 			time_left = rules.match_time if rules.match_time > 0.0 else NetProtocol.DEFAULT_MATCH_TIME
 		Phase.ROUND_OVER:
 			_phase_left = NetProtocol.ROUND_OVER_TIME
+			for slot: Slot in _slots.values():
+				slot.ready = false
 		Phase.FINISHED:
+			for slot: Slot in _slots.values():
+				slot.ready = false
 			if not _round_mode():
 				result_text = _work_out_result()
 			_phase_left = NetProtocol.RESULT_TIME
@@ -651,6 +713,20 @@ func _clean_name(text: String) -> String:
 	return cleaned if cleaned != "" else "Pilot"
 
 
+## A pilot's choice of mech and loadout for their next spawn.
+@rpc("any_peer", "call_remote", "reliable")
+func c_choose(mech_id: String, loadout: Dictionary) -> void:
+	if is_server:
+		_apply_choice(_slots.get(multiplayer.get_remote_sender_id()), mech_id, loadout)
+
+
+## A pilot is ready for the next round.
+@rpc("any_peer", "call_remote", "reliable")
+func c_ready() -> void:
+	if is_server:
+		_mark_ready(_slots.get(multiplayer.get_remote_sender_id()))
+
+
 ## The pilot's controls for one frame.
 @rpc("any_peer", "call_remote", "unreliable_ordered")
 func c_input(data: Array) -> void:
@@ -943,7 +1019,7 @@ func _update_hud(delta: float) -> void:
 			var count := str(ceili(_phase_left)) if is_server else "Get ready"
 			message = "Round %d\n%s" % [round_number, count] if rules.is_round_match() else count
 		Phase.ROUND_OVER:
-			message = "%s\nNext round shortly" % result_text
+			message = "%s\nChoose your mech for the next round" % result_text
 		Phase.FINISHED:
 			message = "%s\nNext match shortly" % result_text
 	if phase == Phase.ACTIVE and local_mech == null and rules != null and rules.is_round_match():

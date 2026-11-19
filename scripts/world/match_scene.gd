@@ -11,6 +11,7 @@ var status_text: String = ""
 
 var _mechs_root: Node3D
 var _pause: PauseMenu
+var _choice: ChoicePanel
 var _world_built: bool = false
 
 
@@ -31,6 +32,8 @@ func _ready() -> void:
 	_pause = PauseMenu.new()
 	add_child(_pause)
 	_pause.leave_requested.connect(func() -> void: _leave(""))
+	_choice = ChoicePanel.new()
+	add_child(_choice)
 	controller = PlayerController.new()
 	controller.enabled = false
 	add_child(controller)
@@ -40,6 +43,8 @@ func _ready() -> void:
 	session.hud = hud
 	session.controller = controller
 	add_child(session)
+	_choice.chosen.connect(func(mech_id: String, loadout: Dictionary) -> void: session.choose(mech_id, loadout))
+	_choice.ready_pressed.connect(func() -> void: session.press_ready())
 	session.rejected.connect(func(reason: String) -> void: _leave("Rejected: " + reason))
 	session.disconnected.connect(func(reason: String) -> void: _leave(reason))
 
@@ -77,7 +82,7 @@ func _build_world(rules: Ruleset) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not _headless() and not _pause.is_open():
+	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not _headless() and not _pause.is_open() and not _choice.is_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
@@ -86,6 +91,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			hud.toggle_debug()
 		elif event.keycode == KEY_F10:
 			_leave("")
+
+
+func _process(_delta: float) -> void:
+	# The mech-and-loadout panel is up for the break between rounds (and between matches).
+	var between := session != null and session.rules != null and session.rules.is_round_match() \
+			and (session.phase == NetSession.Phase.ROUND_OVER or session.phase == NetSession.Phase.FINISHED) \
+			and session.has_local_pilot()
+	if between and not _choice.is_open() and not _pause.is_open():
+		_choice.open(session.chosen_mech())
+	elif not between and _choice.is_open():
+		_choice.close()
 
 
 func _headless() -> bool:
