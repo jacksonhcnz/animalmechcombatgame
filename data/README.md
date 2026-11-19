@@ -107,3 +107,7 @@ A ranged weapon with a `projectile` block fires a real shot that flies, instead 
 ## Between rounds
 
 In round-based rulesets the break between rounds lasts 15 s (`NetProtocol.ROUND_OVER_TIME`). A panel lets each player pick a mech and one of their four saved loadouts, then press Ready; the break ends early once every human player is ready. The server validates the choice (`NetSession.choose`) and applies it when the next round spawns.
+
+## Mech colours
+
+In round (team) matches every mech is painted by team: team 1 blue, team 2 red (`LoadoutStore.TEAM_PAINT`). In other matches a mech wears its pilot's own colour, picked on the loadout screen and saved in `user://paint.txt`; the server sends the final colour to every client in the spawn info. Painting replaces the mech palette's `primary` tone and darkens `dark` to match; `accent` stays.

@@ -30,6 +30,8 @@ class Slot extends RefCounted:
 	var pilot_name: String = ""
 	var mech_id: String = ""
 	var loadout: Dictionary = {}
+	## The colour worn in individual matches.
+	var paint: String = ""
 	var team: int = 1
 	var spawn_index: int = 0
 	var mech: Mech
@@ -114,6 +116,7 @@ func start_server(port: int, ruleset_id: String, name_text: String, players: int
 		my_id = 1
 		var slot := _add_slot(1, str(local_player["name"]), str(local_player["mech"]))
 		slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", slot.mech_id), local_player.get("loadout", {}))
+		slot.paint = str(local_player.get("paint", ""))
 		slot.is_local = true
 		_spawn_mech(slot, slot.spawn_index)
 	connected = true
@@ -135,6 +138,7 @@ func start_offline(ruleset_id: String, local_player: Dictionary, team_size: int,
 	my_id = 1
 	var me := _add_slot(1, str(local_player["name"]), str(local_player["mech"]))
 	me.loadout = Loadout.sanitize(GameData.get_entry("mechs", me.mech_id), local_player.get("loadout", {}))
+	me.paint = str(local_player.get("paint", ""))
 	me.is_local = true
 	var names := ["Ash", "Briar", "Cinder", "Dusk", "Ember"]
 	var mechs := GameData.ids("mechs")
@@ -520,10 +524,18 @@ func _safest_spawn(slot: Slot) -> int:
 	return best_index
 
 
+## The paint a pilot's mech wears: red or blue by team in a round match, otherwise their own
+## colour ("" keeps the mech's own colours).
+func _paint_for(slot: Slot) -> String:
+	if _round_mode():
+		return str(LoadoutStore.TEAM_PAINT.get(slot.team, ""))
+	return slot.paint if Color.html_is_valid(slot.paint) else ""
+
+
 ## Creates (or re-creates) the real mech for a pilot at a spawn point.
 func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	_remove_mech(slot)
-	var mech := Mech.create(slot.mech_id, rules, slot.loadout)
+	var mech := Mech.create(slot.mech_id, rules, slot.loadout, _paint_for(slot))
 	mech.team = slot.team
 	mech.altitude_limit = Arena.MATCH_ALTITUDE_LIMIT
 	mechs_root.add_child(mech)
@@ -581,6 +593,7 @@ func _spawn_info(slot: Slot) -> Dictionary:
 		"yaw": mech.rotation.y,
 		"state": mech.damage.export_state(),
 		"noise": float(mech.def.get("noise_mult", 1.0)),
+		"paint": _paint_for(slot),
 	}
 
 
@@ -684,6 +697,7 @@ func c_hello(info: Dictionary) -> void:
 	})
 	var slot := _add_slot(peer, _clean_name(str(info["name"])), str(info["mech"]))
 	slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", slot.mech_id), info.get("loadout", {}))
+	slot.paint = str(info.get("paint", "")).left(7)
 	# In a round match a late arrival waits for the next round, so nobody joins a fight half way.
 	if _joins_now():
 		_spawn_mech(slot, slot.spawn_index)
@@ -751,6 +765,7 @@ func _on_connected() -> void:
 		"name": _pilot_name,
 		"mech": _mech_choice,
 		"loadout": _loadout_choice,
+		"paint": LoadoutStore.paint(),
 	})
 
 
@@ -829,7 +844,7 @@ func _place_display_mech(peer: int, mech: Mech) -> void:
 func _client_spawn(info: Dictionary) -> void:
 	var peer := int(info["peer"])
 	_client_despawn(peer)
-	var mech := Mech.create_remote(str(info["mech_id"]), rules)
+	var mech := Mech.create_remote(str(info["mech_id"]), rules, str(info.get("paint", "")))
 	mech.team = int(info["team"])
 	mech.def["noise_mult"] = clampf(float(info.get("noise", 1.0)), 0.1, 1.0)
 	mechs_root.add_child(mech)
