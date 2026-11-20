@@ -49,13 +49,16 @@ func _physics_process(delta: float) -> void:
 		if Input.is_action_just_pressed("sprint"):
 			_sprint_latched = not _sprint_latched
 		c.sprint = _sprint_latched
-	if mech.is_flying():
+	if mech.is_flying() and not mech.landed:
 		# Flying: W pushes the nose down and S pulls it up, Shift and Ctrl set the speed and
 		# Space is the boost.
 		c.vertical = Input.get_axis("move_forward", "move_back")
 		c.throttle = Input.get_action_strength("sprint") - Input.get_action_strength("descend")
 		c.sprint = Input.is_action_pressed("jump")
 		c.jump = false
+	elif mech.is_flying():
+		# Landed on its feet: walk like a ground mech, and Space takes off.
+		c.jump = Input.is_action_pressed("jump")
 	c.aim_yaw_delta += _mouse_yaw - Input.get_axis("aim_left", "aim_right") * stick_aim_rate * delta
 	c.aim_pitch_delta += _mouse_pitch + Input.get_axis("aim_down", "aim_up") * stick_aim_rate * delta
 	_mouse_yaw = 0.0
