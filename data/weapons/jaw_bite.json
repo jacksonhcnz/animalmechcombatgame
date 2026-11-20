@@ -4,7 +4,7 @@
 	"name": "Jaw Bite",
 	"kind": "melee",
 	"slot": "melee",
-	"damage": 55.0,
+	"damage": 40.0,
 	"range": 14.0,
-	"fire_interval": 1.0
+	"fire_interval": 0.7
 }

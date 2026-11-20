@@ -86,7 +86,7 @@ func _run() -> void:
 	_check(player.pivots["foot_l"].get_parent() == player.pivots["metatarsus_l"], "the foot hangs from the ankle bone")
 	_check(player.pivots["sickle_l"].get_parent() == player.pivots["foot_l"], "the sickle claw is on the foot")
 	_check(player.pivots["forearm_l"].get_parent() == player.pivots["arm_l"], "the forearm hangs from the upper arm")
-	_check(player.damage.mount_online("gun_l") and player.damage.mount_online("kick"), "raptor guns and kick start online")
+	_check(player.damage.mount_online("gun_l") and player.damage.mount_online("jaw"), "raptor guns and jaw start online")
 	var shin_fold := 0.0
 	var shin_stretch := 0.0
 	player.controls.throttle = 1.0
@@ -281,7 +281,7 @@ func _run() -> void:
 	_check(lion.damage.mount_online("gun_l") and lion.damage.mount_online("gun_r"), "both guns work while the mast is intact")
 	lion.take_hit("mast", 9999.0)
 	_check(not lion.damage.mount_online("gun_l") and not lion.damage.mount_online("gun_r"), "destroying the mast knocks out both guns")
-	_check(lion.damage.mount_online("jaw"), "the jaw still works without the mast")
+	_check(lion.damage.mount_online("claw"), "the claw still works without the mast")
 
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)

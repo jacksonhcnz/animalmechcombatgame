@@ -330,7 +330,7 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 		var ptag := "%s part '%s'" % [tag, part.get("id", "?")]
 		var anim: Dictionary = part.get("anim", {})
 		for key in anim:
-			if not ["pivot", "walk", "flap", "aim", "stabilize", "look"].has(key):
+			if not ["pivot", "walk", "flap", "aim", "stabilize", "look", "strike"].has(key):
 				p.append("%s: unknown anim entry '%s'" % [ptag, key])
 		if anim.has("aim") and not ["yaw", "pitch"].has(anim["aim"]):
 			p.append("%s: anim.aim must be 'yaw' or 'pitch'" % ptag)
@@ -360,6 +360,24 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 			for key in motion:
 				if not ["axis", "deg", "phase", "offset_deg", "droop_deg", "rectify"].has(key):
 					p.append("%s: unknown %s setting '%s'" % [ptag, motion_name, key])
+
+		if anim.has("strike"):
+			var strike: Dictionary = anim["strike"]
+			var mounts: Array = []
+			for mount in mech.get("mounts", []):
+				mounts.append(mount.get("id", ""))
+			if not mounts.has(strike.get("mount", "")):
+				p.append("%s: strike.mount must be one of the mech's mount ids" % ptag)
+			if not ["x", "y", "z"].has(strike.get("axis", "")):
+				p.append("%s: strike.axis must be x, y or z" % ptag)
+			for key in strike:
+				if not ["mount", "axis", "windup_deg", "deg", "lunge", "time"].has(key):
+					p.append("%s: unknown strike setting '%s'" % [ptag, key])
+				elif key == "lunge":
+					if not _is_vec3(strike[key]):
+						p.append("%s: strike.lunge must be [x, y, z]" % ptag)
+				elif key != "mount" and key != "axis" and not (strike[key] is float or strike[key] is int):
+					p.append("%s: strike.%s must be a number" % [ptag, key])
 
 		# A chain of parents must end somewhere, not loop back on itself.
 		var steps := 0

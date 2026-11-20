@@ -36,6 +36,8 @@ var _droop: Dictionary = {}
 var _walk_amp: float = 0.0
 var _flap_amp: float = 0.45
 var _perch: float = 0.0
+## Melee strikes under way: mount id -> how far through the strike it is (0 to 1).
+var _strikes: Dictionary = {}
 var _flap_hz: float = 0.0
 var _bank: float = 0.0
 var _pitch: float = 0.0
@@ -62,7 +64,7 @@ func _init(mech: Mech) -> void:
 		if part.has("parent"):
 			_parent_of[id] = part["parent"]
 		var anim: Dictionary = part.get("anim", {})
-		if anim.has("walk") or anim.has("flap") or anim.has("aim") or anim.has("stabilize") or anim.has("look"):
+		if anim.has("walk") or anim.has("flap") or anim.has("aim") or anim.has("stabilize") or anim.has("look") or anim.has("strike"):
 			_entries.append({
 				"id": id,
 				"pivot": mech.pivots[id],
@@ -71,6 +73,9 @@ func _init(mech: Mech) -> void:
 				"aim": anim.get("aim", ""),
 				"stabilize": float(anim.get("stabilize", 0.0)),
 				"look": anim.get("look", {}),
+				"strike": anim.get("strike", {}),
+				"base_pos": mech.pivots[id].position,
+				"last_pos": mech.pivots[id].position,
 				"last": Vector3(INF, INF, INF),
 			})
 			_look_yaw[id] = 0.0
@@ -81,7 +86,36 @@ func _init(mech: Mech) -> void:
 			_leg_ids.append(id)
 
 
+## Starts the strike animation of a melee mount (a claw swipe, a bite, a talon strike).
+func start_strike(mount_id: String) -> void:
+	_strikes[mount_id] = 0.0
+
+
+## The pose of a strike `t` (0 to 1) of the way through: [rotation in degrees, how far forward it lunges 0..1].
+## The limb draws back, snaps forward and eases home.
+static func strike_pose(strike: Dictionary, t: float) -> Vector2:
+	var windup := float(strike.get("windup_deg", 0.0))
+	var hit := float(strike.get("deg", 0.0))
+	if t < 0.3:
+		return Vector2(lerpf(0.0, windup, _ease(t / 0.3)), 0.0)
+	if t < 0.5:
+		var u := _ease((t - 0.3) / 0.2)
+		return Vector2(lerpf(windup, hit, u), u)
+	var back := _ease((t - 0.5) / 0.5)
+	return Vector2(lerpf(hit, 0.0, back), 1.0 - back)
+
+
+static func _ease(x: float) -> float:
+	var c := clampf(x, 0.0, 1.0)
+	return c * c * (3.0 - 2.0 * c)
+
+
 func update(delta: float) -> void:
+	for mount_id in _strikes.keys():
+		var length := _strike_time(mount_id)
+		_strikes[mount_id] = float(_strikes[mount_id]) + delta / length
+		if float(_strikes[mount_id]) >= 1.0:
+			_strikes.erase(mount_id)
 	_idle_time += delta
 	if _mech.is_dead():
 		_death = minf(1.0, _death + delta / DEATH_TIME)
@@ -210,6 +244,15 @@ func _update_flight(delta: float) -> void:
 	_crouch = 0.0
 
 
+## How long a strike on this mount lasts, from the first part that animates it.
+func _strike_time(mount_id: String) -> float:
+	for entry in _entries:
+		var strike: Dictionary = entry["strike"]
+		if not strike.is_empty() and strike["mount"] == mount_id:
+			return maxf(0.1, float(strike.get("time", 0.45)))
+	return 0.45
+
+
 func _apply_parts(delta: float) -> void:
 	var alive := 1.0 - _death
 	for entry in _entries:
@@ -229,6 +272,19 @@ func _apply_parts(delta: float) -> void:
 			var live := _motion_angle(flap, flap_phase, _flap_amp, factor)
 			var drooped := deg_to_rad(float(flap.get("droop_deg", 0.0)))
 			rotation[_axis_index(flap)] += lerpf(live, drooped, _droop[id])
+
+		# A melee strike: the limb draws back, snaps forward and settles, lunging a little as it hits.
+		var strike: Dictionary = entry["strike"]
+		var lunge := Vector3.ZERO
+		if not strike.is_empty() and _strikes.has(strike["mount"]):
+			var pose := strike_pose(strike, float(_strikes[strike["mount"]]))
+			rotation[_axis_index(strike)] += deg_to_rad(pose.x) * alive * factor
+			if strike.has("lunge"):
+				var v: Array = strike["lunge"]
+				lunge = Vector3(float(v[0]), float(v[1]), float(v[2])) * pose.y * alive * factor
+		if entry["base_pos"] + lunge != entry["last_pos"]:
+			entry["last_pos"] = entry["base_pos"] + lunge
+			entry["pivot"].position = entry["last_pos"]
 
 		# Looking: the head (and neck) turn towards where the pilot is aiming, but only as far
 		# as the anatomy allows. Past that limit the aim carries on and the head stays put.
