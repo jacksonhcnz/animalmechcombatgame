@@ -30,12 +30,6 @@ func _ready() -> void:
 	var title := UiKit.heading("Build your advantage.", 50)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_row.add_child(title)
-	var hint := UiKit.label("Choose a mech, pick one of its four loadouts, then edit and save it.", 15, UiKit.DIM)
-	hint.size_flags_vertical = Control.SIZE_SHRINK_END
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.custom_minimum_size = Vector2(280, 0)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	title_row.add_child(hint)
 
 	var body := UiKit.hbox(column, 18)
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -46,7 +40,6 @@ func _ready() -> void:
 	var choose := UiKit.mono("2. Choose loadout")
 	choose.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	heading_row.add_child(choose)
-	heading_row.add_child(UiKit.mono("%d slots per mech" % LoadoutStore.SLOT_COUNT, UiKit.DIM, 10))
 	_cards = UiKit.hbox(main, 14)
 	_build_editor(main)
 
