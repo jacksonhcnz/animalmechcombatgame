@@ -255,6 +255,7 @@ static func header(column: VBoxContainer) -> LineEdit:
 	var inner := vbox(pilot, 2)
 	inner.add_child(mono("Pilot name", DIM, 10))
 	var row := hbox(inner, 4)
+	GameSettings.load_settings()
 	var edit := LineEdit.new()
 	edit.text = LaunchConfig.player_name
 	edit.max_length = 20
@@ -264,7 +265,8 @@ static func header(column: VBoxContainer) -> LineEdit:
 	edit.add_theme_color_override("caret_color", LIME)
 	edit.add_theme_font_size_override("font_size", 16)
 	edit.text_changed.connect(func(t: String) -> void:
-		LaunchConfig.player_name = t.strip_edges() if t.strip_edges() != "" else "Pilot")
+		LaunchConfig.player_name = t.strip_edges() if t.strip_edges() != "" else "Pilot"
+		GameSettings.save_settings())
 	row.add_child(edit)
 	row.add_child(link_button("Edit", LIME, func() -> void:
 		edit.grab_focus()

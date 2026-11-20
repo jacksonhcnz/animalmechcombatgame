@@ -28,6 +28,20 @@ func _run() -> void:
 	_check(Settings.get_value("master_volume") == 0.8, "default master volume")
 	_check(Settings.hud_scale() == 1.0, "default HUD scale is 100%")
 
+	# The pilot name is kept between runs.
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(GameSettings.PATH))
+	LaunchConfig.player_name = "Ace"
+	GameSettings.save_settings()
+	LaunchConfig.player_name = "Pilot"
+	GameSettings.load_settings()
+	_check(LaunchConfig.player_name == "Ace", "pilot name survives a restart")
+	LaunchConfig.player_name = "Pilot"
+	LaunchConfig.name_from_args = true
+	GameSettings.load_settings()
+	_check(LaunchConfig.player_name == "Pilot", "a --name on the command line wins over the saved name")
+	LaunchConfig.name_from_args = false
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(GameSettings.PATH))
+
 	# Save, change, reload.
 	Settings.values["mouse_sens"] = 2.0
 	Settings.values["resolution"] = "1920x1080"
