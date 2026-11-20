@@ -64,6 +64,8 @@ func _run() -> void:
 	await _frames(30)
 	var session: NetSession = scene.session
 	_check(session.phase == NetSession.Phase.COUNTDOWN or session.phase == NetSession.Phase.ACTIVE, "the match starts by itself")
+	_check(session.choice_window(), "round 1 starts with a pick period")
+	session.press_ready()
 	for i in 60 * 6:
 		await physics_frame
 		if session.phase == NetSession.Phase.ACTIVE:

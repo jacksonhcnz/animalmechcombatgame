@@ -40,7 +40,14 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	var session: NetSession = scene.session
-	_check(await _until(NetSession.Phase.ACTIVE, session, 10.0), "the round begins")
+	# Before round 1 the pilot picks too: the panel is up and a swap is accepted.
+	await process_frame
+	_check(session.choice_window() and scene._choice.is_open(), "the panel is up before round 1")
+	session.choose("velociraptor", {})
+	_check(session.chosen_mech() == "velociraptor", "a pre-match swap is accepted")
+	session.choose("lion", {})
+	session.press_ready()
+	_check(await _until(NetSession.Phase.ACTIVE, session, 10.0), "Ready starts round 1")
 
 	# During a round a swap is refused.
 	session.choose("velociraptor", {})

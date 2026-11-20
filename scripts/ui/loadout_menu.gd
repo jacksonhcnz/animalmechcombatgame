@@ -1,6 +1,6 @@
 class_name LoadoutMenu
 extends Control
-## Pick a mech, pick one of its four loadouts (the equipped one goes into matches), and edit a
+## Pick a mech, pick one of its four loadouts (you choose which one to fly before each round), and edit a
 ## loadout's name and four slots. Saved by LoadoutStore.
 
 var _mech_pick: OptionButton
@@ -132,16 +132,12 @@ func _refresh() -> void:
 	var mech_def := GameData.get_entry("mechs", mech_id)
 	var active := LoadoutStore.active_index(mech_id)
 	var slots := LoadoutStore.slots(mech_id)
-	var active_name := str(slots[active]["name"])
 
 	for child in _side.get_children():
 		child.queue_free()
 	_side.add_child(UiKit.heading(UiKit.mech_name(mech_id), 30))
 	_side.add_child(UiKit.mono("Carrying capacity", UiKit.DIM, 10))
 	_side.add_child(UiKit.heading("%.0f" % Points.carry_capacity(mech_def), 64))
-	UiKit.rule(_side)
-	_side.add_child(UiKit.mono("Current configuration", UiKit.DIM, 10))
-	_side.add_child(UiKit.label(active_name, 20, UiKit.LIME))
 
 	for child in _cards.get_children():
 		child.queue_free()
@@ -149,26 +145,19 @@ func _refresh() -> void:
 		_cards.add_child(_card(mech_id, i, slots[i], i == active))
 	_load_editor(active)
 	_footer_left.text = "%s / %d loadout slots" % [UiKit.mech_name(mech_id), LoadoutStore.SLOT_COUNT]
-	_footer_right.text = "Equipped: %s" % active_name
 
 
 ## A slot with nothing chosen yet: still the starting weapons under the starting name.
-func _is_configured(index: int, slot: Dictionary, equipped: bool) -> bool:
-	return equipped or str(slot["name"]) != "Loadout %d" % (index + 1) or slot["loadout"] != Loadout.default_loadout()
+func _is_configured(index: int, slot: Dictionary, selected: bool) -> bool:
+	return selected or str(slot["name"]) != "Loadout %d" % (index + 1) or slot["loadout"] != Loadout.default_loadout()
 
 
-func _card(mech_id: String, index: int, slot: Dictionary, equipped: bool) -> Control:
-	var configured := _is_configured(index, slot, equipped)
-	var panel := UiKit.panel(UiKit.LIME_SOFT if equipped else UiKit.PANEL, UiKit.LIME if equipped else UiKit.BORDER, 18)
+func _card(mech_id: String, index: int, slot: Dictionary, selected: bool) -> Control:
+	var configured := _is_configured(index, slot, selected)
+	var panel := UiKit.panel(UiKit.LIME_SOFT if selected else UiKit.PANEL, UiKit.LIME if selected else UiKit.BORDER, 18)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.custom_minimum_size = Vector2(150, 0)
 	var box := UiKit.vbox(panel, 8)
-	if equipped:
-		var top := UiKit.hbox(box, 0)
-		var spacer := Control.new()
-		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		top.add_child(spacer)
-		top.add_child(UiKit.mono("Equipped"))
 	box.add_child(UiKit.heading(str(slot["name"]), 26))
 	var detail := UiKit.vbox(box, 2)
 	detail.custom_minimum_size = Vector2(0, 40)
@@ -185,7 +174,7 @@ func _card(mech_id: String, index: int, slot: Dictionary, equipped: bool) -> Con
 	pick.focus_mode = Control.FOCUS_NONE
 	pick.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	pick.pressed.connect(func() -> void:
-		if not equipped:
+		if not selected:
 			LoadoutStore.set_active(mech_id, index)
 			_refresh())
 	panel.add_child(pick)
