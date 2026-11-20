@@ -19,6 +19,8 @@ signal projectile_launched(info: Dictionary)
 signal projectile_ended(id: int, pos: Vector3, exploded: bool)
 ## A weapon sound was played at `pos`; the server tells network clients so they hear it too.
 signal sound_cue(clip: String, pos: Vector3, team: int)
+## A melee weapon swung: its mount id (the animation plays; network clients are told too).
+signal melee_struck(mount_id: String)
 
 const LAYER_WORLD := 1
 const LAYER_HITBOX := 2
@@ -732,6 +734,9 @@ func _handle_fire(delta: float) -> void:
 
 
 func _fire(weapon: WeaponState) -> void:
+	if weapon.is_melee():
+		play_strike(weapon.mount_id)
+		melee_struck.emit(weapon.mount_id)
 	if weapon.def.has("projectile"):
 		_launch(weapon)
 		return
@@ -771,6 +776,12 @@ func _fire(weapon: WeaponState) -> void:
 		var muzzle := mount_position(weapon.mount_id)
 		fired.emit(muzzle, end, tracer_color)
 		spawn_tracer(get_parent(), muzzle, end, tracer_color)
+
+
+## Plays the strike animation of a melee mount.
+func play_strike(mount_id: String) -> void:
+	if animator != null:
+		animator.start_strike(mount_id)
 
 
 ## Plays the weapon's "sound" clip at its muzzle and reports it for network clients.

@@ -574,6 +574,9 @@ func _spawn_mech(slot: Slot, spawn_index: int) -> void:
 	mech.sound_cue.connect(func(clip: String, pos: Vector3, team: int) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_sound.rpc(clip, pos, team))
+	mech.melee_struck.connect(func(mount_id: String) -> void:
+		if not multiplayer.get_peers().is_empty():
+			s_melee.rpc(slot.peer, mount_id))
 	mech.projectile_ended.connect(func(id: int, pos: Vector3, exploded: bool) -> void:
 		if not multiplayer.get_peers().is_empty():
 			s_projectile_end.rpc(id, pos, exploded))
@@ -945,6 +948,13 @@ func s_beam(from: Vector3, to: Vector3, color_html: String, width: float, fade: 
 @rpc("authority", "call_remote", "unreliable")
 func s_sound(clip: String, pos: Vector3, team: int) -> void:
 	Sfx.play_at(mechs_root, clip, pos, 0.0, 1.0, team)
+
+
+## A mech swung a claw, jaw or talon: play the strike on its display copy.
+@rpc("authority", "call_remote", "unreliable")
+func s_melee(peer: int, mount_id: String) -> void:
+	if _display_mechs.has(peer) and is_instance_valid(_display_mechs[peer]):
+		(_display_mechs[peer] as Mech).play_strike(mount_id)
 
 
 @rpc("authority", "call_remote", "unreliable")
