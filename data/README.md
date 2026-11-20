@@ -111,3 +111,7 @@ In round-based rulesets the break between rounds lasts 15 s (`NetProtocol.ROUND_
 ## Mech colours
 
 In round (team) matches every mech is painted by team: team 1 blue, team 2 red (`LoadoutStore.TEAM_PAINT`). In other matches a mech wears its pilot's own colour, picked on the loadout screen and saved in `user://paint.txt`; the server sends the final colour to every client in the spawn info. Painting replaces the mech palette's `primary` tone and darkens `dark` to match; `accent` stays.
+
+## Practice maps
+
+The main menu lets you pick a map for a match against computer pilots: the open field or any map in `data/maps/` (`LaunchConfig.map`, or `--map=canyon` on the command line). On a map file the computer pilots work out routes round the raised rock with A* over the map's grid (`AiPilot.plan`), and flying pilots stay above the rim. A canyon practice round lasts at least 300 s.

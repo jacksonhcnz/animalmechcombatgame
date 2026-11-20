@@ -23,7 +23,11 @@ func _ready() -> void:
 	session = NetSession.new()
 	session.world_ready.connect(_build_world)
 	if LaunchConfig.mode != LaunchConfig.CLIENT:
-		_build_world(Ruleset.load_id(LaunchConfig.ruleset_id))
+		var world_rules := Ruleset.load_id(LaunchConfig.ruleset_id)
+		# A practice match can be played on another map than its ruleset's own.
+		if LaunchConfig.mode == LaunchConfig.PRACTICE and LaunchConfig.map != "":
+			world_rules.map = LaunchConfig.map
+		_build_world(world_rules)
 	_mechs_root = Node3D.new()
 	_mechs_root.name = "Mechs"
 	add_child(_mechs_root)
@@ -60,7 +64,7 @@ func _ready() -> void:
 				print("Server '%s' running on port %d, ruleset %s" % [LaunchConfig.server_name, LaunchConfig.port, LaunchConfig.ruleset_id])
 		LaunchConfig.PRACTICE:
 			var local := {"name": LaunchConfig.player_name, "mech": LaunchConfig.mech_id, "loadout": LaunchConfig.loadout, "paint": LoadoutStore.paint()}
-			var error := session.start_offline(LaunchConfig.ruleset_id, local, LaunchConfig.team_size, LaunchConfig.bot_level)
+			var error := session.start_offline(LaunchConfig.ruleset_id, local, LaunchConfig.team_size, LaunchConfig.bot_level, LaunchConfig.map)
 			if error != OK:
 				_leave("Could not start the practice match (error %d)" % error)
 		LaunchConfig.CLIENT:

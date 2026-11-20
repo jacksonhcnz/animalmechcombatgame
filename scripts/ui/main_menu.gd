@@ -11,6 +11,7 @@ var _name_edit: LineEdit
 var _address_edit: LineEdit
 var _ruleset_pick: OptionButton
 var _level_pick: OptionButton
+var _map_pick: OptionButton
 var _status: Label
 var _list: VBoxContainer
 var _scanner: LanDiscovery.Scanner
@@ -109,7 +110,20 @@ func _build_range_card(parent: Control) -> void:
 	box.add_child(UiKit.outline_button("Enter test range", _on_test_range))
 	UiKit.rule(box)
 	box.add_child(UiKit.mono("Versus computer / Offline", UiKit.DIM, 10))
+	var pickers := UiKit.hbox(box, 8)
+	_map_pick = OptionButton.new()
+	_map_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_map_pick.add_item("Open field")
+	_map_pick.set_item_metadata(0, "field")
+	for id in GameData.ids("maps"):
+		_map_pick.add_item(str(GameData.get_entry("maps", id).get("name", id.capitalize())))
+		_map_pick.set_item_metadata(_map_pick.item_count - 1, id)
+		if id == LaunchConfig.map:
+			_map_pick.select(_map_pick.item_count - 1)
+	UiKit.style_input(_map_pick)
+	pickers.add_child(_map_pick)
 	_level_pick = OptionButton.new()
+	_level_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var levels: Dictionary = GameData.ai_table()["levels"]
 	var default_level := str(GameData.ai_table()["default_level"])
 	for level in levels:
@@ -118,7 +132,7 @@ func _build_range_card(parent: Control) -> void:
 		if level == default_level:
 			_level_pick.select(_level_pick.item_count - 1)
 	UiKit.style_input(_level_pick)
-	box.add_child(_level_pick)
+	pickers.add_child(_level_pick)
 	var sizes := UiKit.hbox(box, 8)
 	for size in [1, 2, 3]:
 		var button := UiKit.primary_button("%dv%d" % [size, size], _on_practice.bind(size))
@@ -203,6 +217,7 @@ func _on_practice(size: int) -> void:
 	LaunchConfig.ruleset_id = "practice_match"
 	LaunchConfig.team_size = size
 	LaunchConfig.bot_level = str(_level_pick.get_item_metadata(_level_pick.selected))
+	LaunchConfig.map = str(_map_pick.get_item_metadata(_map_pick.selected))
 	_start_match()
 
 

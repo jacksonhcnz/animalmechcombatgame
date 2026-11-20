@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## Options: --server (dedicated, no player), --host (listen server, you play too),
 ## --join=ADDRESS[:PORT], --port=N, --ruleset=ID, --name=PILOT, --mech=ID,
-## --max-players=N, --server-name=TEXT, --practice=1|2|3 (play offline against computer pilots, that many a side) and --bot-level=easy|normal|hard, and --primary=ID --secondary=ID --equipment=ID --perk=ID.
+## --max-players=N, --server-name=TEXT, --practice=1|2|3 (play offline against computer pilots, that many a side) and --bot-level=easy|normal|hard, --map=field|canyon (practice), and --primary=ID --secondary=ID --equipment=ID --perk=ID.
 
 const SERVER := "server"
 const HOST := "host"
@@ -31,6 +31,8 @@ static var max_players: int = 2
 ## Practice matches: pilots on each side (1 is 1v1, 3 is 3v3) and how sharp the computer pilots are.
 static var team_size: int = 1
 static var bot_level: String = ""
+## Practice matches: the map to play on ("" keeps the ruleset's own: the open field).
+static var map: String = ""
 
 
 ## Reads the command line. Returns true if it asked for a server, a host or a join.
@@ -45,6 +47,8 @@ static func from_args(args: PackedStringArray) -> bool:
 			mode = PRACTICE
 			team_size = clampi(int(arg.trim_prefix("--practice=")), 1, 3)
 			ruleset_id = "practice_match"
+		elif arg.begins_with("--map="):
+			map = arg.trim_prefix("--map=")
 		elif arg.begins_with("--bot-level="):
 			bot_level = arg.trim_prefix("--bot-level=")
 		elif arg.begins_with("--join="):
