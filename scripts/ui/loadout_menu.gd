@@ -19,12 +19,19 @@ var _save_button: Button
 var _save_note: Label
 var _paint_row: HFlowContainer
 
+## Set when the screen is laid over another scene (the test range): the back link then just closes it.
+signal back_requested
+var embedded: bool = false
+
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var column := UiKit.page(self)
 	UiKit.header(column)
-	column.add_child(UiKit.link_button("Main menu", UiKit.DIM, func() -> void: get_tree().change_scene_to_file("res://scenes/main_menu.tscn"), true))
+	if embedded:
+		column.add_child(UiKit.link_button("Back to range", UiKit.DIM, func() -> void: back_requested.emit(), true))
+	else:
+		column.add_child(UiKit.link_button("Main menu", UiKit.DIM, func() -> void: get_tree().change_scene_to_file("res://scenes/main_menu.tscn"), true))
 	column.add_child(UiKit.mono("01 / Prepare"))
 	var title_row := UiKit.hbox(column, 0)
 	var title := UiKit.heading("Build your advantage.", 50)
