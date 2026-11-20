@@ -58,7 +58,7 @@ func close() -> void:
 func _build() -> void:
 	for child in _body.get_children():
 		child.queue_free()
-	_body.add_child(UiKit.mono("Between rounds", UiKit.LIME, 11))
+	_body.add_child(UiKit.mono("Next round", UiKit.LIME, 11))
 	_body.add_child(UiKit.label("Choose your mech and loadout", 22))
 	_body.add_child(UiKit.mono("Mech", UiKit.DIM, 10))
 	var mech_row := UiKit.hbox(_body, 8)
@@ -79,7 +79,8 @@ func _build() -> void:
 		var summary := "%s  /  %s" % [_weapon_name(load["primary"]), _weapon_name(load["secondary"])]
 		if load["primary"] == load["secondary"]:
 			summary = _weapon_name(load["primary"])
-		var text := "%s\n%s\n%d / %d%s" % [slots[i]["name"], summary, roundi(weight), roundi(capacity), "" if fits else "  too heavy"]
+		var gear := "%s  /  %s" % [_item_name("equipment", load["equipment"]), _item_name("perk", load["perk"])]
+		var text := "%s\n%s\n%s\n%d / %d%s" % [slots[i]["name"], summary, gear, roundi(weight), roundi(capacity), "" if fits else "  too heavy"]
 		var button := UiKit.primary_button(text, _pick_slot.bind(i)) if i == _slot else UiKit.outline_button(text, _pick_slot.bind(i))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.disabled = not fits
@@ -88,6 +89,10 @@ func _build() -> void:
 	var ready := UiKit.primary_button("Waiting for the others" if _ready_sent else "Ready", _on_ready)
 	ready.disabled = _ready_sent
 	_body.add_child(ready)
+
+
+func _item_name(slot: String, id: String) -> String:
+	return str(Loadout.item(slot, id).get("name", id.capitalize()))
 
 
 func _weapon_name(id: String) -> String:
