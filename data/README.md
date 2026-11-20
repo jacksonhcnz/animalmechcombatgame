@@ -115,3 +115,7 @@ In round (team) matches every mech is painted by team: team 1 blue, team 2 red (
 ## Practice maps
 
 The main menu lets you pick a map for a match against computer pilots: the open field or any map in `data/maps/` (`LaunchConfig.map`, or `--map=canyon` on the command line). On a map file the computer pilots work out routes round the raised rock with A* over the map's grid (`AiPilot.plan`), and flying pilots stay above the rim. A canyon practice round lasts at least 300 s.
+
+## Landing
+
+A flying mech with a `landing` block (`touch_height`, `walk_speed`, `turn_rate`) settles onto its feet when it is slower than 80% of cruise speed, within `touch_height` metres of the ground and not pulling the nose up. It then walks at `walk_speed` like a ground mech, with its wings folded; Space takes off again at cruise speed. The `animation` block's `stride_length`, `bob_m`, `sway_roll_deg` and `perch_lift_m` shape the walk. Computer pilots take off again at once.

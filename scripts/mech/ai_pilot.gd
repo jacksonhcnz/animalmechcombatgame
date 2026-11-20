@@ -70,7 +70,10 @@ func think(mech: Mech, enemies: Array[Mech], delta: float) -> void:
 		var wobble := deg_to_rad(float(level["aim_error_deg"]))
 		_noise = Vector2(_rng.randfn(0.0, wobble), _rng.randfn(0.0, wobble))
 		_noise_left = 0.4
-	if mech.is_flying():
+	if mech.is_flying() and mech.landed:
+		# Down on its feet: take off again at once.
+		c.jump = true
+	elif mech.is_flying():
 		_fly(mech, c, delta)
 	else:
 		_walk(mech, c, delta)

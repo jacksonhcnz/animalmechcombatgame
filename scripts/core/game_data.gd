@@ -348,7 +348,9 @@ static func _validate_animation(tag: String, mech: Dictionary, parts: Array, par
 		for motion_name in ["walk", "flap"]:
 			if not anim.has(motion_name):
 				continue
-			if (motion_name == "walk") == flying:
+			# A flyer that can land walks on its feet, so it may have a walk motion too.
+			var may_walk: bool = motion_name == "walk" and flying and mech.has("landing")
+			if (motion_name == "walk") == flying and not may_walk:
 				p.append("%s: a %s mech cannot use a '%s' motion" % [ptag, "flying" if flying else "ground", motion_name])
 			var motion: Dictionary = anim[motion_name]
 			if not ["x", "y", "z"].has(motion.get("axis", "")):

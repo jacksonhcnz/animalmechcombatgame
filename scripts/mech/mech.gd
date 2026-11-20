@@ -48,6 +48,10 @@ var remote_mode: bool = false
 var boost_left: float = 10.0
 var boost_locked: bool = false
 var boosting: bool = false
+## Flying mechs: standing on the ground on their feet (set when they settle onto it, and cleared by a
+## take-off). A display copy takes it from whether the server says it is on the ground.
+var landed: bool = false
+var _takeoff_grace: float = 0.0
 ## Flying mechs: speed along the nose (m/s, negative until the first frame sets it), the nose pitch
 ## and bank in radians, whether the wings have stalled, and how fast it is falling in a stall.
 var air_speed: float = -1.0
@@ -382,7 +386,7 @@ func set_boost(ratio: float, locked: bool) -> void:
 func _update_boost(delta: float) -> void:
 	var capacity := boost_capacity()
 	var moving := true  # a flyer is always moving
-	boosting = is_flying() and rules.sprinting and controls.sprint and moving and not boost_locked and boost_left > 0.0
+	boosting = is_flying() and not landed and rules.sprinting and controls.sprint and moving and not boost_locked and boost_left > 0.0
 	if boosting:
 		boost_left = maxf(0.0, boost_left - delta)
 		if boost_left <= 0.0:
@@ -476,7 +480,10 @@ func sprint_mult() -> float:
 
 func _move(delta: float) -> void:
 	if is_flying():
-		_fly(delta)
+		if landed:
+			_walk_landed(delta)
+		else:
+			_fly(delta)
 		return
 	if sniping or realigning:
 		_sniper_turn(delta)
@@ -526,6 +533,15 @@ func stall_air_speed() -> float:
 func _fly(delta: float) -> void:
 	var c := controls
 	_update_boost(delta)
+	# Close to the ground and slowed down (and not pulling up): settle onto it and walk.
+	var landing: Dictionary = def.get("landing", {})
+	_takeoff_grace = maxf(0.0, _takeoff_grace - delta)
+	if not landing.is_empty() and _takeoff_grace <= 0.0 and c.vertical < 0.3:
+		var cruise_speed := float(def["base"]["speed"]) * damage.speed_mult() * Points.flight("max_speed_mult") * Points.flight("cruise_fraction")
+		if air_speed < cruise_speed * 0.8 and _ground_gap() < float(landing.get("touch_height", 3.0)):
+			_land()
+			_walk_landed(delta)
+			return
 	var top := top_air_speed()
 	var cruise := float(def["base"]["speed"]) * damage.speed_mult() * Points.flight("max_speed_mult") * Points.flight("cruise_fraction")
 	var idle := top / maxf(1.0, Points.flight("boost_speed_mult") if boosting else 1.0) * Points.flight("idle_fraction")
@@ -584,6 +600,60 @@ func _fly(delta: float) -> void:
 		global_position.y = altitude_limit
 		velocity.y = minf(velocity.y, 0.0)
 		flight_pitch = minf(flight_pitch, 0.0)
+
+
+## How far the body is above the ground straight below it (INF when there is none close by).
+func _ground_gap() -> float:
+	var query := PhysicsRayQueryParameters3D.create(global_position, global_position + Vector3.DOWN * 8.0, LAYER_WORLD)
+	query.exclude = _own_rids
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return INF if hit.is_empty() else global_position.y - float(hit["position"].y)
+
+
+## Puts a flyer down on its feet: level, and no longer moving along its nose.
+func _land() -> void:
+	landed = true
+	air_speed = -1.0
+	flight_pitch = 0.0
+	flight_roll = 0.0
+	_sink = 0.0
+	rotation.x = 0.0
+	rotation.z = 0.0
+	boosting = false
+
+
+## Walking on its feet, slowly: the legs, not the wings, carry a landed flyer. Space takes off again.
+func _walk_landed(delta: float) -> void:
+	var landing: Dictionary = def["landing"]
+	var c := controls
+	if c.jump and _jump_cooldown <= 0.0:
+		_take_off()
+		return
+	rotation.y -= c.turn * float(landing.get("turn_rate", 1.5)) * damage.turn_mult() * delta
+	var forward := -global_transform.basis.z
+	var right := global_transform.basis.x
+	var wish := forward * c.throttle + right * c.strafe
+	if wish.length() > 1.0:
+		wish = wish.normalized()
+	var target := wish * float(landing.get("walk_speed", 5.0)) * damage.speed_mult()
+	var flat := Vector2(velocity.x, velocity.z).lerp(Vector2(target.x, target.z), clampf(GROUND_ACCEL * delta, 0.0, 1.0))
+	velocity.x = flat.x
+	velocity.z = flat.y
+	velocity.y = 0.0 if is_on_floor() else velocity.y - GRAVITY * delta
+	move_and_slide()
+
+
+## Lifts off from the ground at cruise speed with the nose a little up, and does not settle again
+## for a moment.
+func _take_off() -> void:
+	landed = false
+	_takeoff_grace = 1.5
+	_jump_cooldown = 0.5
+	air_speed = float(def["base"]["speed"]) * damage.speed_mult() * Points.flight("max_speed_mult") * Points.flight("cruise_fraction")
+	flight_pitch = deg_to_rad(15.0)
+	flight_roll = 0.0
+	_sink = 0.0
+	global_position.y += 0.6
 
 
 func _fall(delta: float) -> void:

@@ -852,6 +852,8 @@ func _place_display_mech(peer: int, mech: Mech) -> void:
 	mech.rotation = Vector3(tilt.x, yaw, tilt.y)
 	mech.velocity = vel
 	mech.remote_grounded = grounded
+	if mech.is_flying():
+		mech.landed = grounded
 	if mech != local_mech:
 		# The local pilot's own head turns at once from their own input.
 		mech.aim_yaw = aim_yaw

@@ -35,6 +35,7 @@ var _factor: Dictionary = {}
 var _droop: Dictionary = {}
 var _walk_amp: float = 0.0
 var _flap_amp: float = 0.45
+var _perch: float = 0.0
 var _flap_hz: float = 0.0
 var _bank: float = 0.0
 var _pitch: float = 0.0
@@ -85,10 +86,12 @@ func update(delta: float) -> void:
 	if _mech.is_dead():
 		_death = minf(1.0, _death + delta / DEATH_TIME)
 	_update_factors(delta)
-	if _mech.is_flying():
+	if _mech.is_flying() and not _mech.landed:
 		_update_flight(delta)
 	else:
 		_update_walk(delta)
+	# A landed flyer stands up on its feet, a little higher than it flew.
+	_perch = move_toward(_perch, 1.0 if _mech.landed else 0.0, 2.5 * delta)
 	_update_stand(delta)
 	_apply_parts(delta)
 	_apply_rig()
@@ -147,6 +150,9 @@ func _update_walk(delta: float) -> void:
 	var velocity := _mech.velocity
 	var flat := Vector2(velocity.x, velocity.z).length()
 	var base_speed := float(_mech.def["base"]["speed"])
+	if _mech.landed:
+		base_speed = float(_mech.def.get("landing", {}).get("walk_speed", base_speed))
+		_flap_amp = move_toward(_flap_amp, 0.0, 3.0 * delta)
 	var moving := _mech.grounded() and not _mech.is_dead()
 	var target := clampf(flat / base_speed, 0.0, 1.0) if moving else 0.0
 	_walk_amp = move_toward(_walk_amp, target, 5.0 * delta)
@@ -194,6 +200,7 @@ func _update_flight(delta: float) -> void:
 	var amp_target := lerpf(0.45, 1.0, climbing) - 0.25 * descending
 	_flap_amp = move_toward(_flap_amp, amp_target, 3.0 * delta)
 
+	_walk_amp = move_toward(_walk_amp, 0.0, 5.0 * delta)
 	bob_y = float(_cfg["hover_bob_m"]) * _flap_amp * sin(flap_phase * TAU)
 	# Turning right banks right (right side down, a negative roll).
 	_bank = 0.0
@@ -217,7 +224,7 @@ func _apply_parts(delta: float) -> void:
 		var flap: Dictionary = entry["flap"]
 		if not flap.is_empty():
 			# A destroyed (or dead) wing droops instead of flapping.
-			var droop_target := 1.0 if (_death > 0.0 or _limb_factor(id) <= 0.0) else 0.0
+			var droop_target := 1.0 if (_death > 0.0 or _limb_factor(id) <= 0.0 or _mech.landed) else 0.0
 			_droop[id] = move_toward(_droop[id], droop_target, DROOP_RATE * delta)
 			var live := _motion_angle(flap, flap_phase, _flap_amp, factor)
 			var drooped := deg_to_rad(float(flap.get("droop_deg", 0.0)))
@@ -271,7 +278,7 @@ func stand_pitch() -> float:
 func _apply_rig() -> void:
 	var collapse := _death * _death * (3.0 - 2.0 * _death)
 	bob_y *= 1.0 - collapse
-	var rig_y := bob_y - _crouch * (1.0 - collapse) - float(_cfg.get("collapse_m", 0.0)) * collapse
+	var rig_y := bob_y - _crouch * (1.0 - collapse) - float(_cfg.get("collapse_m", 0.0)) * collapse + float(_cfg.get("perch_lift_m", 0.0)) * _perch
 	var rig_rotation := Vector3(
 		_pitch + deg_to_rad(float(_cfg.get("death_pitch_deg", 0.0))) * collapse,
 		_yaw * (1.0 - collapse),
