@@ -94,10 +94,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	# The mech-and-loadout panel is up for the break between rounds (and between matches).
-	var between := session != null and session.rules != null and session.rules.is_round_match() \
-			and (session.phase == NetSession.Phase.ROUND_OVER or session.phase == NetSession.Phase.FINISHED) \
-			and session.has_local_pilot()
+	# The mech-and-loadout panel is up before round 1 and in the breaks between rounds and matches.
+	var between := session != null and session.rules != null and session.choice_window() and session.has_local_pilot()
 	if between and not _choice.is_open() and not _pause.is_open():
 		_choice.open(session.chosen_mech())
 	elif not between and _choice.is_open():

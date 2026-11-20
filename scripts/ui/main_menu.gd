@@ -55,10 +55,9 @@ func _build() -> void:
 	_build_multiplayer_card(cards)
 
 	var footer := UiKit.hbox(column, 0)
-	var mech_id := LaunchConfig.mech_id
-	var active := UiKit.mono("Active: %s / %s" % [UiKit.mech_name(mech_id), LoadoutStore.active_name(mech_id)], UiKit.DIM, 10)
-	active.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	footer.add_child(active)
+	var fill := Control.new()
+	fill.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(fill)
 	footer.add_child(UiKit.link_button("Options", UiKit.LIME, func() -> void: get_tree().change_scene_to_file("res://scenes/options_menu.tscn")))
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(24, 0)
@@ -83,11 +82,14 @@ func _build_loadout_card(parent: Control) -> void:
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.size_flags_stretch_ratio = 1.25
 	parent.add_child(panel)
-	var button := UiKit.primary_button("Manage mechs", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn"))
-	button.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	button.add_theme_font_size_override("font_size", 34)
-	panel.add_child(button)
+	var column := UiKit.vbox(panel, 0)
+	var above := Control.new()
+	above.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(above)
+	column.add_child(UiKit.primary_button("Manage mechs", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn")))
+	var below := Control.new()
+	below.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	column.add_child(below)
 
 
 func _build_range_card(parent: Control) -> void:

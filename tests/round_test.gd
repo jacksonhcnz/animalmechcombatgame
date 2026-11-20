@@ -89,8 +89,8 @@ func _test_match_flow() -> void:
 	_check(_slot(2).mech.global_position.z < -550.0 and _slot(4).mech.global_position.z < -550.0, "team 1 starts at the north end in round 1")
 	_check(_slot(3).mech.global_position.z > 550.0, "team 2 starts at the south end")
 	_check(absf(_slot(2).mech.global_position.x - _slot(4).mech.global_position.x) > 10.0, "teammates start in different places")
-	_session._server_tick(4.0)
-	_check(_session.phase == NetSession.Phase.ACTIVE, "the round begins after the countdown")
+	_session._server_tick(NetProtocol.PICK_TIME + 0.1)
+	_check(_session.phase == NetSession.Phase.ACTIVE, "the round begins after the pick time")
 
 	_kill_team(2)
 	_check(_slot(3).respawn_left < 0.0, "a destroyed mech does not respawn within the round (one life)")
@@ -136,7 +136,7 @@ func _test_match_flow() -> void:
 	_check(_session.phase == NetSession.Phase.COUNTDOWN and _session.round_number == 1 and _session.team_wins == [0, 0], "a new match starts from round 1, 0-0")
 
 	# A pilot arriving mid-round waits for the next one.
-	_session._server_tick(4.0)
+	_session._server_tick(NetProtocol.PICK_TIME + 0.1)
 	_check(_session.phase == NetSession.Phase.ACTIVE, "round 1 of the new match is under way")
 	var late := _session._add_slot(5, "Late", "lion")
 	_check(late.mech == null and not _session._joins_now(), "a late pilot gets no mech mid-round")

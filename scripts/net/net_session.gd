@@ -272,7 +272,14 @@ func _server_tick(delta: float) -> void:
 ## Whether a pilot may swap mech or loadout now: between rounds and matches, while waiting, or
 ## (when there are no rounds) at any time, taking effect at their next spawn.
 func can_choose() -> bool:
-	return not _round_mode() or phase == Phase.WAITING or phase == Phase.ROUND_OVER or phase == Phase.FINISHED
+	return not _round_mode() or phase == Phase.WAITING or choice_window()
+
+
+## True while the choose-your-mech panel is up: before round 1 and in every break after.
+func choice_window() -> bool:
+	if not _round_mode():
+		return false
+	return phase == Phase.ROUND_OVER or phase == Phase.FINISHED or (phase == Phase.COUNTDOWN and round_number == 1)
 
 
 ## Whether this machine has a pilot in the match (a dedicated server has none).
@@ -310,13 +317,13 @@ func _apply_choice(slot: Slot, mech_id: String, loadout: Variant) -> void:
 		return
 	slot.mech_id = mech_id
 	slot.loadout = Loadout.sanitize(GameData.get_entry("mechs", mech_id), loadout)
-	if phase == Phase.WAITING and slot.mech != null:
+	if (phase == Phase.WAITING or phase == Phase.COUNTDOWN) and slot.mech != null:
 		_spawn_mech(slot, slot.spawn_index)
 	_broadcast_match()
 
 
 func _mark_ready(slot: Slot) -> void:
-	if slot == null or not (phase == Phase.ROUND_OVER or phase == Phase.FINISHED):
+	if slot == null or not choice_window():
 		return
 	slot.ready = true
 	for other: Slot in _slots.values():
@@ -356,7 +363,7 @@ func _set_phase(new_phase: Phase) -> void:
 				round_number += 1
 			else:
 				_reset_scores()
-			_phase_left = NetProtocol.COUNTDOWN_TIME
+			_phase_left = NetProtocol.PICK_TIME if _round_mode() and round_number == 1 else NetProtocol.COUNTDOWN_TIME
 			for slot: Slot in _slots.values():
 				_spawn_mech(slot, slot.spawn_index)
 		Phase.ACTIVE:
@@ -1032,7 +1039,10 @@ func _update_hud(delta: float) -> void:
 				message = "Waiting for an opponent\n%d / %d pilots" % [_pilot_total(), max_players]
 		Phase.COUNTDOWN:
 			var count := str(ceili(_phase_left)) if is_server else "Get ready"
-			message = "Round %d\n%s" % [round_number, count] if rules.is_round_match() else count
+			if rules.is_round_match() and round_number == 1:
+				message = "Choose your mech and loadout"
+			else:
+				message = "Round %d\n%s" % [round_number, count] if rules.is_round_match() else count
 		Phase.ROUND_OVER:
 			message = "%s\nChoose your mech for the next round" % result_text
 		Phase.FINISHED:
