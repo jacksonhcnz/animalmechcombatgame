@@ -4,6 +4,10 @@ extends CanvasLayer
 ## The game keeps running behind it (a networked match cannot pause).
 
 signal leave_requested
+signal loadouts_requested
+
+## The test range adds a Loadouts button.
+var loadouts_button: bool = false
 
 var _panel: Control
 
@@ -28,6 +32,8 @@ func _ready() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	_button(box, "Resume", close)
+	if loadouts_button:
+		_button(box, "Loadouts", func() -> void: loadouts_requested.emit())
 	_button(box, "Main menu", func() -> void: leave_requested.emit())
 	var help := Label.new()
 	help.text = "Sprint: Shift   Melee: F (gamepad X)   Jump: Space   View: C"

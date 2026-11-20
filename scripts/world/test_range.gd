@@ -3,7 +3,7 @@ extends Node3D
 ## Used to try every mech, weapon and ruleset offline.
 ##
 ## Keys: 1/2/3 pick Lion/Velociraptor/Hawk, F1/F2/F4/F5 pick Practice/Standard/Hardcore/Arcade,
-## F3 developer overlay, R restart, Esc opens the pause menu (resume or main menu), click to capture the mouse.
+## F3 developer overlay, R restart, L change and edit loadouts, Esc opens the pause menu (resume or main menu), click to capture the mouse.
 
 const MECH_KEYS := {KEY_1: "lion", KEY_2: "velociraptor", KEY_3: "hawk"}
 const RULESET_KEYS := {KEY_F1: "practice", KEY_F2: "standard", KEY_F4: "hardcore", KEY_F5: "arcade"}
@@ -34,6 +34,7 @@ var _match_over: bool = false
 var _generation: int = 0
 var _mechs_root: Node3D
 var _pause: PauseMenu
+var _loadouts: CanvasLayer
 
 
 func _ready() -> void:
@@ -46,7 +47,9 @@ func _ready() -> void:
 	hud = Hud.new()
 	add_child(hud)
 	_pause = PauseMenu.new()
+	_pause.loadouts_button = true
 	add_child(_pause)
+	_pause.loadouts_requested.connect(open_loadouts)
 	_pause.leave_requested.connect(func() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		get_tree().change_scene_to_file("res://scenes/main_menu.tscn"))
@@ -101,6 +104,8 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _loadouts != null:
+		return
 	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not _pause.is_open():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event is InputEventKey and event.pressed and not event.echo:
@@ -113,12 +118,42 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameSettings.set_head_bob(GameSettings.head_bob + (step if event.keycode == KEY_BRACKETRIGHT else -step))
 			GameSettings.save_settings()
 			hud.flash("Head bob %d%%" % roundi(GameSettings.head_bob * 100.0))
+		elif event.keycode == KEY_L:
+			open_loadouts()
 		elif event.keycode == KEY_R:
 			start(player_mech_id, ruleset_id)
 		elif MECH_KEYS.has(event.keycode):
 			start(MECH_KEYS[event.keycode], ruleset_id)
 		elif RULESET_KEYS.has(event.keycode):
 			start(player_mech_id, RULESET_KEYS[event.keycode])
+
+
+## Opens the loadout screen over the range; closing it restarts the range with the mech and
+## loadout that is selected there.
+func open_loadouts() -> void:
+	if _loadouts != null:
+		return
+	_pause.close()
+	_loadouts = CanvasLayer.new()
+	_loadouts.layer = 25
+	var screen := LoadoutMenu.new()
+	screen.embedded = true
+	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_loadouts.add_child(screen)
+	add_child(_loadouts)
+	controller.enabled = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	screen.back_requested.connect(close_loadouts)
+
+
+func close_loadouts() -> void:
+	if _loadouts == null:
+		return
+	_loadouts.queue_free()
+	_loadouts = null
+	start(LaunchConfig.mech_id, ruleset_id)
+	if DisplayServer.get_name() != "headless":
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _spawn_target(spec: Array) -> void:
