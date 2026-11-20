@@ -86,7 +86,7 @@ func _build_loadout_card(parent: Control) -> void:
 	var above := Control.new()
 	above.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(above)
-	column.add_child(UiKit.primary_button("Manage mechs", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn")))
+	column.add_child(UiKit.primary_button("MANAGE MECHS", func() -> void: get_tree().change_scene_to_file("res://scenes/loadout_menu.tscn")))
 	var below := Control.new()
 	below.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(below)
