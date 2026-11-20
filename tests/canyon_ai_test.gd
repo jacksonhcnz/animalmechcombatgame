@@ -37,6 +37,13 @@ func _go() -> void:
 		length += route[i].distance_to(route[i - 1])
 	_check(length >= north.distance_to(south) - 1.0, "the route is no shorter than the straight line")
 
+	# The archipelago has a walkable route between the two ends too.
+	var arch := Canyon.rasterize(Canyon.load_map("archipelago"))
+	var arch_pilot := AiPilot.new("hard")
+	arch_pilot.grid = arch
+	var arch_route := arch_pilot.plan(Arena.map_spawn("archipelago", "north", 0).origin, Arena.map_spawn("archipelago", "south", 0).origin)
+	_check(arch_route.size() > 3, "a route exists across the archipelago (%d points)" % arch_route.size())
+
 	# A whole practice match on the canyon: pilots cross to meet each other.
 	LaunchConfig.mode = LaunchConfig.PRACTICE
 	LaunchConfig.ruleset_id = "practice_match"
