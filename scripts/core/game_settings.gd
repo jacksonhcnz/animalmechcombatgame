@@ -21,9 +21,15 @@ static func load_settings() -> void:
 	if config.load(PATH) != OK:
 		return
 	set_head_bob(float(config.get_value("view", "head_bob", head_bob)))
+	# A name given on the command line wins over the saved one.
+	var saved := str(config.get_value("pilot", "name", "")).strip_edges().left(20)
+	if saved != "" and not LaunchConfig.name_from_args:
+		LaunchConfig.player_name = saved
 
 
 static func save_settings() -> void:
 	var config := ConfigFile.new()
+	config.load(PATH)
 	config.set_value("view", "head_bob", head_bob)
+	config.set_value("pilot", "name", LaunchConfig.player_name)
 	config.save(PATH)

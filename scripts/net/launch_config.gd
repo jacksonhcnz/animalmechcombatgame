@@ -22,6 +22,8 @@ static var port: int = NetProtocol.DEFAULT_PORT
 static var ruleset_id: String = "standard"
 static var server_name: String = "Animal Mech Combat server"
 static var player_name: String = "Pilot"
+## True when --name= was given, so the name saved in settings does not replace it.
+static var name_from_args: bool = false
 static var mech_id: String = "lion"
 ## The four loadout slots (primary, secondary, equipment, perk) as item ids.
 static var loadout: Dictionary = {}
@@ -59,6 +61,7 @@ static func from_args(args: PackedStringArray) -> bool:
 			ruleset_id = arg.trim_prefix("--ruleset=")
 		elif arg.begins_with("--name="):
 			player_name = arg.trim_prefix("--name=")
+			name_from_args = true
 		elif arg.begins_with("--mech="):
 			mech_id = arg.trim_prefix("--mech=")
 		elif arg.begins_with("--primary="):
