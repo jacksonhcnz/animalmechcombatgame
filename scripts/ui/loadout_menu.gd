@@ -163,11 +163,11 @@ func _card(mech_id: String, index: int, slot: Dictionary, equipped: bool) -> Con
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.custom_minimum_size = Vector2(150, 0)
 	var box := UiKit.vbox(panel, 8)
-	var top := UiKit.hbox(box, 0)
-	var number := UiKit.mono("%02d" % (index + 1), UiKit.DIM, 11)
-	number.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(number)
 	if equipped:
+		var top := UiKit.hbox(box, 0)
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		top.add_child(spacer)
 		top.add_child(UiKit.mono("Equipped"))
 	box.add_child(UiKit.heading(str(slot["name"]), 26))
 	var detail := UiKit.vbox(box, 2)
