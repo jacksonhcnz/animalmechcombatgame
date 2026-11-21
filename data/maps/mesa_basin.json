@@ -1,0 +1,477 @@
+{
+ "id": "mesa_basin",
+ "name": "Mesa Basin",
+ "notes": "Traced from the designer's side-on sketch, which runs north to south: a wall at each end, a big flat-topped mesa near each end with a steep outer cliff and a long ramp down to the low middle (the north ramp is shorter and steeper, the south one longer and gentler, as drawn). Sixteen smaller mesas of different heights stand around them in half-turn mirror pairs. The ground rolls, dry washes cut across it and boulder fields give cover low down. Built as a terrain map: heights come from the mesas, ground, washes and edge below. x and z are metres from the middle; z runs from the north end (team spawn 1) to the south end (spawn 2). Ramp dir is a compass bearing (0 north, 90 east); width is the ramp's half-angle in degrees.",
+ "terrain": true,
+ "cell": 8,
+ "size": [
+  960,
+  1360
+ ],
+ "ground": {
+  "roll": 7,
+  "wavelength": 75,
+  "seed": 11
+ },
+ "edge": {
+  "width": 90,
+  "height": 72
+ },
+ "washes": [
+  {
+   "points": [
+    [
+     -470,
+     -20
+    ],
+    [
+     -300,
+     25
+    ],
+    [
+     -150,
+     -15
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     150,
+     -20
+    ],
+    [
+     300,
+     15
+    ],
+    [
+     470,
+     -15
+    ]
+   ],
+   "width": 22,
+   "depth": 6
+  },
+  {
+   "points": [
+    [
+     -470,
+     -330
+    ],
+    [
+     -250,
+     -200
+    ],
+    [
+     -60,
+     -110
+    ]
+   ],
+   "width": 16,
+   "depth": 4
+  },
+  {
+   "points": [
+    [
+     470,
+     330
+    ],
+    [
+     250,
+     200
+    ],
+    [
+     60,
+     110
+    ]
+   ],
+   "width": 16,
+   "depth": 4
+  }
+ ],
+ "mesas": [
+  {
+   "x": -32,
+   "z": -384,
+   "rx": 176,
+   "rz": 77,
+   "height": 59,
+   "cliff": 22,
+   "ledge": true,
+   "ramps": [
+    {
+     "dir": 180,
+     "length": 240,
+     "width": 40
+    },
+    {
+     "dir": 45,
+     "length": 150,
+     "width": 14
+    }
+   ]
+  },
+  {
+   "x": 32,
+   "z": 378,
+   "rx": 166,
+   "rz": 64,
+   "height": 62,
+   "cliff": 22,
+   "ledge": true,
+   "ramps": [
+    {
+     "dir": 0,
+     "length": 280,
+     "width": 40
+    },
+    {
+     "dir": 225,
+     "length": 150,
+     "width": 14
+    }
+   ]
+  },
+  {
+   "x": 250,
+   "z": -192,
+   "rx": 35,
+   "rz": 45,
+   "height": 20,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 0,
+     "length": 96,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -272,
+   "z": -96,
+   "rx": 51,
+   "rz": 32,
+   "height": 29,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 90,
+     "length": 134,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 346,
+   "z": -506,
+   "rx": 38,
+   "rz": 51,
+   "height": 42,
+   "cliff": 22,
+   "ledge": true,
+   "ramps": [
+    {
+     "dir": 210,
+     "length": 176,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -358,
+   "z": -262,
+   "rx": 32,
+   "rz": 58,
+   "height": 25,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 135,
+     "length": 128,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 102,
+   "z": -115,
+   "rx": 22,
+   "rz": 22,
+   "height": 13,
+   "cliff": 13,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 340,
+     "length": 58,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 154,
+   "z": -282,
+   "rx": 38,
+   "rz": 29,
+   "height": 36,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 240,
+     "length": 122,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -314,
+   "z": -550,
+   "rx": 42,
+   "rz": 38,
+   "height": 28,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 160,
+     "length": 128,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -122,
+   "z": -45,
+   "rx": 29,
+   "rz": 19,
+   "height": 10,
+   "cliff": 12,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 60,
+     "length": 45,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -250,
+   "z": 192,
+   "rx": 35,
+   "rz": 45,
+   "height": 20,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 180,
+     "length": 96,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 272,
+   "z": 96,
+   "rx": 51,
+   "rz": 32,
+   "height": 29,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 270,
+     "length": 134,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -346,
+   "z": 506,
+   "rx": 38,
+   "rz": 51,
+   "height": 42,
+   "cliff": 22,
+   "ledge": true,
+   "ramps": [
+    {
+     "dir": 30,
+     "length": 176,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 358,
+   "z": 262,
+   "rx": 32,
+   "rz": 58,
+   "height": 25,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 315,
+     "length": 128,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -102,
+   "z": 115,
+   "rx": 22,
+   "rz": 22,
+   "height": 13,
+   "cliff": 13,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 160,
+     "length": 58,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": -154,
+   "z": 282,
+   "rx": 38,
+   "rz": 29,
+   "height": 36,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 60,
+     "length": 122,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 314,
+   "z": 550,
+   "rx": 42,
+   "rz": 38,
+   "height": 28,
+   "cliff": 19,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 340,
+     "length": 128,
+     "width": 45
+    }
+   ]
+  },
+  {
+   "x": 122,
+   "z": 45,
+   "rx": 29,
+   "rz": 19,
+   "height": 10,
+   "cliff": 12,
+   "ledge": false,
+   "ramps": [
+    {
+     "dir": 240,
+     "length": 45,
+     "width": 45
+    }
+   ]
+  }
+ ],
+ "boulders": {
+  "count": 140,
+  "seed": 20261121,
+  "size": [
+   4,
+   11
+  ],
+  "max_height": 14
+ },
+ "spawns": {
+  "north": {
+   "facing": "south",
+   "points": [
+    [
+     -150,
+     -560
+    ],
+    [
+     -120,
+     -560
+    ],
+    [
+     -90,
+     -560
+    ],
+    [
+     -60,
+     -560
+    ],
+    [
+     -150,
+     -532
+    ],
+    [
+     -120,
+     -532
+    ],
+    [
+     -90,
+     -532
+    ],
+    [
+     -60,
+     -532
+    ]
+   ]
+  },
+  "south": {
+   "facing": "north",
+   "points": [
+    [
+     150,
+     560
+    ],
+    [
+     120,
+     560
+    ],
+    [
+     90,
+     560
+    ],
+    [
+     60,
+     560
+    ],
+    [
+     150,
+     532
+    ],
+    [
+     120,
+     532
+    ],
+    [
+     90,
+     532
+    ],
+    [
+     60,
+     532
+    ]
+   ]
+  }
+ }
+}
