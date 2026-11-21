@@ -8,6 +8,9 @@ extends RefCounted
 ## The map is worked out on a grid of square cells (`cell` metres), one cell either canyon
 ## floor or raised, then drawn as flat-coloured rectangles with the runs of matching cells
 ## merged. The server and every client build it from the same numbers, so they agree.
+##
+## A map with "terrain": true is built by Terrain instead (rolling ground, mesas of different
+## heights with ramps); it fills the same Grid, with heights at the cell corners.
 
 const TOP_GREENS: Array[String] = ["#74a554", "#6b9a4d", "#7dae5c"]
 const FLOOR_GREENS: Array[String] = ["#5d8a44", "#56803f", "#65944b"]
@@ -17,7 +20,7 @@ const LAYER_HEIGHT := 7.5
 ## Patches of ground tone are this many cells across.
 const PATCH := 10
 
-## The grid: 0 is canyon floor, 1 is raised.
+## The grid: 0 is canyon floor (open to walk), 1 is raised (rock, a cliff or a boulder).
 class Grid extends RefCounted:
 	var cell: float = 4.0
 	var depth: float = 20.0
@@ -26,15 +29,43 @@ class Grid extends RefCounted:
 	var nx: int = 0
 	var nz: int = 0
 	var raised: PackedByteArray = PackedByteArray()
+	## Terrain maps only: ground height at each cell corner, (nx + 1) by (nz + 1). Empty on canyon maps.
+	var heights: PackedFloat32Array = PackedFloat32Array()
+	## Terrain maps only: the boulders, as boxes.
+	var boulders: Array[AABB] = []
 
 	func at(i: int, j: int) -> int:
 		if i < 0 or j < 0 or i >= nx or j >= nz:
 			return 1
 		return raised[j * nx + i]
 
-	## Height of the ground at a world position (0 in the canyon, `depth` on the rock).
+	## Height of the ground at a world position (0 in the canyon, `depth` on the rock; on a
+	## terrain map, the height of the drawn ground).
 	func height_at(x: float, z: float) -> float:
-		return depth * at(int(floor((x - x0) / cell)), int(floor((z - z0) / cell)))
+		if heights.is_empty():
+			return depth * at(int(floor((x - x0) / cell)), int(floor((z - z0) / cell)))
+		var fx := clampf((x - x0) / cell, 0.0, float(nx) - 0.001)
+		var fz := clampf((z - z0) / cell, 0.0, float(nz) - 0.001)
+		var i := int(fx)
+		var j := int(fz)
+		var u := fx - float(i)
+		var v := fz - float(j)
+		var h00 := corner(i, j)
+		var h10 := corner(i + 1, j)
+		var h01 := corner(i, j + 1)
+		var h11 := corner(i + 1, j + 1)
+		# The same split into triangles as the drawn ground.
+		if (i + j) % 2 == 0:
+			return h00 + (h11 - h01) * u + (h01 - h00) * v if v > u else h00 + (h10 - h00) * u + (h11 - h10) * v
+		return h00 + (h10 - h00) * u + (h01 - h00) * v if u + v < 1.0 else h11 + (h01 - h11) * (1.0 - u) + (h10 - h11) * (1.0 - v)
+
+	## Ground height at a cell corner (terrain maps).
+	func corner(i: int, j: int) -> float:
+		return heights[clampi(j, 0, nz) * (nx + 1) + clampi(i, 0, nx)]
+
+	## True where a walker cannot go: rock, a cliff, a boulder or off the map.
+	func blocked_at(x: float, z: float) -> bool:
+		return at(int(floor((x - x0) / cell)), int(floor((z - z0) / cell))) != 0
 
 	func half_x() -> float:
 		return -x0
@@ -47,8 +78,21 @@ static func load_map(map_id: String) -> Dictionary:
 	return GameData.get_entry("maps", map_id)
 
 
+static var _grids: Dictionary = {}
+
+
+## The grid for a map, worked out once and kept (terrain maps take a moment to work out).
+static func grid_for(map_def: Dictionary) -> Grid:
+	var key := map_def.hash()
+	if not _grids.has(key):
+		_grids[key] = rasterize(map_def)
+	return _grids[key]
+
+
 ## Works out which cells are canyon floor and which are raised.
 static func rasterize(map_def: Dictionary) -> Grid:
+	if map_def.get("terrain", false):
+		return Terrain.rasterize(map_def)
 	var grid := Grid.new()
 	grid.cell = float(map_def.get("cell", 4.0))
 	grid.depth = float(map_def.get("depth", 20.0))
@@ -99,18 +143,23 @@ static func validate(map_id: String) -> Array[String]:
 	var tag := "maps/%s" % map_id
 	if def.get("id", "") != map_id:
 		p.append("%s: id must equal the file name" % tag)
-	if float(def.get("cell", 0.0)) <= 0.0 or float(def.get("depth", 0.0)) <= 0.0:
+	if def.get("terrain", false):
+		p.append_array(Terrain.validate(def, tag))
+		if not p.is_empty():
+			return p
+	elif float(def.get("cell", 0.0)) <= 0.0 or float(def.get("depth", 0.0)) <= 0.0:
 		p.append("%s: cell and depth must be above 0" % tag)
 		return p
-	var outer: Variant = def.get("outer")
-	if not (outer is Array and outer.size() >= 3):
-		p.append("%s: outer needs at least 3 points" % tag)
-		return p
-	for island: Variant in def.get("islands", []):
-		if not (island is Array and island.size() >= 3):
-			p.append("%s: every island needs at least 3 points" % tag)
+	if not def.get("terrain", false):
+		var outer: Variant = def.get("outer")
+		if not (outer is Array and outer.size() >= 3):
+			p.append("%s: outer needs at least 3 points" % tag)
 			return p
-	var grid := rasterize(def)
+		for island: Variant in def.get("islands", []):
+			if not (island is Array and island.size() >= 3):
+				p.append("%s: every island needs at least 3 points" % tag)
+				return p
+	var grid := grid_for(def)
 	for end in ["north", "south"]:
 		var spawns: Variant = def.get("spawns", {}).get(end)
 		if not (spawns is Dictionary and ["north", "south"].has(str(spawns.get("facing", ""))) and spawns.get("points") is Array):
@@ -119,10 +168,10 @@ static func validate(map_id: String) -> Array[String]:
 		if spawns["points"].size() < 4:
 			p.append("%s: spawns.%s needs at least 4 points, one for each pilot of a team" % [tag, end])
 		for point: Array in spawns["points"]:
-			# The spot and the ground around it must all be canyon floor.
+			# The spot and the ground around it must all be open floor.
 			for dx in [-8.0, 0.0, 8.0]:
 				for dz in [-8.0, 0.0, 8.0]:
-					if grid.height_at(float(point[0]) + dx, float(point[1]) + dz) != 0.0:
+					if grid.blocked_at(float(point[0]) + dx, float(point[1]) + dz):
 						p.append("%s: spawn %s is not clear canyon floor" % [tag, point])
 						break
 	return p
@@ -131,7 +180,9 @@ static func validate(map_id: String) -> Array[String]:
 ## Builds the terrain under `parent`: the drawn mesh and a static body to stand on.
 ## Returns the grid, so callers can ask how high the ground is.
 static func build(parent: Node3D, map_def: Dictionary) -> Grid:
-	var grid := rasterize(map_def)
+	if map_def.get("terrain", false):
+		return Terrain.build(parent, map_def)
+	var grid := grid_for(map_def)
 	var drawn := _Mesh.new()
 	var faces := PackedVector3Array()
 	_tops(grid, drawn, faces)

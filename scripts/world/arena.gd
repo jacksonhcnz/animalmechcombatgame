@@ -90,6 +90,10 @@ static func map_spawn(map_id: String, end: String, index: int) -> Transform3D:
 	var points: Array = spawns["points"]
 	var point: Array = points[index % points.size()]
 	var position := Vector3(float(point[0]), 0.0, float(point[1]))
+	# On a terrain map the ground rolls, so start from its height there.
+	var map_def := Canyon.load_map(map_id)
+	if map_def.get("terrain", false):
+		position.y = Canyon.grid_for(map_def).height_at(position.x, position.z)
 	# Forward is -Z: facing north is yaw 0, facing south is yaw PI.
 	var yaw := PI if str(spawns["facing"]) == "south" else 0.0
 	return Transform3D(Basis(Vector3.UP, yaw), position)

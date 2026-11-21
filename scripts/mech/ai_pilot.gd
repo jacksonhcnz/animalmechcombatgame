@@ -12,7 +12,8 @@ const MELEE_REACH := 11.0
 ## A flying pilot stays above this height (metres) so a turn or a stall does not put it in the ground.
 const FLY_FLOOR := 32.0
 ## Path finding on a canyon map works on blocks this many ground cells wide.
-const NAV_BLOCK := 4
+## Routes are planned over blocks of about this many metres (a whole number of map cells).
+const NAV_BLOCK_METRES := 16.0
 ## How often a walking pilot works its route out again (seconds), and how far ahead it looks along it.
 const REPLAN_TIME := 1.0
 const LOOKAHEAD_NODES := 5
@@ -24,6 +25,7 @@ var _path: Array[Vector3] = []
 var _replan_left: float = 0.0
 var _coarse: PackedByteArray
 var _cnx: int = 0
+var _nav := 4
 var _cnz: int = 0
 
 var level: Dictionary
@@ -87,27 +89,28 @@ func _fly_floor() -> float:
 # ---------------------------------------------------------------- finding a way round the rock
 
 func _build_coarse() -> void:
-	_cnx = int(ceil(float(grid.nx) / NAV_BLOCK))
-	_cnz = int(ceil(float(grid.nz) / NAV_BLOCK))
+	_nav = maxi(1, int(round(NAV_BLOCK_METRES / grid.cell)))
+	_cnx = int(ceil(float(grid.nx) / _nav))
+	_cnz = int(ceil(float(grid.nz) / _nav))
 	_coarse = PackedByteArray()
 	_coarse.resize(_cnx * _cnz)
 	for j in _cnz:
 		for i in _cnx:
 			var blocked := 0
-			for dj in NAV_BLOCK:
-				for di in NAV_BLOCK:
-					if grid.at(i * NAV_BLOCK + di, j * NAV_BLOCK + dj) != 0:
+			for dj in _nav:
+				for di in _nav:
+					if grid.at(i * _nav + di, j * _nav + dj) != 0:
 						blocked = 1
 			_coarse[j * _cnx + i] = blocked
 
 
 func _coarse_of(p: Vector3) -> Vector2i:
-	var size := grid.cell * NAV_BLOCK
+	var size := grid.cell * _nav
 	return Vector2i(clampi(int(floor((p.x - grid.x0) / size)), 0, _cnx - 1), clampi(int(floor((p.z - grid.z0) / size)), 0, _cnz - 1))
 
 
 func _coarse_centre(c: Vector2i) -> Vector3:
-	var size := grid.cell * NAV_BLOCK
+	var size := grid.cell * _nav
 	return Vector3(grid.x0 + (c.x + 0.5) * size, 0.0, grid.z0 + (c.y + 0.5) * size)
 
 
@@ -130,7 +133,7 @@ func _nearest_open(c: Vector2i) -> Vector2i:
 	return c
 
 
-## True when walking straight from a to b stays on the canyon floor.
+## True when walking straight from a to b stays on open floor (no rock, cliff or boulder).
 func walkable_line(a: Vector3, b: Vector3) -> bool:
 	if grid == null:
 		return true
@@ -138,11 +141,11 @@ func walkable_line(a: Vector3, b: Vector3) -> bool:
 	var steps := maxi(1, int(length / 6.0))
 	for i in range(steps + 1):
 		var p := a.lerp(b, float(i) / steps)
-		if grid.height_at(p.x, p.z) > 0.0:
+		if grid.blocked_at(p.x, p.z):
 			return false
 		# Keep a body's width clear of the rock on either side.
 		var side := Vector3(b.z - a.z, 0.0, a.x - b.x).normalized() * 7.0 if length > 0.1 else Vector3.ZERO
-		if grid.height_at(p.x + side.x, p.z + side.z) > 0.0 or grid.height_at(p.x - side.x, p.z - side.z) > 0.0:
+		if grid.blocked_at(p.x + side.x, p.z + side.z) or grid.blocked_at(p.x - side.x, p.z - side.z):
 			return false
 	return true
 
@@ -235,7 +238,7 @@ func _steer_point(mech: Mech, point: Vector3, delta: float) -> Vector3:
 	if _path.is_empty():
 		return point
 	# Drop the points already passed, then head for the furthest of the next few that is in a straight line.
-	while _path.size() > 1 and Vector2(_path[0].x - origin.x, _path[0].z - origin.z).length() < grid.cell * NAV_BLOCK * 1.2:
+	while _path.size() > 1 and Vector2(_path[0].x - origin.x, _path[0].z - origin.z).length() < grid.cell * _nav * 1.2:
 		_path.pop_front()
 	var best := _path[0]
 	for i in mini(LOOKAHEAD_NODES, _path.size()):

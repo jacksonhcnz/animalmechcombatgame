@@ -143,7 +143,7 @@ func start_offline(ruleset_id: String, local_player: Dictionary, team_size: int,
 		rules.map = map_id
 		# The canyon is a long way across, so a round gets longer.
 		rules.match_time = maxf(rules.match_time, 300.0)
-		grid = Canyon.rasterize(Canyon.load_map(map_id))
+		grid = Canyon.grid_for(Canyon.load_map(map_id))
 	my_id = 1
 	var me := _add_slot(1, str(local_player["name"]), str(local_player["mech"]))
 	me.loadout = Loadout.sanitize(GameData.get_entry("mechs", me.mech_id), local_player.get("loadout", {}))
